@@ -27,7 +27,7 @@ all: restorecond
 restorecond.o utmpwatcher.o stringslist.o user.o watch.o: restorecond.h
 
 restorecond:  restore.o restorecond.o utmpwatcher.o stringslist.o user.o watch.o
-	$(CC) $(LDFLAGS) -o $@ $^ $(LDLIBS)
+	$(CC) $(CFLAGS) $(LDFLAGS) -o $@ $^ $(LDLIBS)
 
 install: all
 	[ -d $(DESTDIR)$(MANDIR)/man8 ] || mkdir -p $(DESTDIR)$(MANDIR)/man8

@@ -60,7 +60,7 @@ endif
 all: newrole
 
 newrole: newrole.o $(EXTRA_OBJS)
-	$(CC) $(LDFLAGS) -o $@ $^ $(LDLIBS)
+	$(CC) $(CFLAGS) $(LDFLAGS) -o $@ $^ $(LDLIBS)
 
 install: all
 	test -d $(DESTDIR)$(BINDIR)      || install -m 755 -d $(DESTDIR)$(BINDIR)

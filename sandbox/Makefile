@@ -15,6 +15,7 @@ SEUNSHARE_OBJS = seunshare.o
 all: sandbox seunshare sandboxX.sh start
 
 seunshare: $(SEUNSHARE_OBJS)
+	$(CC) $(CFLAGS) $(LDFLAGS) -o $@ $^ $(LDLIBS)
 
 install: all
 	-mkdir -p $(DESTDIR)$(BINDIR)

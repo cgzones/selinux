@@ -12,7 +12,7 @@ PP_OBJS = $(patsubst %.c,%.o,$(PP_SRCS))
 all: pp
 
 pp: $(PP_OBJS)
-	$(CC) $(LDFLAGS) -o $@ $^ $(LDLIBS)
+	$(CC) $(CFLAGS) $(LDFLAGS) -o $@ $^ $(LDLIBS)
 
 %.o: %.c
 	$(CC) $(CFLAGS) -c -o $@ $^

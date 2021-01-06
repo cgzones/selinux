@@ -11,6 +11,7 @@ SEMODULE_OBJS = semodule.o
 all: semodule genhomedircon
 
 semodule: $(SEMODULE_OBJS)
+	$(CC) $(CFLAGS) $(LDFLAGS) -o $@ $^ $(LDLIBS)
 
 genhomedircon:
 	ln -sf semodule genhomedircon

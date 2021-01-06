@@ -18,16 +18,15 @@ else
 		-Wunused \
 		-Wwrite-strings \
 		-fno-common
+	export LDFLAGS ?= -Wl,-z,defs
 endif
 
 ifneq ($(DESTDIR),)
 	LIBDIR ?= $(DESTDIR)$(PREFIX)/lib
 	LIBSEPOLA ?= $(LIBDIR)/libsepol.a
 
-	CFLAGS += -I$(DESTDIR)$(PREFIX)/include
-	LDFLAGS += -L$(DESTDIR)$(PREFIX)/lib -L$(LIBDIR)
-	export CFLAGS
-	export LDFLAGS
+	export override CFLAGS += -I$(DESTDIR)$(PREFIX)/include
+	export override LDFLAGS += -L$(DESTDIR)$(PREFIX)/lib -L$(LIBDIR)
 	export LIBSEPOLA
 endif
 

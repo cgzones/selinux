@@ -9,7 +9,8 @@ override LDLIBS += -lsepol
 
 all: semodule_expand
 
-semodule_expand:  semodule_expand.o 
+semodule_expand:  semodule_expand.o
+	$(CC) $(CFLAGS) $(LDFLAGS) -o $@ $^ $(LDLIBS)
 
 install: all
 	-mkdir -p $(DESTDIR)$(BINDIR)

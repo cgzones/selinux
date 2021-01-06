@@ -14,6 +14,7 @@ BASHCOMPLETIONS=setsebool-bash-completion.sh
 all: setsebool
 
 setsebool: $(SETSEBOOL_OBJS)
+	$(CC) $(CFLAGS) $(LDFLAGS) -o $@ $^ $(LDLIBS)
 
 install: all
 	-mkdir -p $(DESTDIR)$(SBINDIR)

@@ -13,6 +13,7 @@ override LDLIBS += -lselinux
 all: sestatus
 
 sestatus: sestatus.o
+	$(CC) $(CFLAGS) $(LDFLAGS) -o $@ $^ $(LDLIBS)
 
 install: all
 	[ -d $(DESTDIR)$(MANDIR)/man8 ] || mkdir -p $(DESTDIR)$(MANDIR)/man8

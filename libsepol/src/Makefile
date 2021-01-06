@@ -29,7 +29,7 @@ LOBJS += $(sort $(patsubst %.c,%.lo,$(sort $(wildcard $(CILDIR)/src/*.c)) $(CIL_
 override CFLAGS += -I$(CILDIR)/include
 endif
 
-LD_SONAME_FLAGS=-soname,$(LIBSO),--version-script=$(LIBMAP),-z,defs
+LD_SONAME_FLAGS=-soname,$(LIBSO),--version-script=$(LIBMAP)
 
 LN=ln
 OS := $(shell uname)

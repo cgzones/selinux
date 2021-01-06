@@ -16,11 +16,13 @@ endif
 all: setfiles restorecon restorecon_xattr
 
 setfiles: setfiles.o restore.o
+	$(CC) $(CFLAGS) $(LDFLAGS) -o $@ $^ $(LDLIBS)
 
 restorecon: setfiles
 	ln -sf setfiles restorecon
 
 restorecon_xattr: restorecon_xattr.o restore.o
+	$(CC) $(CFLAGS) $(LDFLAGS) -o $@ $^ $(LDLIBS)
 
 install: all
 	[ -d $(DESTDIR)$(MANDIR)/man8 ] || mkdir -p $(DESTDIR)$(MANDIR)/man8

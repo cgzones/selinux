@@ -12,7 +12,8 @@ override LDLIBS += -lselinux
 
 all: secon
 
-secon: secon.o 
+secon: secon.o
+	$(CC) $(CFLAGS) $(LDFLAGS) -o $@ $^ $(LDLIBS)
 
 install-nogui: install
 

@@ -20,7 +20,7 @@ CFLAGS ?= -Wall -W -Wundef -Wmissing-noreturn -Wmissing-format-attribute
 all: $(PROG)
 
 $(PROG): $(PROG_OBJS) $(LIBSEPOLA)
-	$(CC) $(LDFLAGS) -pie -o $@ $^ -lselinux -lcap -lpcre $(LDLIBS_LIBSEPOLA)
+	$(CC) $(CFLAGS) $(LDFLAGS) -pie -o $@ $^ -lselinux -lcap -lpcre $(LDLIBS_LIBSEPOLA)
 
 %.o:  %.c 
 	$(CC) $(CFLAGS) -D_GNU_SOURCE -D_FILE_OFFSET_BITS=64 -fPIE -c -o $@ $<
