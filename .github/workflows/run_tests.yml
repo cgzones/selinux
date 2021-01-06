@@ -29,6 +29,9 @@ jobs:
             python-ruby-version: {python: 3.9, ruby: 2.7, other: linker-bfd}
           - compiler: clang
             python-ruby-version: {python: 3.9, ruby: 2.7, other: linker-gold}
+        include:
+          - compiler: clang
+            python-ruby-version: {python: 3.9, ruby: 2.7, other: sanitizer}
 
     steps:
     - uses: actions/checkout@v2
@@ -88,6 +91,9 @@ jobs:
         elif [ "${{ matrix.python-ruby-version.other }}" = "test-debug" ] ; then
             # Test hat debug build works fine
             EXPLICIT_MAKE_VARS="DEBUG=1"
+         elif [ "${{ matrix.python-ruby-version.other }}" = "sanitizer" ] ; then
+            # Test hat sanitizer build works fine
+            EXPLICIT_MAKE_VARS=CFLAGS="-O1 -g -fsanitize=address -fsanitize-address-use-after-scope -fno-omit-frame-pointer -fsanitize=undefined -fsanitize=nullability -fsanitize=implicit-conversion -fsanitize=integer -fsanitize=float-divide-by-zero -fsanitize=local-bounds"
         else
             EXPLICIT_MAKE_VARS=
         fi
@@ -137,6 +143,9 @@ jobs:
         echo "::endgroup::"
 
     - name: Run tests
+      env:
+        ASAN_OPTIONS: 'strict_string_checks=1:detect_stack_use_after_return=1:check_initialization_order=1:strict_init_order=1'
+        UBSAN_OPTIONS: 'print_stacktrace=1:print_summary=1:halt_on_error=1'
       run: |
         echo "::group::make install"
         make -j$(nproc) install $EXPLICIT_MAKE_VARS -k
