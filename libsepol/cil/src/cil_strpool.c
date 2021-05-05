@@ -45,6 +45,12 @@ static pthread_mutex_t cil_strpool_mutex = PTHREAD_MUTEX_INITIALIZER;
 static unsigned int cil_strpool_readers = 0;
 static hashtab_t cil_strpool_tab = NULL;
 
+#if defined(__clang__) && defined(__clang_major__) && (__clang_major__ >= 4)
+__attribute__((no_sanitize("unsigned-integer-overflow")))
+#if (__clang_major__ >= 12)
+__attribute__((no_sanitize("unsigned-shift-base")))
+#endif
+#endif
 static unsigned int cil_strpool_hash(hashtab_t h, const_hashtab_key_t key)
 {
 	unsigned int hash = 5381;
