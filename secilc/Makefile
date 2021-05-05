@@ -26,7 +26,7 @@ POL_VERS = $(shell $(CHECKPOLICY) -V | cut -f 1 -d ' ')
 CFLAGS ?= -Wall -Wshadow -Wextra -Wundef -Wmissing-format-attribute -Wcast-align -Wstrict-prototypes -Wpointer-arith -Wunused
 
 override CFLAGS += -D_GNU_SOURCE -D_FILE_OFFSET_BITS=64
-override LDLIBS += -lsepol
+LDLIBS ?= -lsepol
 
 all: $(SECILC) $(SECIL2CONF) $(SECIL2TREE) man
 
