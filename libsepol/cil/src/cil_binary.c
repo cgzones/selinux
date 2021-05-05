@@ -1228,7 +1228,7 @@ int __perm_str_to_datum(char *perm_str, class_datum_t *sepol_class, uint32_t *da
 			goto exit;
 		}
 	}
-	*datum |= 1 << (sepol_perm->s.value - 1);
+	*datum |= 1U << (sepol_perm->s.value - 1);
 
 	return SEPOL_OK;
 
