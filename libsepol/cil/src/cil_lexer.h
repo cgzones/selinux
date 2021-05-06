@@ -46,6 +46,7 @@ struct token {
 	uint32_t type;
 	char * value;
 	uint32_t line;
+	uint32_t column;
 };
 
 int cil_lexer_setup(char *buffer, uint32_t size);

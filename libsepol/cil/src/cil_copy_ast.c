@@ -2009,6 +2009,7 @@ int __cil_copy_node_helper(struct cil_tree_node *orig, __attribute__((unused)) u
 
 		new->parent = parent;
 		new->line = orig->line;
+		new->column = orig->column;
 		new->hll_line = orig->hll_line;
 		new->flavor = orig->flavor;
 		new->data = data;

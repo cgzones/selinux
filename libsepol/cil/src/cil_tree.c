@@ -120,7 +120,7 @@ __attribute__((format (printf, 3, 4))) void cil_tree_log(struct cil_tree_node *n
 		path = cil_tree_get_cil_path(node);
 
 		if (path != NULL) {
-			cil_log(lvl, " at %s:%d", path, node->line);
+			cil_log(lvl, " at %s:%d:%d", path, node->line, node->column);
 		}
 
 		while (node) {
@@ -222,6 +222,7 @@ void cil_tree_node_init(struct cil_tree_node **node)
 	new_node->next = NULL;
 	new_node->flavor = CIL_ROOT;
 	new_node->line = 0;
+	new_node->column = 0;
 	new_node->hll_line = 0;
 
 	*node = new_node;

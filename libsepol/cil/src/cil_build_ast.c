@@ -619,6 +619,7 @@ int cil_gen_perm_nodes(struct cil_db *db, struct cil_tree_node *current_perm, st
 		cil_tree_node_init(&new_ast);
 		new_ast->parent = ast_node;
 		new_ast->line = current_perm->line;
+		new_ast->column = current_perm->column;
 		new_ast->hll_line = current_perm->hll_line;
 
 		rc = cil_gen_perm(db, current_perm, new_ast, flavor, num_perms);
@@ -6194,6 +6195,7 @@ int __cil_build_ast_node_helper(struct cil_tree_node *parse_current, uint32_t *f
 
 	ast_node->parent = ast_current;
 	ast_node->line = parse_current->line;
+	ast_node->column = parse_current->column;
 	ast_node->hll_line = parse_current->hll_line;
 
 	if (parse_current->data == CIL_KEY_BLOCK) {
