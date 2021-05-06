@@ -73,12 +73,13 @@ static void pop_hll_info(struct cil_stack *stack, uint32_t *hll_offset, uint32_t
 	free(curr->data);
 }
 
-static void create_node(struct cil_tree_node **node, struct cil_tree_node *current, uint32_t line, uint32_t hll_offset, void *value)
+static void create_node(struct cil_tree_node **node, struct cil_tree_node *current, uint32_t line, uint32_t column, uint32_t hll_offset, void *value)
 {
 	cil_tree_node_init(node);
 	(*node)->parent = current;
 	(*node)->flavor = CIL_NODE;
 	(*node)->line = line;
+	(*node)->column = column;
 	(*node)->hll_offset = hll_offset;
 	(*node)->data = value;
 }
@@ -136,14 +137,14 @@ static int add_hll_linemark(struct cil_tree_node **current, uint32_t *hll_offset
 			goto exit;
 		}
 
-		create_node(&node, *current, tok.line, *hll_offset, NULL);
+		create_node(&node, *current, tok.line, tok.column, *hll_offset, NULL);
 		insert_node(node, *current);
 		*current = node;
 
-		create_node(&node, *current, tok.line, *hll_offset, CIL_KEY_SRC_INFO);
+		create_node(&node, *current, tok.line, tok.column, *hll_offset, CIL_KEY_SRC_INFO);
 		insert_node(node, *current);
 
-		create_node(&node, *current, tok.line, *hll_offset, hll_type);
+		create_node(&node, *current, tok.line, tok.column, *hll_offset, hll_type);
 		insert_node(node, *current);
 
 		cil_lexer_next(&tok);
@@ -152,7 +153,7 @@ static int add_hll_linemark(struct cil_tree_node **current, uint32_t *hll_offset
 			goto exit;
 		}
 
-		create_node(&node, *current, tok.line, *hll_offset, cil_strpool_add(tok.value));
+		create_node(&node, *current, tok.line, tok.column, *hll_offset, cil_strpool_add(tok.value));
 		insert_node(node, *current);
 
 		cil_lexer_next(&tok);
@@ -166,7 +167,7 @@ static int add_hll_linemark(struct cil_tree_node **current, uint32_t *hll_offset
 			tok.value = tok.value+1;
 		}
 
-		create_node(&node, *current, tok.line, *hll_offset, cil_strpool_add(tok.value));
+		create_node(&node, *current, tok.line, tok.column, *hll_offset, cil_strpool_add(tok.value));
 		insert_node(node, *current);
 
 		*hll_expand = (hll_type == CIL_KEY_SRC_HLL_LMX) ? 1 : 0;
@@ -186,7 +187,7 @@ static int add_hll_linemark(struct cil_tree_node **current, uint32_t *hll_offset
 	return SEPOL_OK;
 
 exit:
-	cil_log(CIL_ERR, "Problem with high-level line mark at line %u of %s\n", tok.line, path);
+	cil_log(CIL_ERR, "Problem with high-level line mark at line %u:%u of %s\n", tok.line, tok.column, path);
 	return SEPOL_ERR;
 }
 
@@ -194,20 +195,20 @@ static void add_cil_path(struct cil_tree_node **current, char *path)
 {
 	struct cil_tree_node *node;
 
-	create_node(&node, *current, 0, 0, NULL);
+	create_node(&node, *current, 0, 0, 0, NULL);
 	insert_node(node, *current);
 	*current = node;
 
-	create_node(&node, *current, 0, 0, CIL_KEY_SRC_INFO);
+	create_node(&node, *current, 0, 0, 0, CIL_KEY_SRC_INFO);
 	insert_node(node, *current);
 
-	create_node(&node, *current, 0, 0, CIL_KEY_SRC_CIL);
+	create_node(&node, *current, 0, 0, 0, CIL_KEY_SRC_CIL);
 	insert_node(node, *current);
 
-	create_node(&node, *current, 0, 0, cil_strpool_add("1"));
+	create_node(&node, *current, 0, 0, 0, cil_strpool_add("1"));
 	insert_node(node, *current);
 
-	create_node(&node, *current, 0, 0, path);
+	create_node(&node, *current, 0, 0, 0, path);
 	insert_node(node, *current);
 }
 
@@ -247,17 +248,17 @@ int cil_parser(const char *_path, char *buffer, uint32_t size, struct cil_tree *
 		case OPAREN:
 			paren_count++;
 			if (paren_count > CIL_PARSER_MAX_EXPR_DEPTH) {
-				cil_log(CIL_ERR, "Number of open parenthesis exceeds limit of %d at line %d of %s\n", CIL_PARSER_MAX_EXPR_DEPTH, tok.line, path);
+				cil_log(CIL_ERR, "Number of open parenthesis exceeds limit of %d at line %d:%d of %s\n", CIL_PARSER_MAX_EXPR_DEPTH, tok.line, tok.column, path);
 				goto exit;
 			}
-			create_node(&node, current, tok.line, hll_offset, NULL);
+			create_node(&node, current, tok.line, tok.column, hll_offset, NULL);
 			insert_node(node, current);
 			current = node;
 			break;
 		case CPAREN:
 			paren_count--;
 			if (paren_count < 0) {
-				cil_log(CIL_ERR, "Close parenthesis without matching open at line %d of %s\n", tok.line, path);
+				cil_log(CIL_ERR, "Close parenthesis without matching open at line %d:%d of %s\n", tok.line, tok.column, path);
 				goto exit;
 			}
 			current = current->parent;
@@ -268,11 +269,11 @@ int cil_parser(const char *_path, char *buffer, uint32_t size, struct cil_tree *
 			/* FALLTHRU */
 		case SYMBOL:
 			if (paren_count == 0) {
-				cil_log(CIL_ERR, "Symbol not inside parenthesis at line %d of %s\n", tok.line, path);
+				cil_log(CIL_ERR, "Symbol not inside parenthesis at line %d:%d of %s\n", tok.line, tok.column, path);
 				goto exit;
 			}
 
-			create_node(&node, current, tok.line, hll_offset, cil_strpool_add(tok.value));
+			create_node(&node, current, tok.line, tok.column, hll_offset, cil_strpool_add(tok.value));
 			insert_node(node, current);
 			break;
 		case NEWLINE :
@@ -294,19 +295,19 @@ int cil_parser(const char *_path, char *buffer, uint32_t size, struct cil_tree *
 			// Fall through if EOF
 		case END_OF_FILE:
 			if (paren_count > 0) {
-				cil_log(CIL_ERR, "Open parenthesis without matching close at line %d of %s\n", tok.line, path);
+				cil_log(CIL_ERR, "Open parenthesis without matching close at line %d:%d of %s\n", tok.line, tok.column, path);
 				goto exit;
 			}
 			if (!cil_stack_is_empty(stack)) {
-				cil_log(CIL_ERR, "High-level language line marker start without close at line %d of %s\n", tok.line, path);
+				cil_log(CIL_ERR, "High-level language line marker start without close at line %d:%d of %s\n", tok.line, tok.column, path);
 				goto exit;
 			}
 			break;
 		case UNKNOWN:
-			cil_log(CIL_ERR, "Invalid token '%s' at line %d of %s\n", tok.value, tok.line, path);
+			cil_log(CIL_ERR, "Invalid token '%s' at line %d:%d of %s\n", tok.value, tok.line, tok.column, path);
 			goto exit;
 		default:
-			cil_log(CIL_ERR, "Unknown token type '%d' at line %d of %s\n", tok.type, tok.line, path);
+			cil_log(CIL_ERR, "Unknown token type '%d' at line %d:%d of %s\n", tok.type, tok.line, tok.column, path);
 			goto exit;
 		}
 	}

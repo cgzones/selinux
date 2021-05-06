@@ -36,6 +36,10 @@
 	#include "cil_mem.h"
 	char *value =  NULL;
 	int line = 1;
+	int column = 0;
+	int next_column = 0;
+
+	#define YY_USER_ACTION column = next_column; next_column += yyleng;
 %}
 
 %option nounput
@@ -54,7 +58,7 @@ hll_lm          ^;;\*
 comment		;
 
 %%
-{newline}	line++; return NEWLINE;
+{newline}	line++; column = 0; next_column = 0; return NEWLINE;
 {hll_lm}	value=yytext; return HLL_LINEMARK;
 {comment}	value=yytext; return COMMENT;
 "("		value=yytext; return OPAREN;
@@ -89,6 +93,7 @@ int cil_lexer_next(struct token *tok)
 	tok->type = yylex();
 	tok->value = value;
 	tok->line = line;
+	tok->column = column;
 
 	return SEPOL_OK;
 }

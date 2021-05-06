@@ -2009,6 +2009,7 @@ static int __cil_copy_node_helper(struct cil_tree_node *orig, uint32_t *finished
 
 		new->parent = parent;
 		new->line = orig->line;
+		new->column = orig->column;
 		new->hll_offset = orig->hll_offset;
 		new->flavor = orig->flavor;
 		new->data = data;
