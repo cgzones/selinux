@@ -167,6 +167,7 @@ int __cil_verify_syntax(struct cil_tree_node *parse_current, enum cil_syntax s[]
 				} else if ((s[i] & CIL_SYN_N_STRINGS) && c->data != NULL && c->cl_head == NULL) {
 					c = c->next;
 				} else {
+					cil_tree_log(c, CIL_ERR, "Invalid syntax: unexpected list end");
 					goto exit;
 				}
 			}
