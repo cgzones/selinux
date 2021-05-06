@@ -161,6 +161,7 @@ int __cil_verify_syntax(struct cil_tree_node *parse_current, enum cil_syntax s[]
 					i++;
 					continue;
 				} else {
+					cil_tree_log(c, CIL_ERR, "Invalid syntax: unexpected list end");
 					goto exit;
 				}
 			} else if ((s[i] & CIL_SYN_N_LISTS) && (c->data == NULL && c->cl_head != NULL)) {
@@ -175,6 +176,7 @@ int __cil_verify_syntax(struct cil_tree_node *parse_current, enum cil_syntax s[]
 		}
 
 		if (c == NULL) {
+			cil_tree_log(c, CIL_ERR, "Invalid syntax: unexpected statement end");
 			goto exit;
 		}
 
@@ -201,12 +203,12 @@ int __cil_verify_syntax(struct cil_tree_node *parse_current, enum cil_syntax s[]
 				continue;
 			}
 		}
+		cil_tree_log(c, CIL_ERR, "Invalid syntax: invalid token type");
 		goto exit;
 	}
 	return SEPOL_OK;
 
 exit:
-	cil_log(CIL_ERR, "Invalid syntax\n");
 	return rc;
 }
 
