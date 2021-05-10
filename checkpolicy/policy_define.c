@@ -2387,7 +2387,7 @@ static int avrule_cpy(avrule_t *dest, const avrule_t *src)
 static int define_te_avtab_ioctl(const avrule_t *avrule_template)
 {
 	avrule_t *avrule;
-	struct av_ioctl_range_list *rangelist;
+	struct av_ioctl_range_list *rangelist, *r, *r2;
 	av_extended_perms_t *complete_driver, *partial_driver, *xperms;
 	unsigned int i;
 
@@ -2445,6 +2445,13 @@ done:
 	if (partial_driver)
 		free(partial_driver);
 
+	r = rangelist;
+	while (r != NULL) {
+		r2 = r;
+		r = r->next;
+		free(r2);
+	}
+
 	return 0;
 }
 
@@ -2471,6 +2478,8 @@ int define_te_avtab_extended_perms(int which)
 		free(id);
 		if (define_te_avtab_ioctl(avrule_template))
 			return -1;
+		avrule_destroy(avrule_template);
+		free(avrule_template);
 	} else {
 		yyerror("only ioctl extended permissions are supported");
 		free(id);
