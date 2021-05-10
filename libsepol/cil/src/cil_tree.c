@@ -41,15 +41,6 @@
 #include "cil_parser.h"
 #include "cil_strpool.h"
 
-__attribute__((noreturn)) __attribute__((format (printf, 1, 2))) void cil_tree_error(const char* msg, ...)
-{
-	va_list ap;
-	va_start(ap, msg);
-	cil_vlog(CIL_ERR, msg, ap);
-	va_end(ap);
-	exit(1);
-}
-
 struct cil_tree_node *cil_tree_get_next_path(struct cil_tree_node *node, char **path, int* is_cil)
 {
 	if (!node) {
@@ -265,7 +256,7 @@ void cil_tree_node_destroy(struct cil_tree_node **node)
    extra_args:               any additional data to be passed to the helper functions
 */
 
-int cil_tree_walk_core(struct cil_tree_node *node,
+static int cil_tree_walk_core(struct cil_tree_node *node,
 					   int (*process_node)(struct cil_tree_node *node, uint32_t *finished, void *extra_args),
 					   int (*first_child)(struct cil_tree_node *node, void *extra_args), 
 					   int (*last_child)(struct cil_tree_node *node, void *extra_args), 
