@@ -27,6 +27,7 @@ CFLAGS ?= -Werror \
           -Winit-self \
           -Wmissing-format-attribute \
           -Wmissing-noreturn \
+          -Wmissing-prototypes \
           -Wpointer-arith \
           -Wshadow \
           -Wstrict-prototypes \
