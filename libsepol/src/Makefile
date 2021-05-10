@@ -21,10 +21,18 @@ OBJS= $(patsubst %.c,%.o,$(sort $(wildcard *.c)))
 LOBJS= $(patsubst %.c,%.lo,$(sort $(wildcard *.c)))
 CFLAGS ?= -Werror \
           -Wall \
+          -Wdeclaration-after-statement \
           -Wextra \
+          -Wfloat-equal \
+          -Winit-self \
           -Wmissing-format-attribute \
+          -Wmissing-noreturn \
+          -Wpointer-arith \
           -Wshadow \
+          -Wstrict-prototypes \
           -Wundef \
+          -Wunused \
+          -Wwrite-strings \
           -O2 -fno-semantic-interposition
 
 override CFLAGS += -I. -I../include -D_GNU_SOURCE
