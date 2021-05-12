@@ -23,7 +23,25 @@ DIFF = diff
 CHECKPOLICY = checkpolicy
 POL_VERS = $(shell $(CHECKPOLICY) -V | cut -f 1 -d ' ')
 
-CFLAGS ?= -Wall -Wshadow -Wextra -Wundef -Wmissing-format-attribute -Wcast-align -Wstrict-prototypes -Wpointer-arith -Wunused
+CFLAGS ?= -Werror \
+          -Wall \
+          -Wcast-align \
+          -Wcast-qual \
+          -Wdeclaration-after-statement \
+          -Wextra \
+          -Wfloat-equal \
+          -Wformat=2 \
+          -Winit-self \
+          -Wmissing-format-attribute \
+          -Wmissing-noreturn \
+          -Wmissing-prototypes \
+          -Wpointer-arith \
+          -Wshadow \
+          -Wstrict-prototypes \
+          -Wundef \
+          -Wunused \
+          -Wwrite-strings \
+          -O2
 
 override CFLAGS += -D_GNU_SOURCE -D_FILE_OFFSET_BITS=64
 LDLIBS ?= -lsepol
