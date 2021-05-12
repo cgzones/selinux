@@ -108,7 +108,7 @@ int main(int argc, char *argv[])
 	char *fc_buf = NULL;
 	size_t fc_size;
 	enum cil_log_level log_level = CIL_WARN;
-	static struct option long_opts[] = {
+	const struct option long_opts[] = {
 		{"help", no_argument, 0, 'h'},
 		{"verbose", no_argument, 0, 'v'},
 		{"target", required_argument, 0, 't'},
