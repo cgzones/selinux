@@ -267,13 +267,13 @@ int main(int argc, char *argv[])
 	for (i = optind; i < argc; i++) {
 		file = fopen(argv[i], "r");
 		if (!file) {
-			fprintf(stderr, "Could not open file: %s\n", argv[i]);
+			fprintf(stderr, "Could not open file %s: %s\n", argv[i], strerror(errno));
 			rc = SEPOL_ERR;
 			goto exit;
 		}
 		rc = stat(argv[i], &filedata);
 		if (rc == -1) {
-			fprintf(stderr, "Could not stat file: %s\n", argv[i]);
+			fprintf(stderr, "Could not stat file %s: %s\n", argv[i], strerror(errno));
 			rc = SEPOL_ERR;
 			goto exit;
 		}
@@ -294,7 +294,7 @@ int main(int argc, char *argv[])
 
 		rc = fread(buffer, file_size, 1, file);
 		if (rc != 1) {
-			fprintf(stderr, "Failure reading file: %s\n", argv[i]);
+			fprintf(stderr, "Failure reading file %s: %s\n", argv[i], strerror(errno));
 			rc = SEPOL_ERR;
 			goto exit;
 		}
@@ -335,7 +335,7 @@ int main(int argc, char *argv[])
 		int size = snprintf(NULL, 0, "policy.%d", policyvers);
 		output = malloc((size + 1) * sizeof(char));
 		if (output == NULL) {
-			fprintf(stderr, "Failed to create output filename\n");
+			fprintf(stderr, "Failed to allocate output filename: %s\n", strerror(errno));
 			rc = SEPOL_ERR;
 			goto exit;
 		}
@@ -348,7 +348,7 @@ int main(int argc, char *argv[])
 
 	binary = fopen(output, "w");
 	if (binary == NULL) {
-		fprintf(stderr, "Failure opening binary file for writing\n");
+		fprintf(stderr, "Failure opening binary file %s for writing: %s\n", output, strerror(errno));
 		rc = SEPOL_ERR;
 		goto exit;
 	}
@@ -367,8 +367,13 @@ int main(int argc, char *argv[])
 		goto exit;
 	}
 
-	fclose(binary);
+	rc = fclose(binary);
 	binary = NULL;
+	if (rc != 0) {
+		fprintf(stderr, "Failed to close binary policy %s: %s\n", output, strerror(errno));
+		rc = SEPOL_ERR;
+		goto exit;
+	}
 
 	rc = cil_filecons_to_string(db, &fc_buf, &fc_size);
 	if (rc != SEPOL_OK) {
@@ -383,19 +388,29 @@ int main(int argc, char *argv[])
 	}
 
 	if (file_contexts == NULL) {
-		fprintf(stderr, "Failed to open file_contexts file\n");
+		fprintf(stderr, "Failed to open file_contexts file %s: %s\n",
+			filecontexts ? filecontexts : "file_contexts",
+			strerror(errno));
 		rc = SEPOL_ERR;
 		goto exit;
 	}
 
 	if (fwrite(fc_buf, sizeof(char), fc_size, file_contexts) != fc_size) {
-		fprintf(stderr, "Failed to write file_contexts file\n");
+		fprintf(stderr, "Failed to write file_contexts file %s\n",
+			filecontexts ? filecontexts : "file_contexts");
 		rc = SEPOL_ERR;
 		goto exit;
 	}
 
-	fclose(file_contexts);
+	rc = fclose(file_contexts);
 	file_contexts = NULL;
+	if (rc != 0) {
+		fprintf(stderr, "Failed to close file_contexts file %s: %s\n",
+			filecontexts ? filecontexts : "file_contexts",
+			strerror(errno));
+		rc = SEPOL_ERR;
+		goto exit;
+	}
 
 	rc = SEPOL_OK;
 
