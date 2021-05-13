@@ -116,9 +116,9 @@ void cil_symtab_remove_datum(struct cil_symtab_datum *datum)
 	datum->symtab = NULL;
 }
 
-int cil_symtab_get_datum(symtab_t *symtab, char *key, struct cil_symtab_datum **datum)
+int cil_symtab_get_datum(symtab_t *symtab, const char *key, struct cil_symtab_datum **datum)
 {
-	*datum = (struct cil_symtab_datum*)hashtab_search(symtab->table, (hashtab_key_t)key);
+	*datum = (struct cil_symtab_datum*)hashtab_search(symtab->table, key);
 	if (*datum == NULL) {
 		return SEPOL_ENOENT;
 	}

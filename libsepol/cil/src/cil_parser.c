@@ -81,7 +81,7 @@ static void pop_hll_info(struct cil_stack *stack, uint32_t *hll_lineno, uint32_t
 	}
 }
 
-static void create_node(struct cil_tree_node **node, struct cil_tree_node *current, uint32_t line, uint32_t column, uint32_t hll_line, void *value)
+static void create_node(struct cil_tree_node **node, struct cil_tree_node *current, uint32_t line, uint32_t column, uint32_t hll_line, const char *value)
 {
 	cil_tree_node_init(node);
 	(*node)->parent = current;
@@ -89,7 +89,7 @@ static void create_node(struct cil_tree_node **node, struct cil_tree_node *curre
 	(*node)->line = line;
 	(*node)->column = column;
 	(*node)->hll_line = hll_line;
-	(*node)->data = value;
+	(*node)->data = (void *) value;
 }
 
 static void insert_node(struct cil_tree_node *node, struct cil_tree_node *current)

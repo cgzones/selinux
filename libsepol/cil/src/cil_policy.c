@@ -450,7 +450,7 @@ static char *__cil_userattribute_to_string(struct cil_db *db, struct cil_useratt
 {
 	ebitmap_node_t *unode;
 	unsigned int i;
-	char *str;
+	const char *str;
 	size_t len;
 
 	ebitmap_for_each_positive_bit(attr->users, unode, i) {
@@ -984,7 +984,7 @@ static void cil_mlsconstrains_to_policy(FILE *out, struct cil_db *db, struct cil
 	}
 }
 
-static void cil_validatetrans_to_policy(FILE *out, struct cil_db *db, struct cil_list *validatetrans, char *kind)
+static void cil_validatetrans_to_policy(FILE *out, struct cil_db *db, struct cil_list *validatetrans, const char *kind)
 {
 	struct cil_list_item *i1, *i2;
 	struct cil_validatetrans *trans;

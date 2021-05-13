@@ -99,7 +99,7 @@ static int cil_copy_node(__attribute__((unused)) struct cil_db *db, void *data, 
 int cil_copy_block(__attribute__((unused)) struct cil_db *db, void *data, void **copy, symtab_t *symtab)
 {
 	struct cil_block *orig = data;
-	char *key = orig->datum.name;
+	const char *key = orig->datum.name;
 	struct cil_symtab_datum *datum = NULL;
 	struct cil_block *new;
 
@@ -147,7 +147,7 @@ int cil_copy_blockinherit(__attribute__((unused)) struct cil_db *db, void *data,
 static int cil_copy_policycap(__attribute__((unused)) struct cil_db *db, void *data, void **copy, symtab_t *symtab)
 {
 	struct cil_policycap *orig = data;
-	char *key = orig->datum.name;
+	const char *key = orig->datum.name;
 	struct cil_symtab_datum *datum = NULL;
 
 	cil_symtab_get_datum(symtab, key, &datum);
@@ -165,7 +165,7 @@ static int cil_copy_policycap(__attribute__((unused)) struct cil_db *db, void *d
 int cil_copy_perm(__attribute__((unused)) struct cil_db *db, void *data, void **copy, symtab_t *symtab)
 {
 	struct cil_perm *orig = data;
-	char *key = orig->datum.name;
+	const char *key = orig->datum.name;
 	struct cil_symtab_datum *datum = NULL;
 
 	cil_symtab_get_datum(symtab, key, &datum);
@@ -236,7 +236,7 @@ int cil_copy_class(__attribute__((unused)) struct cil_db *db, void *data, void *
 {
 	struct cil_class *orig = data;
 	struct cil_class *new = NULL;
-	char *key = orig->datum.name;
+	const char *key = orig->datum.name;
 	struct cil_symtab_datum *datum = NULL;
 
 	cil_symtab_get_datum(symtab, key, &datum);
@@ -273,7 +273,7 @@ int cil_copy_classpermission(__attribute__((unused)) struct cil_db *db, void *da
 {
 	struct cil_classpermission *orig = data;
 	struct cil_classpermission *new = NULL;
-	char *key = orig->datum.name;
+	const char *key = orig->datum.name;
 	struct cil_symtab_datum *datum = NULL;
 
 	if (key != NULL) {
@@ -327,7 +327,7 @@ int cil_copy_classcommon(__attribute__((unused)) struct cil_db *db, void *data, 
 int cil_copy_sid(__attribute__((unused)) struct cil_db *db, void *data, void **copy, symtab_t *symtab)
 {
 	struct cil_sid *orig = data;
-	char *key = orig->datum.name;
+	const char *key = orig->datum.name;
 	struct cil_symtab_datum *datum = NULL;
 
 	cil_symtab_get_datum(symtab, key, &datum);
@@ -379,7 +379,7 @@ int cil_copy_sidorder(__attribute__((unused)) struct cil_db *db, void *data, voi
 int cil_copy_user(__attribute__((unused)) struct cil_db *db, void *data, void **copy, symtab_t *symtab)
 {
 	struct cil_user *orig = data;
-	char *key = orig->datum.name;
+	const char *key = orig->datum.name;
 	struct cil_symtab_datum *datum = NULL;
 
 	cil_symtab_get_datum(symtab, key, &datum);
@@ -398,7 +398,7 @@ int cil_copy_userattribute(__attribute__((unused)) struct cil_db *db, void *data
 {
 	struct cil_userattribute *orig = data;
 	struct cil_userattribute *new = NULL;
-	char *key = orig->datum.name;
+	const char *key = orig->datum.name;
 	struct cil_symtab_datum *datum = NULL;
 
 	cil_symtab_get_datum(symtab, key, &datum);
@@ -503,7 +503,7 @@ int cil_copy_userprefix(__attribute__((unused)) struct cil_db *db, void *data, v
 int cil_copy_role(__attribute__((unused)) struct cil_db *db, void *data, void **copy, symtab_t *symtab)
 {
 	struct cil_role *orig = data;
-	char *key = orig->datum.name;
+	const char *key = orig->datum.name;
 	struct cil_symtab_datum *datum = NULL;
 
 	cil_symtab_get_datum(symtab, key, &datum);
@@ -536,7 +536,7 @@ int cil_copy_roletype(__attribute__((unused)) struct cil_db *db, void *data, voi
 int cil_copy_roleattribute(__attribute__((unused)) struct cil_db *db, void *data, void **copy, symtab_t *symtab)
 {
 	struct cil_roleattribute *orig = data;
-	char *key = orig->datum.name;
+	const char *key = orig->datum.name;
 	struct cil_symtab_datum *datum = NULL;
 
 	cil_symtab_get_datum(symtab, key, &datum);
@@ -586,7 +586,7 @@ int cil_copy_roleallow(__attribute__((unused)) struct cil_db *db, void *data, vo
 int cil_copy_type(__attribute__((unused)) struct cil_db *db, void *data, void **copy, symtab_t *symtab)
 {
 	struct cil_type *orig = data;
-	char *key = orig->datum.name;
+	const char *key = orig->datum.name;
 	struct cil_symtab_datum *datum = NULL;
 
 	cil_symtab_get_datum(symtab, key, &datum);
@@ -618,7 +618,7 @@ int cil_copy_typepermissive(__attribute__((unused)) struct cil_db *db, void *dat
 int cil_copy_typeattribute(__attribute__((unused)) struct cil_db *db, void *data, void **copy, symtab_t *symtab)
 {
 	struct cil_typeattribute *orig = data;
-	char *key = orig->datum.name;
+	const char *key = orig->datum.name;
 	struct cil_symtab_datum *datum = NULL;
 
 	cil_symtab_get_datum(symtab, key, &datum);
@@ -676,7 +676,7 @@ static int cil_copy_alias(__attribute__((unused)) struct cil_db *db, void *data,
 {
 	struct cil_alias *orig = data;
 	struct cil_alias *new = NULL;
-	char *key = orig->datum.name;
+	const char *key = orig->datum.name;
 	struct cil_symtab_datum *datum = NULL;
 
 	cil_symtab_get_datum(symtab, key, &datum);
@@ -770,7 +770,7 @@ int cil_copy_bool(__attribute__((unused)) struct cil_db *db, void *data, void **
 {
 	struct cil_bool *orig = data;
 	struct cil_bool *new = NULL;
-	char *key = orig->datum.name;
+	const char *key = orig->datum.name;
 	struct cil_symtab_datum *datum = NULL;
 
 	cil_symtab_get_datum(symtab, key, &datum);
@@ -790,7 +790,7 @@ static int cil_copy_tunable(__attribute__((unused)) struct cil_db *db, void *dat
 {
 	struct cil_tunable *orig = data;
 	struct cil_tunable *new = NULL;
-	char *key = orig->datum.name;
+	const char *key = orig->datum.name;
 	struct cil_symtab_datum *datum = NULL;
 
 	cil_symtab_get_datum(symtab, key, &datum);
@@ -845,7 +845,7 @@ static int cil_copy_permissionx(struct cil_db *db, void *data, void **copy, symt
 {
 	struct cil_permissionx *orig = data;
 	struct cil_permissionx *new = NULL;
-	char *key = orig->datum.name;
+	const char *key = orig->datum.name;
 	struct cil_symtab_datum *datum = NULL;
 
 
@@ -884,7 +884,7 @@ int cil_copy_type_rule(__attribute__((unused)) struct cil_db *db, void *data, vo
 int cil_copy_sens(__attribute__((unused)) struct cil_db *db, void *data, void **copy, symtab_t *symtab)
 {
 	struct cil_sens *orig = data;
-	char *key = orig->datum.name;
+	const char *key = orig->datum.name;
 	struct cil_symtab_datum *datum = NULL;
 
 	cil_symtab_get_datum(symtab, key, &datum);
@@ -902,7 +902,7 @@ int cil_copy_sens(__attribute__((unused)) struct cil_db *db, void *data, void **
 int cil_copy_cat(__attribute__((unused)) struct cil_db *db, void *data, void **copy, symtab_t *symtab)
 {
 	struct cil_cat *orig = data;
-	char *key = orig->datum.name;
+	const char *key = orig->datum.name;
 	struct cil_symtab_datum *datum = NULL;
 
 	cil_symtab_get_datum(symtab, key, &datum);
@@ -928,7 +928,7 @@ int cil_copy_catset(struct cil_db *db, void *data, void **copy, symtab_t *symtab
 {
 	struct cil_catset *orig = data;
 	struct cil_catset *new = NULL;
-	char *key = orig->datum.name;
+	const char *key = orig->datum.name;
 	struct cil_symtab_datum *datum = NULL;
 
 	cil_symtab_get_datum(symtab, key, &datum);
@@ -1007,7 +1007,7 @@ int cil_copy_level(struct cil_db *db, void *data, void **copy, symtab_t *symtab)
 {
 	struct cil_level *orig = data;
 	struct cil_level *new = NULL;
-	char *key = orig->datum.name;
+	const char *key = orig->datum.name;
 	struct cil_symtab_datum *datum = NULL;
 
 	if (key != NULL) {
@@ -1044,7 +1044,7 @@ int cil_copy_levelrange(struct cil_db *db, void *data, void **copy, symtab_t *sy
 {
 	struct cil_levelrange *orig = data;
 	struct cil_levelrange *new = NULL;
-	char *key = orig->datum.name;
+	const char *key = orig->datum.name;
 	struct cil_symtab_datum *datum = NULL;
 
 	if (key != NULL) {
@@ -1081,7 +1081,7 @@ int cil_copy_context(struct cil_db *db, void *data, void **copy, symtab_t *symta
 {
 	struct cil_context *orig = data;
 	struct cil_context *new = NULL;
-	char *key = orig->datum.name;
+	const char *key = orig->datum.name;
 	struct cil_symtab_datum *datum = NULL;
 
 	if (key != NULL) {
@@ -1509,7 +1509,7 @@ exit:
 static int cil_copy_macro(__attribute__((unused)) struct cil_db *db, void *data, void **copy, symtab_t *symtab)
 {
 	struct cil_macro *orig = data;
-	char *key = orig->datum.name;
+	const char *key = orig->datum.name;
 	struct cil_symtab_datum *datum = NULL;
 	struct cil_macro *new;
 
@@ -1549,7 +1549,7 @@ int cil_copy_ipaddr(__attribute__((unused)) struct cil_db *db, void *data, void 
 {
 	struct cil_ipaddr *orig = data;
 	struct cil_ipaddr *new = NULL;
-	char * key = orig->datum.name;	
+	const char * key = orig->datum.name;	
 	struct cil_symtab_datum *datum = NULL;
 
 	cil_symtab_get_datum(symtab, key, &datum);
