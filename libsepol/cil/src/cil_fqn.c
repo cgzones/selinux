@@ -57,7 +57,7 @@ static int __cil_fqn_qualify_decls(__attribute__((unused)) hashtab_key_t k, hash
 
 	newlen = fqn_args->len + strlen(datum->name);
 	if (newlen >= CIL_MAX_NAME_LENGTH) {
-		cil_log(CIL_INFO, "Fully qualified name for %s is too long\n", datum->name);
+		cil_log(CIL_WARN, "Fully qualified name for %s with prefix %s is too long\n", datum->name, fqn_args->prefix);
 		rc = SEPOL_ERR;
 		goto exit;
 	}
@@ -86,7 +86,7 @@ static int __cil_fqn_qualify_blocks(__attribute__((unused)) hashtab_key_t k, has
 
 	newlen = fqn_args->len + strlen(datum->name) + 1;
 	if (newlen >= CIL_MAX_NAME_LENGTH) {
-		cil_log(CIL_INFO, "Fully qualified name for block %s is too long\n", datum->name);
+		cil_log(CIL_WARN, "Fully qualified name for block %s with prefix %s is too long\n", datum->name, fqn_args->prefix);
 		rc = SEPOL_ERR;
 		goto exit;
 	}
@@ -123,7 +123,7 @@ static int __cil_fqn_qualify_blocks(__attribute__((unused)) hashtab_key_t k, has
 
 exit:
 	if (rc != SEPOL_OK) {
-		cil_tree_log(node, CIL_ERR,"Problem qualifying names in block");
+		cil_tree_log(node, CIL_ERR, "Problem qualifying names in block");
 	}
 
 	return rc;
