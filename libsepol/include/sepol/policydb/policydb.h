@@ -86,8 +86,8 @@ extern "C" {
 typedef struct type_set {
 	ebitmap_t types;
 	ebitmap_t negset;
-#define TYPE_STAR 1
-#define TYPE_COMP 2
+#define TYPE_STAR    1
+#define TYPE_COMP    2
 	uint32_t flags;
 } type_set_t;
 
@@ -285,7 +285,8 @@ typedef struct avrule {
 #define AVRULE_XPERMS	(AVRULE_XPERMS_ALLOWED | AVRULE_XPERMS_AUDITALLOW | \
 				AVRULE_XPERMS_DONTAUDIT | AVRULE_XPERMS_NEVERALLOW)
 	uint32_t specified;
-#define RULE_SELF 1
+#define RULE_SELF    1
+#define RULE_NOTSELF 2
 	uint32_t flags;
 	type_set_t stypes;
 	type_set_t ttypes;

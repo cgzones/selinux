@@ -56,6 +56,8 @@ struct cil_args_build {
 	struct cil_tree_node *boolif;
 };
 
+static int __cil_fill_expr_helper(struct cil_tree_node *current, enum cil_flavor flavor, struct cil_list *expr);
+
 static int cil_fill_list(struct cil_tree_node *current, enum cil_flavor flavor, struct cil_list **list)
 {
 	int rc = SEPOL_ERR;
@@ -2073,12 +2075,132 @@ void cil_destroy_roleattributeset(struct cil_roleattributeset *attrset)
 	free(attrset);
 }
 
-int cil_gen_avrule(struct cil_tree_node *parse_current, struct cil_tree_node *ast_node, uint32_t rule_kind)
+static enum cil_flavor __cil_get_typeexpr_operator_flavor(const char *op)
 {
+	if (op == NULL)
+		return CIL_NONE;
+	if (op == CIL_KEY_AND)
+		return CIL_AND;	
+	if (op == CIL_KEY_NOT)
+		return CIL_NOT;
+	if (op == CIL_KEY_ALL)
+		return CIL_ALL; 
+
+	return CIL_NONE;
+}
+
+static int __cil_fill_typeexpr_helper2(struct cil_tree_node *current, struct cil_list *expr, int is_inside_not);
+
+static int __cil_fill_typeexpr_helper1(struct cil_tree_node *current, struct cil_list *expr, int is_top_level, int is_inside_not)
+{
+	int rc = SEPOL_ERR;
+	enum cil_flavor op;
+
+	op = __cil_get_typeexpr_operator_flavor(current->data);
+	if (!is_top_level && op == CIL_ALL) {
+		cil_log(CIL_ERR, "Operator (all) only allowed at top level in a type expression\n");
+		rc = SEPOL_ERR;
+		goto exit;
+	}
+	if (is_inside_not && op == CIL_NOT) {
+		cil_log(CIL_ERR, "Operator (not) not allowed inside a not expression in a type expression\n");
+		rc = SEPOL_ERR;
+		goto exit;
+	}
+
+	rc = cil_verify_typeexpr_syntax(current, op);
+	if (rc != SEPOL_OK) {
+		goto exit;
+	}
+
+	if (op != CIL_NONE) {
+		cil_list_append(expr, CIL_OP, (void *)op);
+		current = current->next;
+	}
+
+	for (;current != NULL; current = current->next) {
+		rc = __cil_fill_typeexpr_helper2(current, expr, is_inside_not || (op == CIL_NOT));
+		if (rc != SEPOL_OK) {
+			goto exit;
+		}
+	}
+
+	return SEPOL_OK;
+
+exit:
+	return rc;
+}
+
+static int __cil_fill_typeexpr_helper2(struct cil_tree_node *current, struct cil_list *expr, int is_inside_not)
+{
+	int rc = SEPOL_ERR;
+
+	if (current->cl_head == NULL) {
+		enum cil_flavor op = __cil_get_typeexpr_operator_flavor(current->data);
+		if (op != CIL_NONE) {
+			cil_log(CIL_ERR, "Operator (%s) not in an type expression\n", (const char *) current->data);
+			goto exit;
+		}
+		cil_list_append(expr, CIL_STRING, current->data);
+	} else {
+		struct cil_list *sub_expr;
+		cil_list_init(&sub_expr, CIL_TYPEEXPR);
+		rc = __cil_fill_typeexpr_helper1(current->cl_head, sub_expr, 0, is_inside_not);
+		if (rc != SEPOL_OK) {
+			cil_list_destroy(&sub_expr, CIL_TRUE);
+			goto exit;
+		}
+		cil_list_append(expr, CIL_LIST, sub_expr);
+	}
+
+	return SEPOL_OK;
+
+exit:
+	return rc;
+}
+
+static int cil_fill_typeexpr_list(struct cil_tree_node *parse_current, enum cil_avrule_kind kind, struct cil_list **cp_list) {
+	int rc = SEPOL_ERR;
+	struct cil_tree_node *curr;
+
+	if (parse_current == NULL || cp_list == NULL) {
+		goto exit;
+	}
+
+	curr = parse_current->cl_head;
+
+	cil_list_init(cp_list, CIL_TYPEEXPR);
+
+	if (curr == NULL) {
+		/* single type, e.g. `type1` */
+		cil_list_append(*cp_list, CIL_STRING, parse_current->data);
+	} else if (curr->cl_head == NULL && kind == CIL_AVRULE_NEVERALLOW) {
+		/* expression, e.g. `(not type1)` */
+		rc = __cil_fill_typeexpr_helper1(curr, *cp_list, 1, 0);
+		if (rc != SEPOL_OK) {
+			goto exit;
+		}
+	} else {
+		cil_log(CIL_ERR, "Bad type-expression list syntax\n");
+		rc = SEPOL_ERR;
+		goto exit;
+	}
+
+	return SEPOL_OK;
+
+exit:
+	cil_log(CIL_ERR, "Problem filling type-expression list\n");
+	cil_list_destroy(cp_list, CIL_TRUE);
+	return rc;
+}
+
+int cil_gen_avrule(struct cil_tree_node *parse_current, struct cil_tree_node *ast_node, enum cil_avrule_kind kind)
+{
+	enum cil_syntax id_type = (kind == CIL_AVRULE_NEVERALLOW) ? (CIL_SYN_STRING | CIL_SYN_LIST) : CIL_SYN_STRING;
 	enum cil_syntax syntax[] = {
 		CIL_SYN_STRING,
-		CIL_SYN_STRING,
-		CIL_SYN_STRING,
+		id_type,
+		id_type,
 		CIL_SYN_STRING | CIL_SYN_LIST,
 		CIL_SYN_END
 	};
@@ -2098,10 +2220,17 @@ int cil_gen_avrule(struct cil_tree_node *parse_current, struct cil_tree_node *as
 	cil_avrule_init(&rule);
 
 	rule->is_extended = 0;
-	rule->rule_kind = rule_kind;
+	rule->rule_kind = kind;
 
-	rule->src_str = parse_current->next->data;
-	rule->tgt_str = parse_current->next->next->data;
+	rc = cil_fill_typeexpr_list(parse_current->next, kind, &rule->source_str_expr);
+	if (rc != SEPOL_OK) {
+		goto exit;
+	}
+
+	rc = cil_fill_typeexpr_list(parse_current->next->next, kind, &rule->target_str_expr);
+	if (rc != SEPOL_OK) {
+		goto exit;
+	}
 
 	rc = cil_fill_classperms_list(parse_current->next->next->next, &rule->perms.classperms);
 	if (rc != SEPOL_OK) {
@@ -2123,6 +2252,14 @@ void cil_destroy_avrule(struct cil_avrule *rule)
 {
 	if (rule == NULL) {
 		return;
+	}
+
+	cil_list_destroy(&rule->source_str_expr, CIL_TRUE);
+	cil_list_destroy(&rule->target_str_expr, CIL_TRUE);
+
+	if (rule->rule_kind == CIL_AVRULE_NEVERALLOW) {
+		cil_list_destroy(&rule->source_datum.expr, CIL_TRUE);
+		cil_list_destroy(&rule->target_datum.expr, CIL_TRUE);
 	}
 
 	if (!rule->is_extended) {
@@ -2233,7 +2370,7 @@ void cil_destroy_permissionx(struct cil_permissionx *permx)
 	free(permx);
 }
 
-int cil_gen_avrulex(struct cil_tree_node *parse_current, struct cil_tree_node *ast_node, uint32_t rule_kind)
+int cil_gen_avrulex(struct cil_tree_node *parse_current, struct cil_tree_node *ast_node, enum cil_avrule_kind kind)
 {
 	enum cil_syntax syntax[] = {
 		CIL_SYN_STRING,
@@ -2258,9 +2395,9 @@ int cil_gen_avrulex(struct cil_tree_node *parse_current, struct cil_tree_node *a
 	cil_avrule_init(&rule);
 
 	rule->is_extended = 1;
-	rule->rule_kind = rule_kind;
-	rule->src_str = parse_current->next->data;
-	rule->tgt_str = parse_current->next->next->data;
+	rule->rule_kind = kind;
+	rule->source_str_expr = parse_current->next->data;
+	rule->target_str_expr = parse_current->next->next->data;
 
 	if (parse_current->next->next->next->cl_head == NULL) {
 		rule->perms.x.permx_str = parse_current->next->next->next->data;

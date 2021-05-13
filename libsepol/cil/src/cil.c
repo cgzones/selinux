@@ -998,10 +998,11 @@ void cil_destroy_data(void **data, enum cil_flavor flavor)
 		cil_destroy_src_info(*data);
 		break;
 	case CIL_OP:
+	case CIL_ALL:
 	case CIL_CONS_OPERAND:
 		break;
 	default:
-		cil_log(CIL_INFO, "Unknown data flavor: %d\n", flavor);
+		cil_log(CIL_WARN, "Unknown data flavor to destroy: %d\n", flavor);
 		break;
 	}
 
@@ -2375,12 +2376,13 @@ void cil_avrule_init(struct cil_avrule **avrule)
 	*avrule = cil_malloc(sizeof(**avrule));
 
 	(*avrule)->is_extended = 0;
-	(*avrule)->rule_kind = CIL_NONE;
-	(*avrule)->src_str = NULL;
-	(*avrule)->src = NULL;
-	(*avrule)->tgt_str = NULL;
-	(*avrule)->tgt = NULL;
+	(*avrule)->rule_kind = CIL_AVRULE_NONE;
+	(*avrule)->source_str_expr = NULL;
+	(*avrule)->target_str_expr = NULL;
+	(*avrule)->source_datum.datum = NULL;
+	(*avrule)->target_datum.datum = NULL;
 	memset(&((*avrule)->perms), 0, sizeof((*avrule)->perms));
+	(*avrule)->is_perms_complement = 0;
 }
 
 void cil_permissionx_init(struct cil_permissionx **permx)

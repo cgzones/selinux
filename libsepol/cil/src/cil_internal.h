@@ -595,18 +595,30 @@ struct cil_tunable {
 	uint16_t value;
 };
 
-#define CIL_AVRULE_ALLOWED     1
-#define CIL_AVRULE_AUDITALLOW  2
-#define CIL_AVRULE_DONTAUDIT   8
-#define CIL_AVRULE_NEVERALLOW 128
-#define CIL_AVRULE_AV         (AVRULE_ALLOWED | AVRULE_AUDITALLOW | AVRULE_DONTAUDIT | AVRULE_NEVERALLOW)
+enum cil_avrule_kind {
+	CIL_AVRULE_NONE = 0,
+	CIL_AVRULE_ALLOWED = AVRULE_ALLOWED,
+	CIL_AVRULE_AUDITALLOW = AVRULE_AUDITALLOW,
+	CIL_AVRULE_DONTAUDIT = AVRULE_DONTAUDIT,
+	CIL_AVRULE_NEVERALLOW = AVRULE_NEVERALLOW
+};
 struct cil_avrule {
 	int is_extended;
-	uint32_t rule_kind;
-	char *src_str;
-	void *src; /* type, alias, or attribute */
-	char *tgt_str;	
-	void *tgt; /* type, alias, or attribute */
+	enum cil_avrule_kind rule_kind;
+
+	struct cil_list *source_str_expr;
+	struct cil_list *target_str_expr;
+
+	union {
+		struct cil_symtab_datum *datum;
+		struct cil_list *expr;
+	} source_datum; /* type, alias, or attribute */
+
+	union {
+		struct cil_symtab_datum *datum;
+		struct cil_list *expr;
+	} target_datum; /* type, alias, or attribute */
+
 	union {
 		struct cil_list *classperms;
 		struct {
@@ -614,6 +626,7 @@ struct cil_avrule {
 			struct cil_permissionx *permx;
 		} x;
 	} perms;
+	int is_perms_complement;
 };
 
 #define CIL_PERMX_KIND_IOCTL 1

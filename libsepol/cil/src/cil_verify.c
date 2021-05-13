@@ -229,8 +229,13 @@ int cil_verify_expr_syntax(struct cil_tree_node *current, enum cil_flavor op, en
 		syntax_len = 3;
 		break;
 	case CIL_AND:
+		break;
 	case CIL_OR:
 	case CIL_XOR:
+		if (expr_flavor == CIL_TYPEEXPR) {
+			cil_log(CIL_ERR,"Invalid operator (%s) for type expression\n", (char*)current->data);
+			goto exit;
+		}
 		break;
 	case CIL_EQ:
 	case CIL_NEQ:
@@ -380,6 +385,43 @@ int cil_verify_constraint_expr_syntax(struct cil_tree_node *current, enum cil_fl
 	rc = __cil_verify_syntax(current, syntax, syntax_len);
 	if (rc != SEPOL_OK) {
 		cil_log(CIL_ERR, "Invalid constraint syntax\n");
+		goto exit;
+	}
+
+	return SEPOL_OK;
+
+exit:
+	return SEPOL_ERR;
+}
+
+int cil_verify_typeexpr_syntax(struct cil_tree_node *current, enum cil_flavor op)
+{
+	int rc;
+	enum cil_syntax syntax[] = {
+		CIL_SYN_STRING,
+		CIL_SYN_END,
+		CIL_SYN_END,
+		CIL_SYN_END
+	};
+	int syntax_len = sizeof(syntax)/sizeof(*syntax);
+
+	switch (op) {
+		case CIL_NOT:
+			syntax[1] = CIL_SYN_STRING | CIL_SYN_LIST;
+			syntax_len--;
+			break;
+		case CIL_AND:
+			syntax[1] = CIL_SYN_STRING | CIL_SYN_LIST;
+			syntax[2] = CIL_SYN_STRING | CIL_SYN_LIST;
+			break;
+		default:
+			cil_log(CIL_ERR, "Invalid operator (%s/%d) for type expression\n", (const char *) current->data, op);
+			goto exit;
+	}
+
+	rc = __cil_verify_syntax(current, syntax, syntax_len);
+	if (rc != SEPOL_OK) {
+		cil_log(CIL_ERR, "Invalid type expression syntax\n");
 		goto exit;
 	}
 

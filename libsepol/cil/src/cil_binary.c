@@ -1262,7 +1262,7 @@ exit:
 	return rc;
 }
 
-static int __cil_insert_avrule(policydb_t *pdb, uint32_t kind, uint32_t src, uint32_t tgt, uint32_t obj, uint32_t data, cond_node_t *cond_node, enum cil_flavor cond_flavor)
+static int __cil_insert_avrule(policydb_t *pdb, enum cil_avrule_kind kind, uint32_t src, uint32_t tgt, uint32_t obj, uint32_t data, cond_node_t *cond_node, enum cil_flavor cond_flavor)
 {
 	int rc = SEPOL_OK;
 	avtab_key_t avtab_key;
@@ -1309,7 +1309,7 @@ exit:
 	return rc;
 }
 
-static int __cil_avrule_expand_helper(policydb_t *pdb, uint16_t kind, struct cil_symtab_datum *src, struct cil_symtab_datum *tgt, struct cil_classperms *cp, cond_node_t *cond_node, enum cil_flavor cond_flavor)
+static int __cil_avrule_expand_helper(policydb_t *pdb, enum cil_avrule_kind kind, struct cil_symtab_datum *src, struct cil_symtab_datum *tgt, struct cil_classperms *cp, cond_node_t *cond_node, enum cil_flavor cond_flavor)
 {
 	int rc = SEPOL_ERR;
 	type_datum_t *sepol_src = NULL;
@@ -1350,7 +1350,7 @@ exit:
 }
 
 
-static int __cil_avrule_expand(policydb_t *pdb, uint16_t kind, struct cil_symtab_datum *src, struct cil_symtab_datum *tgt, struct cil_list *classperms, cond_node_t *cond_node, enum cil_flavor cond_flavor)
+static int __cil_avrule_expand(policydb_t *pdb, enum cil_avrule_kind kind, struct cil_symtab_datum *src, struct cil_symtab_datum *tgt, struct cil_list *classperms, cond_node_t *cond_node, enum cil_flavor cond_flavor)
 {
 	int rc = SEPOL_ERR;
 	struct cil_list_item *curr;
@@ -1408,7 +1408,7 @@ static int __cil_should_expand_attribute( const struct cil_db *db, struct cil_sy
 static int __cil_avrule_to_avtab(policydb_t *pdb, const struct cil_db *db, struct cil_avrule *cil_avrule, cond_node_t *cond_node, enum cil_flavor cond_flavor)
 {
 	int rc = SEPOL_ERR;
-	uint16_t kind = cil_avrule->rule_kind;
+	enum cil_avrule_kind kind = cil_avrule->rule_kind;
 	struct cil_symtab_datum *src = NULL;
 	struct cil_symtab_datum *tgt = NULL;
 	struct cil_list *classperms = cil_avrule->perms.classperms;
@@ -1422,8 +1422,12 @@ static int __cil_avrule_to_avtab(policydb_t *pdb, const struct cil_db *db, struc
 		goto exit;
 	}
 
-	src = cil_avrule->src;
-	tgt = cil_avrule->tgt;
+	if (cil_avrule->rule_kind == CIL_AVRULE_NEVERALLOW) {
+		goto exit;
+	}
+
+	src = cil_avrule->source_datum.datum;
+	tgt = cil_avrule->target_datum.datum;
 
 	if (tgt->fqn == CIL_KEY_SELF) {
 		rc = __cil_expand_type(src, &src_bitmap);
@@ -1728,7 +1732,7 @@ exit:
 	return rc;
 }
 
-static int __cil_avrulex_to_hashtable_helper(policydb_t *pdb, uint16_t kind, struct cil_symtab_datum *src, struct cil_symtab_datum *tgt, struct cil_permissionx *permx, struct cil_args_binary *args)
+static int __cil_avrulex_to_hashtable_helper(policydb_t *pdb, enum cil_avrule_kind kind, struct cil_symtab_datum *src, struct cil_symtab_datum *tgt, struct cil_permissionx *permx, struct cil_args_binary *args)
 {
 	int rc = SEPOL_ERR;
 	type_datum_t *sepol_src = NULL;
@@ -1771,7 +1775,7 @@ exit:
 static int cil_avrulex_to_hashtable(policydb_t *pdb, const struct cil_db *db, struct cil_avrule *cil_avrulex, struct cil_args_binary *args)
 {
 	int rc = SEPOL_ERR;
-	uint16_t kind;
+	enum cil_avrule_kind kind;
 	struct cil_symtab_datum *src = NULL;
 	struct cil_symtab_datum *tgt = NULL;
 	ebitmap_t src_bitmap, tgt_bitmap;
@@ -1784,9 +1788,13 @@ static int cil_avrulex_to_hashtable(policydb_t *pdb, const struct cil_db *db, st
 		goto exit;
 	}
 
+	if (cil_avrulex->rule_kind == CIL_AVRULE_NEVERALLOW) {
+		goto exit;
+	}
+
 	kind = cil_avrulex->rule_kind;
-	src = cil_avrulex->src;
-	tgt = cil_avrulex->tgt;
+	src = cil_avrulex->source_datum.datum;
+	tgt = cil_avrulex->target_datum.datum;
 
 	if (tgt->fqn == CIL_KEY_SELF) {
 		rc = __cil_expand_type(src, &src_bitmap);
@@ -4478,6 +4486,94 @@ exit:
 	return rc;
 }
 
+static int __cil_add_sepol_types(policydb_t *pdb, const struct cil_db *db, const struct cil_list *datum_expr, avrule_t *rule, int is_target, int is_toplevel, int is_negated) {
+	int rc = SEPOL_OK;
+
+	const struct cil_list_item *curr;
+	enum cil_flavor op_flavor;
+	ebitmap_t *dest;
+
+	cil_list_for_each(curr, datum_expr) {
+		switch (curr->flavor) {
+		case CIL_DATUM:
+			if (curr->data == db->selftype) {
+				if (!is_target) {
+					cil_log(CIL_ERR, "neverallow type expression keyword (self) only valid in target expression\n");
+					rc = SEPOL_ERR;
+					goto exit;
+				}
+				if (rule->flags) {
+					cil_log(CIL_ERR, "neverallow type expression keyword (self) only valid once in target expression\n");
+					rc = SEPOL_ERR;
+					goto exit;
+				}
+				rule->flags |= (is_negated ? RULE_NOTSELF : RULE_SELF);
+			} else {
+				if (is_target) {
+					dest = is_negated ? &rule->ttypes.negset : &rule->ttypes.types;
+				} else {
+					dest = is_negated ? &rule->stypes.negset : &rule->stypes.types;
+				}
+				rc = __cil_add_sepol_type(pdb, db, curr->data, dest);
+				if (rc != SEPOL_OK) {
+					goto exit;
+				}
+			}
+			break;
+		case CIL_ALL:
+			if (is_negated) {
+				cil_log(CIL_ERR, "neverallow type expression keyword (all) unsupported inside of not expression\n");
+				rc = SEPOL_ERR;
+				goto exit;
+			}
+			if (is_target) {
+				rule->ttypes.flags |= TYPE_STAR;
+			} else {
+				rule->stypes.flags |= TYPE_STAR;
+			}
+			break;
+		case CIL_OP:
+			op_flavor = (enum cil_flavor)(uintptr_t) curr->data;
+			switch (op_flavor) {
+			case CIL_NOT:
+				if (is_negated) {
+					cil_log(CIL_ERR, "neverallow type expression operator (not) unsupported inside of (not) expression\n");
+					rc = SEPOL_ERR;
+					goto exit;
+				}
+				if (is_toplevel && curr == datum_expr->head) {
+					if (is_target) {
+						rule->ttypes.flags |= TYPE_COMP;
+					} else {
+						rule->stypes.flags |= TYPE_COMP;
+					}
+				} else {
+					is_negated = 1;
+				}				
+				break;
+			case CIL_AND:
+				break;
+			default:
+				cil_log(CIL_ERR, "Unsupported neverallow type expression operator '%d'\n", op_flavor);
+				rc = SEPOL_ERR;
+				goto exit;
+			}
+			break;
+		case CIL_LIST:
+			rc = __cil_add_sepol_types(pdb, db, curr->data, rule, is_target, 0, is_negated);
+			if (rc != SEPOL_OK) goto exit;
+			break;
+		default:
+			cil_log(CIL_ERR, "Unsupported neverallow type expression flavor '%d'\n", curr->flavor);
+			rc = SEPOL_ERR;
+			goto exit;
+		}
+	}
+
+exit:
+	return rc;
+}
+
 static avrule_t *__cil_init_sepol_avrule(uint32_t kind, struct cil_tree_node *node)
 {
 	avrule_t *avrule;
@@ -4534,6 +4630,72 @@ static void __cil_print_parents(const char *pad, struct cil_tree_node *n)
 	}
 }
 
+static void __cil_print_typeexpr(const struct cil_list *expr);
+
+static void __cil_print_typeexpr_item(const struct cil_list_item *item)
+{
+	if (item->flavor == CIL_DATUM) {
+		cil_log(CIL_ERR, "%s", DATUM(item->data)->fqn);
+	} else if (item->flavor == CIL_LIST) {
+		__cil_print_typeexpr(item->data);
+	} else {
+		cil_log(CIL_ERR, "<INVALID_TYPE_EXPR_ITEM_%d>", item->flavor);
+	}
+}
+
+static void __cil_print_typeexpr(const struct cil_list *expr)
+{
+	const struct cil_list_item *item;
+	enum cil_flavor op_flavor;
+	int notfirst = 0;
+
+	if (expr->flavor != CIL_TYPEEXPR) {
+		cil_log(CIL_ERR, "<INVALID_TYPE_EXPR_%d>", expr->flavor);
+		return;
+	}
+
+	cil_list_for_each(item, expr) {
+		if (notfirst)
+			cil_log(CIL_ERR, " ");
+		else
+			notfirst = 1;
+		switch (item->flavor) {
+		case CIL_DATUM:
+			cil_log(CIL_ERR, "%s", DATUM(item->data)->fqn);
+			break;
+		case CIL_ALL:
+			cil_log(CIL_ERR, "%s", CIL_KEY_ALL);
+			break;
+		case CIL_OP:
+			op_flavor = (enum cil_flavor)(uintptr_t) item->data;
+			switch (op_flavor) {
+			case CIL_NOT:
+				cil_log(CIL_ERR, "(%s ", CIL_KEY_NOT);
+				item = item->next;
+				__cil_print_typeexpr_item(item);
+				cil_log(CIL_ERR, ")");
+				break;
+			case CIL_AND:
+				cil_log(CIL_ERR, "(%s ", CIL_KEY_AND);
+				item = item->next;
+				__cil_print_typeexpr_item(item);
+				cil_log(CIL_ERR, " ");
+				item = item->next;
+				__cil_print_typeexpr_item(item);
+				cil_log(CIL_ERR, ")");
+				break;
+			default:
+				cil_log(CIL_ERR, "<UNKNOWN_TYPE_EXPR_OP_%d>", op_flavor);
+				return;
+			}
+			break;
+		default:
+			cil_log(CIL_ERR, "<UNKNOWN_TYPE_EXPR_FLAVOR_%d>", item->flavor);
+			return;
+		}
+	}
+}
+
 static void __cil_print_classperm(struct cil_list *cp_list)
 {
 	struct cil_list_item *i1, *i2;
@@ -4577,10 +4739,17 @@ static void __cil_print_permissionx(struct cil_permissionx *px)
 	free(expr_str);
 }
 
-static void __cil_print_rule(const char *pad, const char *kind, struct cil_avrule *avrule)
+static void __cil_print_rule(const char *pad, const char *kind, const struct cil_avrule *avrule)
 {
-	cil_log(CIL_ERR,"%s(%s ", pad, kind);
-	cil_log(CIL_ERR,"%s %s ", DATUM(avrule->src)->fqn, DATUM(avrule->tgt)->fqn);
+	cil_log(CIL_ERR, "%s(%s ", pad, kind);
+	if (avrule->rule_kind == CIL_AVRULE_NEVERALLOW) {
+		__cil_print_typeexpr(avrule->source_datum.expr);
+		cil_log(CIL_ERR, " ");
+		__cil_print_typeexpr(avrule->target_datum.expr);
+		cil_log(CIL_ERR, " ");
+	} else {
+		cil_log(CIL_ERR, "%s %s ", avrule->source_datum.datum->fqn, avrule->target_datum.datum->fqn);
+	}
 
 	if (!avrule->is_extended) {
 		__cil_print_classperm(avrule->perms.classperms);
@@ -4590,7 +4759,7 @@ static void __cil_print_rule(const char *pad, const char *kind, struct cil_avrul
 		cil_log(CIL_ERR, ")");
 	}
 
-	cil_log(CIL_ERR,")\n");
+	cil_log(CIL_ERR, ")\n");
 }
 
 static int __cil_print_neverallow_failure(const struct cil_db *db, struct cil_tree_node *node)
@@ -4608,8 +4777,8 @@ static int __cil_print_neverallow_failure(const struct cil_db *db, struct cil_tr
 
 	target.rule_kind = CIL_AVRULE_ALLOWED;
 	target.is_extended = cil_rule->is_extended;
-	target.src = cil_rule->src;
-	target.tgt = cil_rule->tgt;
+	target.source_datum.expr = cil_rule->source_datum.expr;
+	target.target_datum.expr = cil_rule->target_datum.expr;
 	target.perms = cil_rule->perms;
 
 	if (!cil_rule->is_extended) {
@@ -4648,11 +4817,16 @@ static int cil_check_neverallow(const struct cil_db *db, policydb_t *pdb, struct
 {
 	int rc = SEPOL_OK;
 	struct cil_avrule *cil_rule = node->data;
-	struct cil_symtab_datum *tgt = cil_rule->tgt;
+	const struct cil_symtab_datum *tgt_datum = NULL;
 	uint32_t kind;
 	avrule_t *rule;
+	ebitmap_t expanded_src;
+	ebitmap_t expanded_tgt;
 	struct cil_list *xperms = NULL;
 	struct cil_list_item *item;
+
+	ebitmap_init(&expanded_src);
+	ebitmap_init(&expanded_tgt);
 
 	if (!cil_rule->is_extended) {
 		kind = AVRULE_NEVERALLOW;
@@ -4663,18 +4837,44 @@ static int cil_check_neverallow(const struct cil_db *db, policydb_t *pdb, struct
 	rule = __cil_init_sepol_avrule(kind, node);
 	rule->next = NULL;
 
-	rc = __cil_add_sepol_type(pdb, db, cil_rule->src, &rule->stypes.types);
+	rc = __cil_add_sepol_types(pdb, db, cil_rule->source_datum.expr, rule, 0, 1, 0);
 	if (rc != SEPOL_OK) {
 		goto exit;
 	}
 
-	if (tgt->fqn == CIL_KEY_SELF) {
-		rule->flags = RULE_SELF;
+	if (cil_rule->target_datum.expr->head->flavor == CIL_DATUM) {
+		tgt_datum = cil_rule->target_datum.expr->head->data;
+	}
+
+	if (tgt_datum && tgt_datum->fqn == CIL_KEY_SELF) {
+		rule->flags |= RULE_SELF;
 	} else {
-		rc = __cil_add_sepol_type(pdb, db, cil_rule->tgt, &rule->ttypes.types);
+		rc = __cil_add_sepol_types(pdb, db, cil_rule->target_datum.expr, rule, 1, 1, 0);
 		if (rc != SEPOL_OK) {
 			goto exit;
 		}
+	}
+
+	rc = type_set_expand(&rule->stypes, &expanded_src, pdb, 1);
+	if (rc != SEPOL_OK) {
+		goto exit;
+	}
+
+	ebitmap_destroy(&rule->stypes.types);
+	rc = ebitmap_cpy(&rule->stypes.types, &expanded_src);
+	if (rc != SEPOL_OK) {
+		goto exit;
+	}
+
+	rc = type_set_expand(&rule->ttypes, &expanded_tgt, pdb, 1);
+	if (rc != SEPOL_OK) {
+		goto exit;
+	}
+
+	ebitmap_destroy(&rule->ttypes.types);
+	rc = ebitmap_cpy(&rule->ttypes.types, &expanded_tgt);
+	if (rc != SEPOL_OK) {
+		goto exit;
 	}
 
 	if (!cil_rule->is_extended) {
@@ -4685,7 +4885,7 @@ static int cil_check_neverallow(const struct cil_db *db, policydb_t *pdb, struct
 
 		rc = check_assertion(pdb, rule);
 		if (rc == CIL_TRUE) {
-			*violation = CIL_TRUE;
+			*violation += 1;
 			rc = __cil_print_neverallow_failure(db, node);
 			if (rc != SEPOL_OK) {
 				goto exit;
@@ -4707,7 +4907,7 @@ static int cil_check_neverallow(const struct cil_db *db, policydb_t *pdb, struct
 			rule->xperms = item->data;
 			rc = check_assertion(pdb, rule);
 			if (rc == CIL_TRUE) {
-				*violation = CIL_TRUE;
+				*violation += 1;
 				rc = __cil_print_neverallow_failure(db, node);
 				if (rc != SEPOL_OK) {
 					goto exit;
@@ -4727,6 +4927,9 @@ exit:
 
 	rule->xperms = NULL;
 	__cil_destroy_sepol_avrules(rule);
+
+	ebitmap_destroy(&expanded_src);
+	ebitmap_destroy(&expanded_tgt);
 
 	return rc;
 }
@@ -4784,11 +4987,16 @@ static int cil_avrule_from_sepol(policydb_t *pdb, avtab_ptr_t sepol_rule, struct
 	int rc = SEPOL_ERR;
 	avtab_key_t *k = &sepol_rule->key;
 	avtab_datum_t *d = &sepol_rule->datum;
-	cil_rule->src = type_value_to_cil[k->source_type];
-	if (!cil_rule->src) goto exit;
 
-	cil_rule->tgt = type_value_to_cil[k->target_type];
-	if (!cil_rule->tgt) goto exit;
+	if (cil_rule->rule_kind == CIL_AVRULE_NEVERALLOW) {
+		goto exit;
+	}
+
+	cil_rule->source_datum.datum = type_value_to_cil[k->source_type];
+	if (!cil_rule->source_datum.datum) goto exit;
+
+	cil_rule->target_datum.datum = type_value_to_cil[k->target_type];
+	if (!cil_rule->target_datum.datum) goto exit;
 
 	cil_rule->perms.classperms = cil_classperms_from_sepol(pdb, k->target_class, d->data, class_value_to_cil, perm_value_to_cil);
 	if (!cil_rule->perms.classperms) goto exit;
@@ -4832,8 +5040,8 @@ static int cil_check_type_bounds(const struct cil_db *db, policydb_t *pdb, void 
 
                         target.is_extended = 0;
 			target.rule_kind = CIL_AVRULE_ALLOWED;
-			target.src_str = NULL;
-			target.tgt_str = NULL;
+			target.source_str_expr = NULL;
+			target.target_str_expr = NULL;
 
 			cil_log(CIL_ERR, "Child type %s exceeds bounds of parent %s\n",
 				t->datum.fqn, t->bounds->datum.fqn);
@@ -4998,6 +5206,7 @@ int cil_binary_create_allocated_pdb(const struct cil_db *db, sepol_policydb_t *p
 		cil_log(CIL_INFO, "Checking Neverallows\n");
 		rc = cil_check_neverallows(db, pdb, neverallows, &violation);
 		if (rc != SEPOL_OK) goto exit;
+		cil_log(CIL_WARN, "Found %d neverallow violations\n", violation);
 
 		cil_log(CIL_INFO, "Checking User Bounds\n");
 		rc = bounds_check_users(NULL, pdb);

@@ -313,33 +313,62 @@ int cil_resolve_avrule(struct cil_tree_node *current, void *extra_args)
 
 	struct cil_avrule *rule = current->data;
 	struct cil_symtab_datum *src_datum = NULL;
+	struct cil_list *src_datum_expr = NULL;
 	struct cil_symtab_datum *tgt_datum = NULL;
+	struct cil_list *tgt_datum_expr = NULL;
 	struct cil_symtab_datum *permx_datum = NULL;
-	int used;
+	struct cil_list_item *item;
 	int rc = SEPOL_ERR;
 
 	if (args != NULL) {
 		db = args->db;
 	}
 
-	rc = cil_resolve_name(current, rule->src_str, CIL_SYM_TYPES, args, &src_datum);
-	if (rc != SEPOL_OK) {
-		goto exit;
-	}
-	rule->src = src_datum;
-		
-	if (rule->tgt_str == CIL_KEY_SELF) {
-		rule->tgt = db->selftype;
-	} else {
-		rc = cil_resolve_name(current, rule->tgt_str, CIL_SYM_TYPES, args, &tgt_datum);
+	if (rule->rule_kind == CIL_AVRULE_NEVERALLOW) {
+		rc = cil_resolve_expr(CIL_TYPEEXPR, rule->source_str_expr, &src_datum_expr, current, args);
 		if (rc != SEPOL_OK) {
 			goto exit;
 		}
-		rule->tgt = tgt_datum;
-		used = (rule->rule_kind == CIL_AVRULE_NEVERALLOW) ?
-			CIL_ATTR_NEVERALLOW : CIL_ATTR_AVRULE;
-		cil_type_used(src_datum, used); /* src not used if tgt is self */
-		cil_type_used(tgt_datum, used);
+		rule->source_datum.expr = src_datum_expr;
+	} else {
+		rc = cil_resolve_name(current, rule->source_str_expr->head->data, CIL_SYM_TYPES, args, &src_datum);
+		if (rc != SEPOL_OK) {
+			goto exit;
+		}
+		rule->source_datum.datum = src_datum;
+	}
+
+	if (rule->rule_kind == CIL_AVRULE_NEVERALLOW) {
+		rc = cil_resolve_expr(CIL_TYPEEXPR, rule->target_str_expr, &tgt_datum_expr, current, args);
+		if (rc != SEPOL_OK) {
+			goto exit;
+		}
+		rule->target_datum.expr = tgt_datum_expr;
+
+		if (tgt_datum_expr->head->flavor != CIL_DATUM || tgt_datum_expr->head->data != db->selftype) {
+			cil_list_for_each(item, src_datum_expr) {
+				if (item->flavor == CIL_DATUM) {
+					cil_type_used(item->data, CIL_ATTR_NEVERALLOW); /* src not used if tgt is self */
+				}
+			}
+			cil_list_for_each(item, tgt_datum_expr) {
+				if (item->flavor == CIL_DATUM && item->data != db->selftype) {
+					cil_type_used(item->data, CIL_ATTR_NEVERALLOW);
+				}
+			}
+		}
+	} else {
+		if (rule->target_str_expr->head->data == CIL_KEY_SELF) {
+			rule->target_datum.datum = (struct cil_symtab_datum *) db->selftype;
+		} else {
+			rc = cil_resolve_name(current, rule->target_str_expr->head->data, CIL_SYM_TYPES, args, &tgt_datum);
+			if (rc != SEPOL_OK) {
+				goto exit;
+			}
+			rule->target_datum.datum = tgt_datum;
+			cil_type_used(src_datum, CIL_ATTR_AVRULE); /* src not used if tgt is self */
+			cil_type_used(tgt_datum, CIL_ATTR_AVRULE);
+		}
 	}
 
 	if (!rule->is_extended) {
@@ -3229,6 +3258,7 @@ int cil_resolve_expr(enum cil_flavor expr_type, struct cil_list *str_expr, struc
 	enum cil_sym_index sym_index =  CIL_SYM_UNKNOWN;
 	struct cil_list *datum_sub_expr;
 	enum cil_flavor op = CIL_NONE;
+	struct cil_db *db = NULL;
 
 	switch (str_expr->flavor) {
 	case CIL_BOOL:
@@ -3237,6 +3267,9 @@ int cil_resolve_expr(enum cil_flavor expr_type, struct cil_list *str_expr, struc
 	case CIL_TUNABLE:
 		sym_index = CIL_SYM_TUNABLES;
 		break;
+	case CIL_TYPEEXPR:
+		db = ((struct cil_args_resolve *) extra_args)->db;
+		/* FALLTHROUGH */ 
 	case CIL_TYPE:
 		sym_index = CIL_SYM_TYPES;
 		break;
@@ -3250,6 +3283,7 @@ int cil_resolve_expr(enum cil_flavor expr_type, struct cil_list *str_expr, struc
 		sym_index = CIL_SYM_CATS;
 		break;
 	default:
+		cil_log(CIL_WARN, "Unknown expression flavor '%d'\n", str_expr->flavor);
 		break;
 	}
 
@@ -3258,6 +3292,16 @@ int cil_resolve_expr(enum cil_flavor expr_type, struct cil_list *str_expr, struc
 	cil_list_for_each(curr, str_expr) {
 		switch (curr->flavor) {
 		case CIL_STRING:
+			if (str_expr->flavor == CIL_TYPEEXPR && curr->data == CIL_KEY_SELF) {
+				cil_list_append(*datum_expr, CIL_DATUM, db->selftype);
+				break;
+			}
+
+			if (str_expr->flavor == CIL_TYPEEXPR && curr->data == CIL_KEY_ALL) {
+				cil_list_append(*datum_expr, CIL_ALL, curr->data);
+				break;
+			}
+
 			rc = cil_resolve_name(parent, curr->data, sym_index, extra_args, &res_datum);
 			if (rc != SEPOL_OK) {
 				goto exit;
@@ -3855,6 +3899,7 @@ static int __cil_resolve_ast_node(struct cil_tree_node *node, void *extra_args)
 		}
 		break;
 	default:
+		cil_log(CIL_ERR, "Unsupported pass '%d'\n", pass);
 		break;
 	}
 

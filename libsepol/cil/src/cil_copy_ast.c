@@ -822,8 +822,9 @@ int cil_copy_avrule(struct cil_db *db, void *data, void **copy, __attribute__((u
 
 	new->is_extended = orig->is_extended;
 	new->rule_kind = orig->rule_kind;
-	new->src_str = orig->src_str;
-	new->tgt_str = orig->tgt_str;
+
+	cil_copy_expr(db, orig->source_str_expr, &new->source_str_expr);
+	cil_copy_expr(db, orig->target_str_expr, &new->target_str_expr);
 
 	if (!new->is_extended) {
 		cil_copy_classperms_list(orig->perms.classperms, &new->perms.classperms);

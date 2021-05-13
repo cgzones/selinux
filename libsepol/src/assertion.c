@@ -241,7 +241,7 @@ static int report_assertion_avtab_matches(avtab_key_t *k, avtab_datum_t *d, void
 	if (rc)
 		goto oom;
 
-	if (avrule->flags == RULE_SELF) {
+	if (avrule->flags & RULE_SELF) {
 		rc = ebitmap_and(&matches, &p->attr_type_map[k->source_type - 1], &p->attr_type_map[k->target_type - 1]);
 		if (rc)
 			goto oom;
@@ -402,7 +402,7 @@ static int check_assertion_extended_permissions(avrule_t *avrule, avtab_t *avtab
 	if (rc)
 		goto oom;
 
-	if (avrule->flags == RULE_SELF) {
+	if (avrule->flags & RULE_SELF) {
 		rc = ebitmap_and(&matches, &p->attr_type_map[k->source_type - 1],
 				&p->attr_type_map[k->target_type - 1]);
 		if (rc)
@@ -463,7 +463,7 @@ static int check_assertion_avtab_match(avtab_key_t *k, avtab_datum_t *d, void *a
 	if (rc == 0)
 		goto exit;
 
-	if (avrule->flags == RULE_SELF) {
+	if (avrule->flags & RULE_SELF) {
 		/* If the neverallow uses SELF, then it is not enough that the
 		 * neverallow's source matches the src and tgt of the rule being checked.
 		 * It must match the same thing in the src and tgt, so AND the source
@@ -479,9 +479,20 @@ static int check_assertion_avtab_match(avtab_key_t *k, avtab_datum_t *d, void *a
 		ebitmap_destroy(&match);
 	}
 
+	if (avrule->ttypes.flags & RULE_NOTSELF) {
+		ebitmap_t match;
+		rc = ebitmap_and(&match, &p->attr_type_map[k->source_type - 1], &p->attr_type_map[k->target_type - 1] );
+		if (rc) {
+			ebitmap_destroy(&match);
+			goto oom;
+		}
+		rc2 = ebitmap_cardinality(&p->attr_type_map[k->source_type - 1]) > ebitmap_cardinality(&match);
+		ebitmap_destroy(&match);
+	}
+
 	/* neverallow may have tgts even if it uses SELF */
 	rc = ebitmap_match_any(&avrule->ttypes.types, &p->attr_type_map[k->target_type -1]);
-	if (rc == 0 && rc2 == 0)
+	if (((rc == 0) != (avrule->ttypes.flags & RULE_NOTSELF)) && rc2 == 0)
 		goto exit;
 
 	if (avrule->specified == AVRULE_XPERMS_NEVERALLOW) {

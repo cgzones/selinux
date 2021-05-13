@@ -41,19 +41,19 @@
 #include "cil_write_ast.h"
 
 
-static inline const char *datum_or_str(struct cil_symtab_datum *datum, const char *str)
+static inline const char *datum_or_str(const struct cil_symtab_datum *datum, const char *str)
 {
 	return datum ? datum->fqn : str;
 }
 
-static inline const char *datum_to_str(struct cil_symtab_datum *datum)
+static inline const char *datum_to_str(const struct cil_symtab_datum *datum)
 {
 	return datum ? datum->fqn : "<?DATUM>";
 }
 
-static void write_expr(FILE *out, struct cil_list *expr)
+static void write_expr(FILE *out, const struct cil_list *expr)
 {
-	struct cil_list_item *curr;
+	const struct cil_list_item *curr;
 	int notfirst = 0;
 
 	fprintf(out, "(");
@@ -221,9 +221,9 @@ static void write_string_list(FILE *out, struct cil_list *list)
 	fprintf(out, ")");
 }
 
-static void write_datum_list(FILE *out, struct cil_list *list)
+static void write_datum_list(FILE *out, const struct cil_list *list)
 {
-	struct cil_list_item *curr;
+	const struct cil_list_item *curr;
 	int notfirst = 0;
 
 	if (!list) {
@@ -240,6 +240,50 @@ static void write_datum_list(FILE *out, struct cil_list *list)
 		fprintf(out, "%s", datum_to_str(curr->data));
 	}
 	fprintf(out, ")");
+}
+
+static void write_typeexpr_list(FILE *out, const struct cil_list *expr)
+{
+	const struct cil_list_item *curr;
+	int notfirst = 0;
+
+	cil_list_for_each(curr, expr) {
+		if (notfirst)
+			fprintf(out, " ");
+		else
+			notfirst = 1;
+		switch (curr->flavor) {
+		case CIL_STRING:
+			fprintf(out, "%s", (char *)curr->data);
+			break;
+		case CIL_DATUM:
+			fprintf(out, "%s", datum_to_str(curr->data));
+			break;
+		case CIL_ALL:
+			fprintf(out, "%s", CIL_KEY_ALL);
+			break;
+		case CIL_OP: {
+			enum cil_flavor op_flavor = (enum cil_flavor)(uintptr_t)curr->data;
+			switch (op_flavor) {
+			case CIL_NOT:
+				fprintf(out, "(%s ", CIL_KEY_NOT);
+				curr = curr->next;
+				write_expr(out, curr->data);
+				fprintf(out, ")");
+				break;
+			default:
+				fprintf(out, "<?OP_%d>", op_flavor);
+				break;
+			}
+			break;
+		}
+		default:
+			fprintf(out, "<?FLAVOR_%d>", curr->flavor);
+			break;
+		}
+	}
+
+	fprintf(out, " ");
 }
 
 static void write_classperms(FILE *out, struct cil_classperms *cp)
@@ -1103,9 +1147,13 @@ void cil_write_ast_node(FILE *out, struct cil_tree_node *node)
 			fprintf(out, "(neverallow ");
 		else
 			fprintf(out, "(<?AVRULE> ");
-
-		fprintf(out, "%s ", datum_or_str(DATUM(rule->src), rule->src_str));
-		fprintf(out, "%s ", datum_or_str(DATUM(rule->tgt), rule->tgt_str));
+		if (rule->rule_kind == CIL_AVRULE_NEVERALLOW) {
+			write_typeexpr_list(out, rule->source_datum.expr ? rule->source_datum.expr : rule->source_str_expr);
+			write_typeexpr_list(out, rule->target_datum.expr ? rule->target_datum.expr : rule->target_str_expr);
+		} else {
+			fprintf(out, "%s ", datum_or_str(rule->source_datum.datum, rule->source_str_expr->head->data));
+			fprintf(out, "%s ", datum_or_str(rule->target_datum.datum, rule->target_str_expr->head->data));
+		}
 		write_classperms_list(out, rule->perms.classperms);
 		fprintf(out, ")\n");
 		break;
@@ -1122,8 +1170,13 @@ void cil_write_ast_node(FILE *out, struct cil_tree_node *node)
 			fprintf(out, "(neverallowx ");
 		else
 			fprintf(out, "(<?AVRULEX> ");
-		fprintf(out, "%s ", datum_or_str(DATUM(rule->src), rule->src_str));
-		fprintf(out, "%s ", datum_or_str(DATUM(rule->tgt), rule->tgt_str));
+		if (rule->rule_kind == CIL_AVRULE_NEVERALLOW) {
+			write_typeexpr_list(out, rule->source_datum.expr ? rule->source_datum.expr : rule->source_str_expr);
+			write_typeexpr_list(out, rule->target_datum.expr ? rule->target_datum.expr : rule->target_str_expr);
+		} else {
+			fprintf(out, "%s ", datum_or_str(rule->source_datum.datum, rule->source_str_expr->head->data));
+			fprintf(out, "%s ", datum_or_str(rule->target_datum.datum, rule->target_str_expr->head->data));
+		}
 		if (rule->perms.x.permx_str) {
 			fprintf(out, "%s",rule->perms.x.permx_str);
 		} else {

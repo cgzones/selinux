@@ -1157,9 +1157,6 @@ static void cil_av_rulex_to_policy(FILE *out, struct cil_avrule *rule)
 	const char *kind;
 	struct cil_symtab_datum *src, *tgt;
 
-	src = rule->src;
-	tgt = rule->tgt;
-
 	switch (rule->rule_kind) {
 	case CIL_AVRULE_ALLOWED:
 		kind = "allowxperm";
@@ -1178,7 +1175,14 @@ static void cil_av_rulex_to_policy(FILE *out, struct cil_avrule *rule)
 		break;
 	}
 
-	fprintf(out, "%s %s %s : ", kind, src->fqn, tgt->fqn);
+	if (rule->rule_kind == CIL_AVRULE_NEVERALLOW) {
+		// TODO(cgzones)
+		fprintf(out, "%s TODO TODO : ", kind);
+	} else {
+		src = rule->source_datum.datum;
+		tgt = rule->target_datum.datum;
+		fprintf(out, "%s %s %s : ", kind, src->fqn, tgt->fqn);
+	}
 	cil_xperms_to_policy(out, rule->perms.x.permx);
 	fprintf(out, ";\n");
 }
@@ -1189,9 +1193,6 @@ static void cil_av_rule_to_policy(FILE *out, struct cil_avrule *rule)
 	struct cil_symtab_datum *src, *tgt;
 	struct cil_list *classperms_strs;
 	struct cil_list_item *i1;
-
-	src = rule->src;
-	tgt = rule->tgt;
 
 	switch (rule->rule_kind) {
 	case CIL_AVRULE_ALLOWED:
@@ -1215,7 +1216,14 @@ static void cil_av_rule_to_policy(FILE *out, struct cil_avrule *rule)
 	cil_classperms_to_strings(rule->perms.classperms, classperms_strs);
 	cil_list_for_each(i1, classperms_strs) {
 		char *cp_str = i1->data;
-		fprintf(out, "%s %s %s : %s;\n", kind, src->fqn, tgt->fqn, cp_str);
+		if (rule->rule_kind == CIL_AVRULE_NEVERALLOW) {
+			// TODO(cgzones)
+			fprintf(out, "%s TODO TODO : %s;", kind, cp_str);
+		} else {
+			src = rule->source_datum.datum;
+			tgt = rule->target_datum.datum;
+			fprintf(out, "%s %s %s : %s;\n", kind, src->fqn, tgt->fqn, cp_str);
+		}
 		free(cp_str);
 	}
 	cil_list_destroy(&classperms_strs, CIL_FALSE);
