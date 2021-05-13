@@ -1508,7 +1508,7 @@ static int __cil_verify_permissionx(struct cil_permissionx *permx, struct cil_tr
 	struct cil_list_item *item;
 	struct cil_class *class;
 	struct cil_symtab_datum *perm_datum;
-	char *kind_str;
+	const char *kind_str;
 
 	switch (permx->kind) {
 		case CIL_PERMX_KIND_IOCTL:

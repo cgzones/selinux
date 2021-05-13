@@ -141,7 +141,7 @@ static int add_hll_linemark(struct cil_tree_node **current, uint32_t *hll_offset
 		insert_node(node, *current);
 		*current = node;
 
-		create_node(&node, *current, tok.line, tok.column, *hll_offset, CIL_KEY_SRC_INFO);
+		create_node(&node, *current, tok.line, tok.column, *hll_offset, (char*) CIL_KEY_SRC_INFO);
 		insert_node(node, *current);
 
 		create_node(&node, *current, tok.line, tok.column, *hll_offset, hll_type);
@@ -199,10 +199,10 @@ static void add_cil_path(struct cil_tree_node **current, char *path)
 	insert_node(node, *current);
 	*current = node;
 
-	create_node(&node, *current, 0, 0, 0, CIL_KEY_SRC_INFO);
+	create_node(&node, *current, 0, 0, 0, (char*) CIL_KEY_SRC_INFO);
 	insert_node(node, *current);
 
-	create_node(&node, *current, 0, 0, 0, CIL_KEY_SRC_CIL);
+	create_node(&node, *current, 0, 0, 0, (char*) CIL_KEY_SRC_CIL);
 	insert_node(node, *current);
 
 	create_node(&node, *current, 0, 0, 0, cil_strpool_add("1"));

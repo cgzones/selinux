@@ -76,7 +76,7 @@ void cil_symtab_datum_destroy(struct cil_symtab_datum *datum);
 void cil_symtab_datum_remove_node(struct cil_symtab_datum *datum, struct cil_tree_node *node);
 int cil_symtab_insert(symtab_t *symtab, hashtab_key_t key, struct cil_symtab_datum *datum, struct cil_tree_node *node);
 void cil_symtab_remove_datum(struct cil_symtab_datum *datum);
-int cil_symtab_get_datum(symtab_t *symtab, char *key, struct cil_symtab_datum **datum);
+int cil_symtab_get_datum(symtab_t *symtab, const char *key, struct cil_symtab_datum **datum);
 int cil_symtab_map(symtab_t *symtab,
 				   int (*apply) (hashtab_key_t k, hashtab_datum_t d, void *args),
 				   void *args);

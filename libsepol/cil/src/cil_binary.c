@@ -1290,7 +1290,7 @@ int cil_typetransition_to_policydb(policydb_t *pdb, const struct cil_db *db, str
 	return  __cil_typetransition_to_avtab(pdb, db, typetrans, NULL, CIL_FALSE);
 }
 
-static int __perm_str_to_datum(char *perm_str, class_datum_t *sepol_class, uint32_t *datum)
+static int __perm_str_to_datum(const char *perm_str, class_datum_t *sepol_class, uint32_t *datum)
 {
 	int rc;
 	perm_datum_t *sepol_perm;
@@ -1317,7 +1317,7 @@ exit:
 static int __cil_perms_to_datum(struct cil_list *perms, class_datum_t *sepol_class, uint32_t *datum)
 {
 	int rc = SEPOL_ERR;
-	char *key = NULL;
+	const char *key = NULL;
 	struct cil_list_item *curr_perm;
 	struct cil_perm *cil_perm;
 	uint32_t data = 0;
@@ -2194,7 +2194,7 @@ static int __cil_cond_item_to_sepol_expr(policydb_t *pdb, struct cil_list_item *
 	if (item == NULL) {
 		goto exit;
 	} else if (item->flavor == CIL_DATUM) {
-		char *key = DATUM(item->data)->fqn;
+		const char *key = DATUM(item->data)->fqn;
 		cond_bool_datum_t *sepol_bool = hashtab_search(pdb->p_bools.table, key);
 		if (sepol_bool == NULL) {
 			cil_log(CIL_INFO, "Failed to find boolean\n");
@@ -4615,7 +4615,7 @@ static int __cil_permx_to_sepol_class_perms(policydb_t *pdb, struct cil_permissi
 	class_datum_t *sepol_obj = NULL;
 	class_perm_node_t *cpn;
 	uint32_t data = 0;
-	char *perm_str = NULL;
+	const char *perm_str = NULL;
 
 	class_list = cil_expand_class(permx->obj);
 
@@ -4812,8 +4812,8 @@ static int __cil_print_neverallow_failure(const struct cil_db *db, struct cil_tr
 	struct cil_avrule target;
 	struct cil_tree_node *n2;
 	struct cil_avrule *r2;
-	char *neverallow_str;
-	char *allow_str;
+	const char *neverallow_str;
+	const char *allow_str;
 	enum cil_flavor avrule_flavor;
 	int num_matching = 0;
 	int count_matching = 0;
