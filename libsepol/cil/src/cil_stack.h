@@ -30,6 +30,8 @@
 #ifndef CIL_STACK_H_
 #define CIL_STACK_H_
 
+#include "cil_flavor.h"
+
 struct cil_stack {
 	struct cil_stack_item *stack;
 	int size;
@@ -51,7 +53,7 @@ void cil_stack_init(struct cil_stack **stack);
 void cil_stack_destroy(struct cil_stack **stack);
 
 void cil_stack_empty(struct cil_stack *stack);
-int cil_stack_is_empty(struct cil_stack *stack);
+int cil_stack_is_empty(const struct cil_stack *stack);
 int cil_stack_number_of_items(struct cil_stack *stack);
 
 void cil_stack_push(struct cil_stack *stack, enum cil_flavor flavor, void *data);
