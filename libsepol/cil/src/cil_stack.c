@@ -62,7 +62,7 @@ void cil_stack_empty(struct cil_stack *stack)
 	stack->pos = -1;
 }
 
-int cil_stack_is_empty(struct cil_stack *stack)
+int cil_stack_is_empty(const struct cil_stack *stack)
 {
 	return (stack->pos == -1);
 }
