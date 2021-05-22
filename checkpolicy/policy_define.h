@@ -12,6 +12,8 @@
 #define TRUE 1
 #define FALSE 0
 
+void init_parser(int pass_number);
+void yyerror2(const char *fmt, ...) __attribute__ ((format(printf, 1, 2)));
 avrule_t *define_cond_compute_type(int which);
 avrule_t *define_cond_pol_list(avrule_t *avlist, avrule_t *stmt);
 avrule_t *define_cond_te_avtab(int which);
