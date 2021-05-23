@@ -50,6 +50,12 @@ y.tab.c: policy_parse.y
 lex.yy.c: policy_scan.l y.tab.c
 	$(LEX) policy_scan.l
 
+checkpolicy-fuzzer: checkpolicy-fuzzer.o $(CHECKOBJS) $(LIBSEPOLA)
+	$(CC) $(CFLAGS) -o $@ $^ $(LDFLAGS) $(LDLIBS_LIBSEPOLA)
+
+checkmodule-fuzzer: checkmodule-fuzzer.o $(CHECKOBJS) $(LIBSEPOLA)
+	$(CC) $(CFLAGS) -o $@ $^ $(LDFLAGS) $(LDLIBS_LIBSEPOLA)
+
 install: all
 	-mkdir -p $(DESTDIR)$(BINDIR)
 	-mkdir -p $(DESTDIR)$(MANDIR)/man8

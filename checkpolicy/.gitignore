@@ -3,3 +3,7 @@ checkpolicy
 lex.yy.c
 y.tab.c
 y.tab.h
+checkmodule-fuzzer
+checkpolicy-fuzzer
+corpus_dir/
+fuzz-*.log
