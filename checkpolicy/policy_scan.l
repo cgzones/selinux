@@ -60,11 +60,14 @@ hexval	[0-9A-Fa-f]
 
 %%
 \n.*				{ strncpy(linebuf[lno], yytext+1, 255);
-                                  linebuf[lno][254] = 0;
-                                  lno = 1 - lno; 
-                                  policydb_lineno++;
-				  source_lineno++;
-                                  yyless(1); }
+				  linebuf[lno][254] = 0;
+				  lno = 1 - lno;
+				  policydb_lineno++;
+				  if (source_lineno == ULONG_MAX)
+				      yyerror("source line number overflow");
+				  else
+				      source_lineno++;
+				  yyless(1); }
 CLONE |
 clone				{ return(CLONE); }
 COMMON |
@@ -270,7 +273,7 @@ GLBLUB				{ return(GLBLUB); }
 {hexval}{0,4}":"{hexval}{0,4}":"({hexval}|[:.])*  { return(IPV6_ADDR); }
 {digit}+(\.({alnum}|[_.])*)?    { return(VERSION_IDENTIFIER); }
 #line[ ]1[ ]\"[^\n]*\"		{ set_source_file(yytext+9); }
-#line[ ]{digit}+	        { source_lineno = atoi(yytext+6)-1; }
+#line[ ]{digit}+	        { source_lineno = strtoul(yytext+6, NULL, 10) - 1; }
 #[^\n]*                         { /* delete comments */ }
 [ \t\f]+			{ /* delete whitespace */ }
 "==" 				{ return(EQUALS); }
