@@ -573,7 +573,7 @@ static int filename_write_one_compat(hashtab_key_t key, void *data, void *ptr)
 {
 	uint32_t bit, buf[4];
 	size_t items, len;
-	filename_trans_key_t *ft = (filename_trans_key_t *)key;
+	filename_trans_key_t *ft = (filename_trans_key_t *)(void *)key;
 	filename_trans_datum_t *datum = data;
 	ebitmap_node_t *node;
 	void *fp = ptr;
@@ -609,7 +609,7 @@ static int filename_write_one(hashtab_key_t key, void *data, void *ptr)
 {
 	uint32_t buf[3];
 	size_t items, len, ndatum;
-	filename_trans_key_t *ft = (filename_trans_key_t *)key;
+	filename_trans_key_t *ft = (filename_trans_key_t *)(void *)key;
 	filename_trans_datum_t *datum;
 	void *fp = ptr;
 
@@ -1661,7 +1661,7 @@ static int rangetrans_count(hashtab_key_t key,
 			    void *data __attribute__ ((unused)),
 			    void *ptr)
 {
-	struct range_trans *rt = (struct range_trans *)key;
+	struct range_trans *rt = (struct range_trans *)(void *)key;
 	struct rangetrans_write_args *args = ptr;
 	struct policydb *p = args->p;
 
@@ -1676,7 +1676,7 @@ static int rangetrans_count(hashtab_key_t key,
 static int range_write_helper(hashtab_key_t key, void *data, void *ptr)
 {
 	uint32_t buf[2];
-	struct range_trans *rt = (struct range_trans *)key;
+	struct range_trans *rt = (struct range_trans *)(void *)key;
 	struct mls_range *r = data;
 	struct rangetrans_write_args *args = ptr;
 	struct policy_file *fp = args->fp;

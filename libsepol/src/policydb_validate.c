@@ -1118,7 +1118,7 @@ bad:
 
 static int validate_filename_trans(hashtab_key_t k, hashtab_datum_t d, void *args)
 {
-	const filename_trans_key_t *ftk = (filename_trans_key_t *)k;
+	const filename_trans_key_t *ftk = (filename_trans_key_t *)(void *)k;
 	const filename_trans_datum_t *ftd = d;
 	const map_arg_t *margs = args;
 	const validate_t *flavors = margs->flavors;

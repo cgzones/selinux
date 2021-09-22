@@ -457,7 +457,7 @@ static int filenametr_display(hashtab_key_t key,
 			      hashtab_datum_t datum,
 			      void *ptr)
 {
-	struct filename_trans_key *ft = (struct filename_trans_key *)key;
+	struct filename_trans_key *ft = (struct filename_trans_key *)(void *)key;
 	struct filename_trans_datum *ftdatum = datum;
 	struct filenametr_display_args *args = ptr;
 	policydb_t *p = args->p;

@@ -1751,7 +1751,7 @@ static int __cil_avrulex_ioctl_to_policydb(hashtab_key_t k, hashtab_datum_t datu
 	class_datum_t *sepol_obj;
 	uint32_t data = 0;
 
-	avtab_key = (avtab_key_t *)k;
+	avtab_key = (avtab_key_t *)(void *)k;
 	pdb = args;
 
 	sepol_obj = pdb->class_val_to_struct[avtab_key->target_class - 1];
@@ -4458,7 +4458,7 @@ exit:
 
 static unsigned int role_trans_hash(hashtab_t h, const_hashtab_key_t key)
 {
-	const role_trans_t *k = (const role_trans_t *)key;
+	const role_trans_t *k = (const role_trans_t *)(void *)key;
 	return ((k->role + (k->type << 2) +
 				(k->tclass << 5)) & (h->size - 1));
 }
@@ -4467,8 +4467,8 @@ static int role_trans_compare(hashtab_t h
              __attribute__ ((unused)), const_hashtab_key_t key1,
 			              const_hashtab_key_t key2)
 {
-	const role_trans_t *a = (const role_trans_t *)key1;
-	const role_trans_t *b = (const role_trans_t *)key2;
+	const role_trans_t *a = (const role_trans_t *)(void *)key1;
+	const role_trans_t *b = (const role_trans_t *)(void *)key2;
 
 	return a->role != b->role || a->type != b->type || a->tclass != b->tclass;
 }
@@ -4478,7 +4478,7 @@ static int role_trans_compare(hashtab_t h
  */
 static unsigned int avrulex_hash(__attribute__((unused)) hashtab_t h, const_hashtab_key_t key)
 {
-	const avtab_key_t *k = (const avtab_key_t *)key;
+	const avtab_key_t *k = (const avtab_key_t *)(void *)key;
 
 	static const uint32_t c1 = 0xcc9e2d51;
 	static const uint32_t c2 = 0x1b873593;
@@ -4519,8 +4519,8 @@ static int avrulex_compare(hashtab_t h
              __attribute__ ((unused)), const_hashtab_key_t key1,
 			              const_hashtab_key_t key2)
 {
-	const avtab_key_t *a = (const avtab_key_t *)key1;
-	const avtab_key_t *b = (const avtab_key_t *)key2;
+	const avtab_key_t *a = (const avtab_key_t *)(void *)key1;
+	const avtab_key_t *b = (const avtab_key_t *)(void *)key2;
 
 	return a->source_type != b->source_type || a->target_type != b->target_type || a->target_class != b->target_class || a->specified != b->specified;
 }

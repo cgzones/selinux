@@ -1850,7 +1850,7 @@ struct map_filename_trans_args {
 
 static int map_filename_trans_to_str(hashtab_key_t key, void *data, void *arg)
 {
-	filename_trans_key_t *ft = (filename_trans_key_t *)key;
+	filename_trans_key_t *ft = (filename_trans_key_t *)(void *)key;
 	filename_trans_datum_t *datum = data;
 	struct map_filename_trans_args *map_args = arg;
 	struct policydb *pdb = map_args->pdb;
@@ -1964,7 +1964,7 @@ struct map_range_trans_args {
 
 static int map_range_trans_to_str(hashtab_key_t key, void *data, void *arg)
 {
-	range_trans_t *rt = (range_trans_t *)key;
+	range_trans_t *rt = (range_trans_t *)(void *)key;
 	mls_range_t *mls_range = data;
 	struct map_range_trans_args *map_args = arg;
 	struct policydb *pdb = map_args->pdb;

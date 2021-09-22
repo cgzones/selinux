@@ -810,7 +810,7 @@ partial_name_hash(unsigned long c, unsigned long prevhash)
 
 static unsigned int filenametr_hash(hashtab_t h, const_hashtab_key_t k)
 {
-	const filename_trans_key_t *ft = (const filename_trans_key_t *)k;
+	const filename_trans_key_t *ft = (const filename_trans_key_t *)(void *)k;
 	unsigned long hash;
 	unsigned int byte_num;
 	unsigned char focus;
@@ -826,8 +826,8 @@ static unsigned int filenametr_hash(hashtab_t h, const_hashtab_key_t k)
 static int filenametr_cmp(hashtab_t h __attribute__ ((unused)),
 			  const_hashtab_key_t k1, const_hashtab_key_t k2)
 {
-	const filename_trans_key_t *ft1 = (const filename_trans_key_t *)k1;
-	const filename_trans_key_t *ft2 = (const filename_trans_key_t *)k2;
+	const filename_trans_key_t *ft1 = (const filename_trans_key_t *)(void *)k1;
+	const filename_trans_key_t *ft2 = (const filename_trans_key_t *)(void *)k2;
 	int v;
 
 	v = spaceship_cmp(ft1->ttype, ft2->ttype);
@@ -844,7 +844,7 @@ static int filenametr_cmp(hashtab_t h __attribute__ ((unused)),
 
 static unsigned int rangetr_hash(hashtab_t h, const_hashtab_key_t k)
 {
-	const struct range_trans *key = (const struct range_trans *)k;
+	const struct range_trans *key = (const struct range_trans *)(void *)k;
 	return (key->source_type + (key->target_type << 3) +
 		(key->target_class << 5)) & (h->size - 1);
 }
@@ -852,8 +852,8 @@ static unsigned int rangetr_hash(hashtab_t h, const_hashtab_key_t k)
 static int rangetr_cmp(hashtab_t h __attribute__ ((unused)),
 		       const_hashtab_key_t k1, const_hashtab_key_t k2)
 {
-	const struct range_trans *key1 = (const struct range_trans *)k1;
-	const struct range_trans *key2 = (const struct range_trans *)k2;
+	const struct range_trans *key1 = (const struct range_trans *)(void *)k1;
+	const struct range_trans *key2 = (const struct range_trans *)(void *)k2;
 	int v;
 
 	v = spaceship_cmp(key1->source_type, key2->source_type);
@@ -1415,7 +1415,7 @@ common_destroy, class_destroy, role_destroy, type_destroy, user_destroy,
 static int filenametr_destroy(hashtab_key_t key, hashtab_datum_t datum,
 			      void *p __attribute__ ((unused)))
 {
-	filename_trans_key_t *ft = (filename_trans_key_t *)key;
+	filename_trans_key_t *ft = (filename_trans_key_t *)(void *)key;
 	filename_trans_datum_t *fd = datum, *next;
 
 	free(ft->name);

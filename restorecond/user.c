@@ -134,8 +134,7 @@ io_channel_callback
     }
 
     while (i < bytes_read) {
-	    struct inotify_event *event;
-	    event = (struct inotify_event *)&buffer[i];
+	    const struct inotify_event *event = (struct inotify_event *)(void *)&buffer[i];
 	    if (debug_mode)
 		    printf("wd=%d mask=%u cookie=%u len=%u\n",
 			   event->wd, event->mask,

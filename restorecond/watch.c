@@ -193,8 +193,7 @@ int watch(int fd, const char *watch_file)
 		/* BUF_LEN too small? */
 		return -1;
 	while (i < len) {
-		struct inotify_event *event;
-		event = (struct inotify_event *)&buf[i];
+		const struct inotify_event *event = (struct inotify_event *)(void *)&buf[i];
 		if (debug_mode)
 			printf("wd=%d mask=%u cookie=%u len=%u\n",
 			       event->wd, event->mask,
