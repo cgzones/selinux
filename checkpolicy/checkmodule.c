@@ -32,6 +32,7 @@
 
 #include "queue.h"
 #include "checkpolicy.h"
+#include "module_compiler.h"
 #include "parse_util.h"
 
 extern int mlspol;
@@ -365,13 +366,15 @@ int main(int argc, char **argv)
 		goto exit;
 	}
 
+	module_compiler_cleanup();
 	sepol_sidtab_destroy(&sidtab);
 	policydb_destroy(&modpolicydb);
 
 	return 0;
 
     exit:
-	sepol_sidtab_destroy(&sidtab);
+        module_compiler_cleanup();
+        sepol_sidtab_destroy(&sidtab);
 	policydb_destroy(&modpolicydb);
 
 	return 1;

@@ -1492,3 +1492,9 @@ static void pop_stack(void)
 	free(stack_top);
 	stack_top = parent;
 }
+
+void module_compiler_cleanup()
+{
+	while (stack_top)
+		pop_stack();
+}

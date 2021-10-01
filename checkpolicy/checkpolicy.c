@@ -92,6 +92,7 @@
 
 #include "queue.h"
 #include "checkpolicy.h"
+#include "module_compiler.h"
 #include "parse_util.h"
 
 extern policydb_t *policydbp;
@@ -1332,6 +1333,7 @@ int main(int argc, char **argv)
 	}
 
       out:
+	module_compiler_cleanup();
 	sepol_sidtab_destroy(&sidtab);
 	policydb_destroy(&policydb);
 	policydb_destroy(&parse_policy);
@@ -1339,6 +1341,7 @@ int main(int argc, char **argv)
 	return 0;
 
       err:
+	module_compiler_cleanup();
 	sepol_sidtab_destroy(&sidtab);
 	policydb_destroy(&policydb);
 	policydb_destroy(&parse_policy);
