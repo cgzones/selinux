@@ -26,6 +26,7 @@ extern FILE *yyin;
 extern void init_parser(int);
 extern int yyparse(void);
 extern void yyrestart(FILE *);
+extern int yylex_destroy(void);
 extern queue_t id_queue;
 extern unsigned int policydb_errors;
 extern policydb_t *policydbp;
@@ -59,6 +60,7 @@ int read_source_policy(policydb_t * p, const char *file, const char *progname)
 			progname);
 		queue_destroy(id_queue);
 		fclose(yyin);
+		yylex_destroy();
 		return -1;
 	}
 	rewind(yyin);
@@ -71,11 +73,13 @@ int read_source_policy(policydb_t * p, const char *file, const char *progname)
 			progname);
 		queue_destroy(id_queue);
 		fclose(yyin);
+		yylex_destroy();
 		return -1;
 	}
-	queue_destroy(id_queue);
 
+	queue_destroy(id_queue);
 	fclose(yyin);
+	yylex_destroy();
 
 	return 0;
 }
