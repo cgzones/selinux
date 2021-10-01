@@ -58,6 +58,8 @@
  * booleans or conditional rules are thrown away a warning is printed.
  */
 
+/// TODO: test EQUIVTYPES
+
 #include <ctype.h>
 #include <getopt.h>
 #include <unistd.h>
@@ -92,9 +94,6 @@
 #include "checkpolicy.h"
 #include "parse_util.h"
 
-static policydb_t policydb;
-static sidtab_t sidtab;
-
 extern policydb_t *policydbp;
 extern int mlspol;
 extern int werror;
@@ -120,7 +119,7 @@ do { \
 	if (fgets(out,size,in)==NULL) {	\
 		fprintf(stderr, "fgets failed at line %d: %s\n", __LINE__, \
 			strerror(errno)); \
-		exit(1);\
+		goto err;\
 	} \
 } while (0)
 
@@ -190,7 +189,7 @@ static int insert_type_rule(avtab_key_t * k, avtab_datum_t * d,
 	n = malloc(sizeof(struct avtab_node));
 	if (!n) {
 		fprintf(stderr, "out of memory\n");
-		exit(1);
+		return -1;
 	}
 
 	n->key = *k;
@@ -204,7 +203,7 @@ static int create_type_rules(avtab_key_t * k, avtab_datum_t * d, void *args)
 {
 	struct avtab_node *type_rules = args;
 
-	if (d->specified & AVTAB_ALLOWED) {
+	if (k->specified & AVTAB_ALLOWED) {
 		/* 
 		 * Insert the rule into the lists for both 
 		 * the source type and the target type.
@@ -229,32 +228,32 @@ static void free_type_rules(struct avtab_node *l)
 	}
 }
 
-static int identify_equiv_types(void)
+static void identify_equiv_types(policydb_t *p)
 {
-	struct avtab_node *type_rules, *l1, *l2;
-	int i, j;
+	struct avtab_node *type_rules = NULL, *l1, *l2;
+	uint32_t i, j;
 
 	/*
 	 * Create a list of access vector rules for each type
 	 * from the access vector table.
 	 */
-	type_rules = malloc(sizeof(struct avtab_node) * policydb.p_types.nprim);
+	type_rules = malloc(sizeof(struct avtab_node) * p->p_types.nprim);
 	if (!type_rules) {
 		fprintf(stderr, "out of memory\n");
-		exit(1);
+		goto out;
 	}
 	memset(type_rules, 0,
-	       sizeof(struct avtab_node) * policydb.p_types.nprim);
-	if (avtab_map(&policydb.te_avtab, create_type_rules, type_rules))
-		exit(1);
+	       sizeof(struct avtab_node) * p->p_types.nprim);
+	if (avtab_map(&p->te_avtab, create_type_rules, type_rules))
+		goto out;
 
 	/*
 	 * Compare the type lists and identify equivalent types.
 	 */
-	for (i = 0; i < policydb.p_types.nprim - 1; i++) {
+	for (i = 0; i < p->p_types.nprim - 1; i++) {
 		if (!type_rules[i].next)
 			continue;
-		for (j = i + 1; j < policydb.p_types.nprim; j++) {
+		for (j = i + 1; j < p->p_types.nprim; j++) {
 			for (l1 = type_rules[i].next, l2 = type_rules[j].next;
 			     l1 && l2; l1 = l1->next, l2 = l2->next) {
 				if (l2->key.source_type == (j + 1)) {
@@ -274,7 +273,7 @@ static int identify_equiv_types(void)
 						break;
 				}
 				if (l1->key.target_class != l2->key.target_class
-				    || l1->datum.allowed != l2->datum.allowed)
+				    || l1->key.specified != l2->key.specified)
 					break;
 			}
 			if (l1 || l2)
@@ -282,15 +281,15 @@ static int identify_equiv_types(void)
 			free_type_rules(type_rules[j].next);
 			type_rules[j].next = NULL;
 			printf("Types %s and %s are equivalent.\n",
-			       policydb.p_type_val_to_name[i],
-			       policydb.p_type_val_to_name[j]);
+			       p->p_type_val_to_name[i],
+			       p->p_type_val_to_name[j]);
 		}
 		free_type_rules(type_rules[i].next);
 		type_rules[i].next = NULL;
 	}
 
+      out:
 	free(type_rules);
-	return 0;
 }
 #endif
 
@@ -381,7 +380,9 @@ static int check_level(hashtab_key_t key, hashtab_datum_t datum, void *arg __att
 
 int main(int argc, char **argv)
 {
-	policydb_t parse_policy;
+	policydb_t parse_policy = {};
+	policydb_t policydb = {};
+	sidtab_t sidtab = {};
 	sepol_security_class_t tclass;
 	sepol_security_id_t ssid, tsid, *sids, oldsid, newsid, tasksid;
 	sepol_security_context_t scontext;
@@ -438,7 +439,7 @@ int main(int argc, char **argv)
 			else{
 				fprintf(stderr, "%s:  Unknown target platform:"
 					"%s\n", argv[0], optarg);
-				exit(1);
+				goto err;
 			}
 			break;
 		case 'b':
@@ -492,7 +493,6 @@ int main(int argc, char **argv)
 						"Invalid policyvers specified: %s\n",
 						optarg);
 					usage(argv[0]);
-					exit(1);
 				}
 				if (n < POLICYDB_VERSION_MIN
 				    || n > POLICYDB_VERSION_MAX) {
@@ -501,7 +501,6 @@ int main(int argc, char **argv)
 						n, POLICYDB_VERSION_MIN,
 						POLICYDB_VERSION_MAX);
 					usage(argv[0]);
-					exit(1);
 				}
 				policyvers = n;
 				break;
@@ -519,7 +518,7 @@ int main(int argc, char **argv)
 		printf("%d (compatibility range %d-%d)\n",
 			   policyvers ? policyvers : POLICYDB_VERSION_MAX ,
 		       POLICYDB_VERSION_MAX, POLICYDB_VERSION_MIN);
-		exit(0);
+		goto out;
 	}
 
 	if (optind != argc) {
@@ -535,7 +534,7 @@ int main(int argc, char **argv)
 
 	if (cil && conf) {
 		fprintf(stderr, "Can't convert to CIL and policy.conf at the same time\n");
-		exit(1);
+		goto err;
 	}
 
 	if (binary) {
@@ -543,12 +542,13 @@ int main(int argc, char **argv)
 		if (fd < 0) {
 			fprintf(stderr, "Can't open '%s':  %s\n",
 				file, strerror(errno));
-			exit(1);
+			goto err;
 		}
 		if (fstat(fd, &sb) < 0) {
 			fprintf(stderr, "Can't stat '%s':  %s\n",
 				file, strerror(errno));
-			exit(1);
+			close(fd);
+			goto err;
 		}
 		map =
 		    mmap(NULL, sb.st_size, PROT_READ | PROT_WRITE, MAP_PRIVATE,
@@ -556,7 +556,8 @@ int main(int argc, char **argv)
 		if (map == MAP_FAILED) {
 			fprintf(stderr, "Can't map '%s':  %s\n",
 				file, strerror(errno));
-			exit(1);
+			close(fd);
+			goto err;
 		}
 		policy_file_init(&pf);
 		pf.type = PF_USE_MEMORY;
@@ -565,14 +566,14 @@ int main(int argc, char **argv)
 		if (policydb_init(&policydb)) {
 			fprintf(stderr, "%s:  policydb_init:  Out of memory!\n",
 				argv[0]);
-			exit(1);
+			goto err;
 		}
 		ret = policydb_read(&policydb, &pf, 1);
 		if (ret) {
 			fprintf(stderr,
 				"%s:  error(s) encountered while parsing configuration\n",
 				argv[0]);
-			exit(1);
+			goto err;
 		}
 		policydbp = &policydb;
 
@@ -581,13 +582,13 @@ int main(int argc, char **argv)
 			if (!mlspol) {
 				fprintf(stderr, "%s:  MLS policy, but non-MLS"
 					" is specified\n", argv[0]);
-				exit(1);
+				goto err;
 			}
 		} else {
 			if (mlspol) {
 				fprintf(stderr, "%s:  non-MLS policy, but MLS"
 					" is specified\n", argv[0]);
-				exit(1);
+				goto err;
 			}
 		}
 
@@ -603,10 +604,10 @@ int main(int argc, char **argv)
 	} else {
 		if (conf) {
 			fprintf(stderr, "Can only generate policy.conf from binary policy\n");
-			exit(1);
+			goto err;
 		}
 		if (policydb_init(&parse_policy))
-			exit(1);
+			goto err;
 		/* We build this as a base policy first since that is all the parser understands */
 		parse_policy.policy_type = POLICY_BASE;
 		policydb_set_target_platform(&parse_policy, target);
@@ -618,27 +619,28 @@ int main(int argc, char **argv)
 		policydbp = &parse_policy;
 
 		if (read_source_policy(policydbp, file, "checkpolicy") < 0)
-			exit(1);
+			goto err;
 
 		if (hashtab_map(policydbp->p_levels.table, check_level, NULL))
-			exit(1);
+			goto err;
 
 		/* Linking takes care of optional avrule blocks */
 		if (link_modules(NULL, policydbp, NULL, 0, 0)) {
 			fprintf(stderr, "Error while resolving optionals\n");
-			exit(1);
+			goto err;
 		}
 
 		if (!cil) {
 			if (policydb_init(&policydb)) {
 				fprintf(stderr, "%s:  policydb_init failed\n", argv[0]);
-				exit(1);
+				goto err;
 			}
 			if (expand_module(NULL, policydbp, &policydb, /*verbose=*/0, !disable_neverallow)) {
 				fprintf(stderr, "Error while expanding policy\n");
-				exit(1);
+				goto err;
 			}
 			policydb_destroy(policydbp);
+			memset(policydbp, '\0', sizeof(*policydbp));
 			policydbp = &policydb;
 		}
 
@@ -646,13 +648,13 @@ int main(int argc, char **argv)
 	}
 
 	if (policydb_load_isids(&policydb, &sidtab))
-		exit(1);
+		goto err;
 
 	if (optimize && policydbp->policy_type == POLICY_KERN) {
 		ret = policydb_optimize(policydbp);
 		if (ret) {
 			fprintf(stderr, "%s:  error optimizing policy\n", argv[0]);
-			exit(1);
+			goto err;
 		}
 	}
 
@@ -663,8 +665,8 @@ int main(int argc, char **argv)
 		} else {
 			outfp = fopen(outfile, "w");
 			if (!outfp) {
-				perror(outfile);
-				exit(1);
+				fprintf(stderr, "%s:  error opening output file '%s':  %s\n", argv[0], outfile, strerror(errno));
+				goto err;
 			}
 		}
 
@@ -680,7 +682,9 @@ int main(int argc, char **argv)
 					if (ret) {
 						fprintf(stderr, "%s:  error sorting ocontexts\n",
 						argv[0]);
-						exit(1);
+						if (outfp != stdout)
+							fclose(outfp);
+						goto err;
 					}
 				}
 				ret = policydb_write(&policydb, &pf);
@@ -690,7 +694,9 @@ int main(int argc, char **argv)
 			if (ret) {
 				fprintf(stderr, "%s:  error writing %s\n",
 						argv[0], outfile);
-				exit(1);
+				if (outfp != stdout)
+					fclose(outfp);
+				goto err;
 			}
 		} else {
 			if (binary) {
@@ -700,26 +706,25 @@ int main(int argc, char **argv)
 			}
 			if (ret) {
 				fprintf(stderr, "%s:  error writing %s\n", argv[0], outfile);
-				exit(1);
+				if (outfp != stdout)
+					fclose(outfp);
+				goto err;
 			}
 		}
 
 		if (outfp != stdout) {
 			if(fclose(outfp)) {
 				fprintf(stderr, "%s:  error closing %s:  %s\n", argv[0], outfile, strerror(errno));
-				exit(1);
+				goto err;
 			}
 		}
 	} else if (cil) {
 		fprintf(stderr, "%s:  No file to write CIL was specified\n", argv[0]);
-		exit(1);
+		goto err;
 	}
 
-	if (!debug) {
-		policydb_destroy(&policydb);
-		sepol_sidtab_destroy(&sidtab);
-		exit(0);
-	}
+	if (!debug)
+		goto out;
 
       menu:
 	printf("\nSelect an option:\n");
@@ -1314,20 +1319,31 @@ int main(int argc, char **argv)
 			break;
 #ifdef EQUIVTYPES
 		case 'z':
-			identify_equiv_types();
+			identify_equiv_types(&policydb);
 			break;
 #endif
 		case 'm':
 			goto menu;
 		case 'q':
-			exit(0);
-			break;
+			goto out;
 		default:
 			printf("\nUnknown option %s.\n", ans);
 		}
 	}
 
+      out:
+	sepol_sidtab_destroy(&sidtab);
+	policydb_destroy(&policydb);
+	policydb_destroy(&parse_policy);
+
 	return 0;
+
+      err:
+	sepol_sidtab_destroy(&sidtab);
+	policydb_destroy(&policydb);
+	policydb_destroy(&parse_policy);
+
+	return 1;
 }
 
 /* FLASK */
