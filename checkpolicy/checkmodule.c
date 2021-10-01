@@ -34,8 +34,6 @@
 #include "checkpolicy.h"
 #include "parse_util.h"
 
-static sidtab_t sidtab;
-
 extern int mlspol;
 extern int werror;
 
@@ -152,7 +150,8 @@ int main(int argc, char **argv)
 	unsigned int binary = 0, cil = 0, disable_neverallow = 0;
 	int ch;
 	int show_version = 0;
-	policydb_t modpolicydb;
+	policydb_t modpolicydb = {};
+	sidtab_t sidtab = {};
 	const struct option long_options[] = {
 		{"help", no_argument, NULL, 'h'},
 		{"output", required_argument, NULL, 'o'},
@@ -241,17 +240,17 @@ int main(int argc, char **argv)
 	if (show_version) {
 		printf("Module versions %d-%d\n",
 		       MOD_POLICYDB_VERSION_MIN, MOD_POLICYDB_VERSION_MAX);
-		exit(0);
+		return 0;
 	}
 
 	if (handle_unknown && (policy_type != POLICY_BASE)) {
 		fprintf(stderr, "%s:  Handling of unknown classes and permissions is only valid in the base module.\n", argv[0]);
-		exit(1);
+		goto exit;
 	}
 
 	if (binary && (policy_type != POLICY_BASE)) {
 		fprintf(stderr, "%s:  -b and -m are incompatible with each other.\n", argv[0]);
-		exit(1);
+		goto exit;
 	}
 
 	if (optind != argc) {
@@ -268,12 +267,12 @@ int main(int argc, char **argv)
 
 	if (binary) {
 		if (read_binary_policy(&modpolicydb, file, argv[0]) == -1) {
-			exit(1);
+			goto exit;
 		}
 	} else {
 		if (policydb_init(&modpolicydb)) {
 			fprintf(stderr, "%s: out of memory!\n", argv[0]);
-			exit(1);
+			goto exit;
 		}
 
 		modpolicydb.policy_type = policy_type;
@@ -281,22 +280,22 @@ int main(int argc, char **argv)
 		modpolicydb.handle_unknown = handle_unknown;
 
 		if (read_source_policy(&modpolicydb, file, argv[0]) == -1) {
-			exit(1);
+			goto exit;
 		}
 
 		if (hierarchy_check_constraints(NULL, &modpolicydb)) {
-			exit(1);
+			goto exit;
 		}
 	}
 
 	if (policy_type != POLICY_BASE && outfile) {
 		char *out_name;
 		char *separator;
-		char *mod_name = modpolicydb.name;
+		const char *mod_name = modpolicydb.name;
 		char *out_path = strdup(outfile);
 		if (out_path == NULL) {
 			fprintf(stderr, "%s:  out of memory\n", argv[0]);
-			exit(1);
+			goto exit;
 		}
 		out_name = basename(out_path);
 		separator = strrchr(out_name, '.');
@@ -305,7 +304,8 @@ int main(int argc, char **argv)
 		}
 		if (strcmp(mod_name, out_name) != 0) {
 			fprintf(stderr,	"%s:  Module name %s is different than the output base filename %s\n", argv[0], mod_name, out_name);
-			exit(1);
+			free(out_path);
+			goto exit;
 		}
 		free(out_path);
 	}
@@ -316,56 +316,65 @@ int main(int argc, char **argv)
 
 		if (policydb_init(&kernpolicydb)) {
 			fprintf(stderr, "%s:  policydb_init failed\n", argv[0]);
-			exit(1);
+			goto exit;
 		}
 		if (link_modules(NULL, &modpolicydb, NULL, 0, 0)) {
 			fprintf(stderr, "%s:  link modules failed\n", argv[0]);
-			exit(1);
+			policydb_destroy(&kernpolicydb);
+			goto exit;
 		}
 		if (expand_module(NULL, &modpolicydb, &kernpolicydb, /*verbose=*/0, !disable_neverallow)) {
 			fprintf(stderr, "%s:  expand module failed\n", argv[0]);
-			exit(1);
+			policydb_destroy(&kernpolicydb);
+			goto exit;
 		}
 		policydb_destroy(&kernpolicydb);
 	}
 
 	if (policydb_load_isids(&modpolicydb, &sidtab))
-		exit(1);
-
-	sepol_sidtab_destroy(&sidtab);
+		goto exit;
 
 	if (outfile) {
 		FILE *outfp = fopen(outfile, "w");
 
 		if (!outfp) {
 			fprintf(stderr, "%s:  error opening %s:  %s\n", argv[0], outfile, strerror(errno));
-			exit(1);
+			goto exit;
 		}
 
 		if (!cil) {
 			if (write_binary_policy(&modpolicydb, outfp) != 0) {
 				fprintf(stderr, "%s:  error writing %s\n", argv[0], outfile);
-				exit(1);
+				fclose(outfp);
+				goto exit;
 			}
 		} else {
 			if (sepol_module_policydb_to_cil(outfp, &modpolicydb, 0) != 0) {
 				fprintf(stderr, "%s:  error writing %s\n", argv[0], outfile);
-				exit(1);
+				fclose(outfp);
+				goto exit;
 			}
 		}
 
 		if (fclose(outfp)) {
 			fprintf(stderr, "%s:  error closing %s:  %s\n", argv[0], outfile, strerror(errno));
-			exit(1);
+			goto exit;
 		}
 	} else if (cil) {
 		fprintf(stderr, "%s:  No file to write CIL was specified\n", argv[0]);
-		exit(1);
+		goto exit;
 	}
 
+	sepol_sidtab_destroy(&sidtab);
 	policydb_destroy(&modpolicydb);
 
 	return 0;
+
+    exit:
+	sepol_sidtab_destroy(&sidtab);
+	policydb_destroy(&modpolicydb);
+
+	return 1;
 }
 
 /* FLASK */
