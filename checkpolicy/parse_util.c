@@ -41,8 +41,10 @@ int read_source_policy(policydb_t * p, const char *file, const char *progname)
 	}
 	set_source_file(file);
 
-	if ((id_queue = queue_create()) == NULL) {
+	id_queue = queue_create();
+	if (id_queue == NULL) {
 		fprintf(stderr, "%s: out of memory!\n", progname);
+		fclose(yyin);
 		return -1;
 	}
 
@@ -55,6 +57,8 @@ int read_source_policy(policydb_t * p, const char *file, const char *progname)
 		fprintf(stderr,
 			"%s:  error(s) encountered while parsing configuration\n",
 			progname);
+		queue_destroy(id_queue);
+		fclose(yyin);
 		return -1;
 	}
 	rewind(yyin);
@@ -65,6 +69,8 @@ int read_source_policy(policydb_t * p, const char *file, const char *progname)
 		fprintf(stderr,
 			"%s:  error(s) encountered while parsing configuration\n",
 			progname);
+		queue_destroy(id_queue);
+		fclose(yyin);
 		return -1;
 	}
 	queue_destroy(id_queue);
