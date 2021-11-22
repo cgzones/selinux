@@ -392,8 +392,8 @@ process_connections(void)
 				cleanup_exit(1);
 			}
 			if (init_colors()) {
-				syslog(LOG_ERR, "Failed to initialize color translations");
-				syslog(LOG_ERR, "No color information will be available");
+				syslog(LOG_WARNING, "Failed to initialize color translations from %s: %m", selinux_colors_path());
+				syslog(LOG_WARNING, "No color information will be available");
 			}
 			restart_daemon = 0;
 		}
@@ -442,8 +442,8 @@ initialize(void)
 		cleanup_exit(1);
 	}
 	if (init_colors()) {
-		syslog(LOG_ERR, "Failed to initialize color translations");
-		syslog(LOG_ERR, "No color information will be available");
+		syslog(LOG_WARNING, "Failed to initialize color translations from %s: %m", selinux_colors_path());
+		syslog(LOG_WARNING, "No color information will be available");
 	}
 
 	/* the socket will be unlinked when the daemon terminates */
@@ -488,17 +488,17 @@ initialize(void)
 	(void)unlink(SETRANS_UNIX_SOCKET);
 
 	if (bind(sockfd, (struct sockaddr *)&addr, sizeof(addr)) < 0) {
-		syslog(LOG_ERR, "bind() failed: %m");
+		syslog(LOG_ERR, "bind() failed on %s: %m", SETRANS_UNIX_SOCKET);
 		cleanup_exit(1);
 	}
 
 	if (listen(sockfd, SOMAXCONN) < 0) {
-		syslog(LOG_ERR, "listen() failed: %m");
+		syslog(LOG_ERR, "listen() failed on %s: %m", SETRANS_UNIX_SOCKET);
 		cleanup_exit(1);
 	}
 
 	if (chmod(SETRANS_UNIX_SOCKET, S_IRWXU | S_IRWXG | S_IRWXO)) {
-		syslog(LOG_ERR, "chmod() failed: %m");
+		syslog(LOG_ERR, "chmod() failed on %s: %m", SETRANS_UNIX_SOCKET);
 		cleanup_exit(1);
 	}
 
