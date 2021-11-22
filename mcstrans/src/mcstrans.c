@@ -869,7 +869,7 @@ read_translations(const char *filename) {
 
 	FILE *cfg = fopen(filename,"r");
 	if (!cfg) {
-		syslog(LOG_ERR, "%s file open failed", filename);
+		syslog(LOG_ERR, "Failed to open translation file %s: %m", filename);
 		return -1;
 	}
 
@@ -904,7 +904,7 @@ extract_range(const char *incon) {
 
 	const char *range = context_range_get(con);
 	if (!range) {
-		syslog(LOG_ERR, "extract_range: context_range_get(%s) failed: %m", incon);
+		syslog(LOG_ERR, "extract_range: context_range_get(%s) failed", incon);
 		context_free(con);
 		return NULL;
 	}
