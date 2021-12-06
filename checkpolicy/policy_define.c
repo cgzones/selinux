@@ -2136,7 +2136,8 @@ static int define_te_avtab_xperms_helper(int which, avrule_t ** rule)
 	avrule->xperms = NULL;
 	if (!avrule->source_filename) {
 		yyerror("out of memory");
-		return -1;
+		ret = -1;
+		goto out;
 	}
 
 	while ((id = queue_remove(id_queue))) {
@@ -2197,6 +2198,7 @@ static int define_te_avtab_xperms_helper(int which, avrule_t ** rule)
 		if (!cur_perms) {
 			yyerror("out of memory");
 			ret = -1;
+			ebitmap_destroy(&tclasses);
 			goto out;
 		}
 		class_perm_node_init(cur_perms);
@@ -2236,7 +2238,11 @@ static int define_te_avtab_xperms_helper(int which, avrule_t ** rule)
 	avrule->perms = perms;
 	*rule = avrule;
 
+	return 0;
 out:
+	avrule_destroy(avrule);
+	free(avrule);
+
 	return ret;
 }
 
