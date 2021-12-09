@@ -32,10 +32,10 @@ SANITIZER=${SANITIZER:-address}
 flags="-O1 -fno-omit-frame-pointer -gline-tables-only -DFUZZING_BUILD_MODE_UNSAFE_FOR_PRODUCTION -fsanitize=$SANITIZER -fsanitize=fuzzer-no-link"
 
 export CC=${CC:-clang}
-export CFLAGS="${CFLAGS:-$flags} -I$DESTDIR/usr/include -D_GNU_SOURCE -D_FILE_OFFSET_BITS=64"
+export CFLAGS="${CFLAGS:-$flags} -I$DESTDIR/usr/include -D_GNU_SOURCE -D_FILE_OFFSET_BITS=64 -Wall -Wextra -Wfloat-equal -Winit-self -Wmissing-format-attribute -Wmissing-noreturn -Wnull-dereference -Wpointer-arith -Wshadow -Wstrict-prototypes -Wundef -Wunused -Wwrite-strings"
 
 export CXX=${CXX:-clang++}
-export CXXFLAGS=${CXXFLAGS:-$flags}
+export CXXFLAGS="${CXXFLAGS:-$flags} -Wall -Wextra"
 
 export OUT=${OUT:-$(pwd)/out}
 mkdir -p "$OUT"
