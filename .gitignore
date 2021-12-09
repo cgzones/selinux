@@ -25,3 +25,8 @@ cscope.*
 .*.swp
 # Failsafes
 !.gitignore
+
+/corpus_dir/
+/out/
+/DESTDIR/
+/fuzz-*.log
