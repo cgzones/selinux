@@ -2178,7 +2178,7 @@ int sepol_get_user_sids(sepol_security_id_t fromsid,
 	ebitmap_for_each_positive_bit(&user->roles.roles, rnode, i) {
 		role = policydb->role_val_to_struct[i];
 		usercon.role = i + 1;
-		ebitmap_for_each_positive_bit(&role->types.types, tnode, j) {
+		ebitmap_for_each_positive_bit(&role->types_.types, tnode, j) {
 			usercon.type = j + 1;
 			if (usercon.type == fromcon->type)
 				continue;

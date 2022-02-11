@@ -532,7 +532,8 @@ void role_datum_init(role_datum_t * x)
 {
 	memset(x, 0, sizeof(role_datum_t));
 	ebitmap_init(&x->dominates);
-	type_set_init(&x->types);
+	type_set_init(&x->types_);
+	type_set_init(&x->nevertypes_);
 	ebitmap_init(&x->cache);
 	ebitmap_init(&x->roles);
 }
@@ -541,7 +542,8 @@ void role_datum_destroy(role_datum_t * x)
 {
 	if (x != NULL) {
 		ebitmap_destroy(&x->dominates);
-		type_set_destroy(&x->types);
+		type_set_destroy(&x->types_);
+		type_set_destroy(&x->nevertypes_);
 		ebitmap_destroy(&x->cache);
 		ebitmap_destroy(&x->roles);
 	}
@@ -948,7 +950,7 @@ int policydb_role_cache(hashtab_key_t key
 	p = (policydb_t *) arg;
 
 	ebitmap_destroy(&role->cache);
-	if (type_set_expand(&role->types, &role->cache, p, 1)) {
+	if (type_set_expand(&role->types_, &role->cache, p, 1)) {
 		return -1;
 	}
 
@@ -2389,13 +2391,16 @@ static int role_read(policydb_t * p, hashtab_t h, struct policy_file *fp)
 		goto bad;
 
 	if (p->policy_type == POLICY_KERN) {
-		if (ebitmap_read(&role->types.types, fp))
+		if (ebitmap_read(&role->types_.types, fp))
 			goto bad;
 	} else {
-		if (type_set_read(&role->types, fp))
+		if (type_set_read(&role->types_, fp))
 			goto bad;
 	}
-	
+
+	if (type_set_read(&role->nevertypes_, fp))
+		goto bad;
+
 	if (p->policy_type != POLICY_KERN &&
 	    p->policyvers >= MOD_POLICYDB_VERSION_ROLEATTRIB) {
 		rc = next_entry(buf, fp, sizeof(uint32_t));

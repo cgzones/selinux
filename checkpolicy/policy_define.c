@@ -2689,7 +2689,7 @@ int define_te_avtab(int which)
 /* The role-types rule is no longer used to declare regular role or
  * role attribute, but solely aimed for declaring role-types associations.
  */
-int define_role_types(void)
+int define_role_types(int never)
 {
 	role_datum_t *role;
 	char *id;
@@ -2722,8 +2722,13 @@ int define_role_types(void)
 	role = get_local_role(id, role->s.value, (role->flavor == ROLE_ATTRIB));
 
 	while ((id = queue_remove(id_queue))) {
-		if (set_types(&role->types, id, &add, 0))
-			return -1;
+		if (never) {
+			if (set_types(&role->nevertypes_, id, &add, 1))
+				return -1;
+		} else {
+			if (set_types(&role->types_, id, &add, 0))
+				return -1;
+		}
 	}
 
 	return 0;
@@ -2877,21 +2882,21 @@ role_datum_t *merge_roles_dom(role_datum_t * r1, role_datum_t * r2)
 		free(new);
 		return NULL;
 	}
-	if (ebitmap_or(&new->types.types, &r1->types.types, &r2->types.types)) {
+	if (ebitmap_or(&new->types_.types, &r1->types_.types, &r2->types_.types)) {
 		yyerror("out of memory");
 		free(new);
 		return NULL;
 	}
 	if (!r1->s.value) {
 		/* free intermediate result */
-		type_set_destroy(&r1->types);
+		type_set_destroy(&r1->types_);
 		ebitmap_destroy(&r1->dominates);
 		free(r1);
 	}
 	if (!r2->s.value) {
 		/* free intermediate result */
 		yyerror("right hand role is temporary?");
-		type_set_destroy(&r2->types);
+		type_set_destroy(&r2->types_);
 		ebitmap_destroy(&r2->dominates);
 		free(r2);
 	}
@@ -2915,7 +2920,7 @@ static int dominate_role_recheck(hashtab_key_t key __attribute__ ((unused)),
 	if (ebitmap_get_bit(&(rdatum->dominates), rdp->s.value - 1)) {
 		ebitmap_t types;
 		ebitmap_init(&types);
-		if (type_set_expand(&rdp->types, &types, policydbp, 1)) {
+		if (type_set_expand(&rdp->types_, &types, policydbp, 1)) {
 			ebitmap_destroy(&types);
 			return -1;
 		}
@@ -2925,7 +2930,7 @@ static int dominate_role_recheck(hashtab_key_t key __attribute__ ((unused)),
 				goto oom;
 		}
 		ebitmap_for_each_positive_bit(&types, node, i) {
-			if (ebitmap_set_bit(&rdatum->types.types, i, TRUE))
+			if (ebitmap_set_bit(&rdatum->types_.types, i, TRUE))
 				goto oom;
 		}
 		ebitmap_destroy(&types);
@@ -3008,18 +3013,18 @@ role_datum_t *define_role_dom(role_datum_t * r)
 			if (ebitmap_set_bit(&role->dominates, i, TRUE))
 				goto oom;
 		}
-		if (type_set_expand(&r->types, &types, policydbp, 1)) {
+		if (type_set_expand(&r->types_, &types, policydbp, 1)) {
 			ebitmap_destroy(&types);
 			return NULL;
 		}
 		ebitmap_for_each_positive_bit(&types, node, i) {
-			if (ebitmap_set_bit(&role->types.types, i, TRUE))
+			if (ebitmap_set_bit(&role->types_.types, i, TRUE))
 				goto oom;
 		}
 		ebitmap_destroy(&types);
 		if (!r->s.value) {
 			/* free intermediate result */
-			type_set_destroy(&r->types);
+			type_set_destroy(&r->types_);
 			ebitmap_destroy(&r->dominates);
 			free(r);
 		}

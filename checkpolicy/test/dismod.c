@@ -529,7 +529,9 @@ static int role_display_callback(hashtab_key_t key __attribute__((unused)),
 	fprintf(fp, "role:");
 	display_id(&policydb, fp, SYM_ROLES, role->s.value - 1, "");
 	fprintf(fp, " types: ");
-	display_type_set(&role->types, 0, &policydb, fp);
+	display_type_set(&role->types_, 0, &policydb, fp);
+	fprintf(fp, " nevertypes: ");
+	display_type_set(&role->nevertypes_, 0, &policydb, fp);
 	fprintf(fp, "\n");
 
 	return 0;

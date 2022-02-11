@@ -521,7 +521,7 @@ static int bounds_check_role_callback(hashtab_key_t k,
 
 	rp = a->p->role_val_to_struct[r->bounds - 1];
 
-	if (rp && !ebitmap_contains(&rp->types.types, &r->types.types)) {
+	if (rp && !ebitmap_contains(&rp->types_.types, &r->types_.types)) {
 		ERR(a->handle, "Role bounds violation, %s exceeds %s",
 		    (char *)k, a->p->p_role_val_to_name[rp->s.value - 1]);
 		a->numbad++;

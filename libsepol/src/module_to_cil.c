@@ -1104,7 +1104,7 @@ static int roletype_role_in_ancestor_to_cil(struct policydb *pdb, struct stack *
 			continue;
 		}
 
-		ts = &role_node->role->types;
+		ts = &role_node->role->types_;
 		rc = process_typeset(pdb, ts, attr_list, &tnames, &num_tnames);
 		if (rc != 0) {
 			goto exit;
@@ -1115,6 +1115,7 @@ static int roletype_role_in_ancestor_to_cil(struct policydb *pdb, struct stack *
 			}
 		}
 		names_destroy(&tnames, &num_tnames);
+		// TODO: print rolenevertypes
 	}
 
 	rc = cil_print_attr_list(indent, pdb, attr_list);
@@ -2171,7 +2172,7 @@ static int role_to_cil(int indent, struct policydb *pdb, struct avrule_block *UN
 			log_err("Warning: role 'dominance' statement unsupported in CIL. Dropping from output.");
 		}
 
-		ts = &role->types;
+		ts = &role->types_;
 		rc = process_typeset(pdb, ts, attr_list, &types, &num_types);
 		if (rc != 0) {
 			goto exit;
@@ -2182,6 +2183,8 @@ static int role_to_cil(int indent, struct policydb *pdb, struct avrule_block *UN
 				cil_println(indent, "(roletype %s %s)", key, types[j]);
 			}
 		}
+
+		// TODO: print rolenevertypes
 
 		if (role->bounds > 0) {
 			cil_println(indent, "(rolebounds %s %s)", key, pdb->p_role_val_to_name[role->bounds - 1]);
@@ -2202,7 +2205,7 @@ static int role_to_cil(int indent, struct policydb *pdb, struct avrule_block *UN
 			cil_printf("))\n");
 		}
 
-		ts = &role->types;
+		ts = &role->types_;
 		rc = process_typeset(pdb, ts, attr_list, &types, &num_types);
 		if (rc != 0) {
 			goto exit;
@@ -2214,6 +2217,8 @@ static int role_to_cil(int indent, struct policydb *pdb, struct avrule_block *UN
 				cil_println(indent, "(roletype %s %s)", key, types[j]);
 			}
 		}
+
+		// TODO: print rolenevertypes
 
 		break;
 

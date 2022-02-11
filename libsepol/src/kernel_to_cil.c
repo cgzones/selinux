@@ -2254,7 +2254,7 @@ static int write_role_decl_rules_to_cil(FILE *out, struct policydb *pdb)
 			rc = -1;
 			goto exit;
 		}
-		types = &role->types.types;
+		types = &role->types_.types;
 		if (types && !ebitmap_is_empty(types)) {
 			rc = strs_init(&type_strs, pdb->p_types.nprim);
 			if (rc != 0) {
@@ -2274,6 +2274,7 @@ static int write_role_decl_rules_to_cil(FILE *out, struct policydb *pdb)
 			}
 			strs_destroy(&type_strs);
 		}
+		// TODO: print rolenevertypes
 	}
 
 	strs_destroy(&strs);

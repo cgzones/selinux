@@ -814,8 +814,8 @@ static int role_fix_callback(hashtab_key_t key, hashtab_datum_t datum,
 		assert(regular_role != NULL &&
 		       regular_role->flavor == ROLE_ROLE);
 
-		if (ebitmap_union(&regular_role->types.types,
-				  &new_role->types.types)) {
+		if (ebitmap_union(&regular_role->types_.types,
+				  &new_role->types_.types)) {
 			ERR(state->handle, "Out of memory!");
 			return -1;
 		}
@@ -832,7 +832,7 @@ static int role_copy_callback(hashtab_key_t key, hashtab_datum_t datum,
 	role_datum_t *role;
 	role_datum_t *new_role;
 	expand_state_t *state;
-	ebitmap_t tmp_union_types;
+	ebitmap_t tmp_union_types, tmp_union_nevertypes;
 
 	id = key;
 	role = (role_datum_t *) datum;
@@ -897,18 +897,35 @@ static int role_copy_callback(hashtab_key_t key, hashtab_datum_t datum,
 
 	/* convert types in the role datum in the global symtab */
 	if (expand_convert_type_set
-	    (state->out, state->typemap, &role->types, &tmp_union_types, 1)) {
+	    (state->out, state->typemap, &role->types_, &tmp_union_types, 1)) {
 		ebitmap_destroy(&tmp_union_types);
 		ERR(state->handle, "Out of memory!");
 		return -1;
 	}
 
-	if (ebitmap_union(&new_role->types.types, &tmp_union_types)) {
+	if (ebitmap_union(&new_role->types_.types, &tmp_union_types)) {
 		ERR(state->handle, "Out of memory!");
 		ebitmap_destroy(&tmp_union_types);
 		return -1;
 	}
 	ebitmap_destroy(&tmp_union_types);
+
+	ebitmap_init(&tmp_union_nevertypes);
+
+	/* convert nevertypes in the role datum in the global symtab */
+	if (expand_convert_type_set
+	    (state->out, state->typemap, &role->nevertypes_, &tmp_union_nevertypes, 1)) {
+		ebitmap_destroy(&tmp_union_nevertypes);
+		ERR(state->handle, "Out of memory!");
+		return -1;
+	}
+
+	if (ebitmap_union(&new_role->nevertypes_.types, &tmp_union_nevertypes)) {
+		ERR(state->handle, "Out of memory!");
+		ebitmap_destroy(&tmp_union_nevertypes);
+		return -1;
+	}
+	ebitmap_destroy(&tmp_union_nevertypes);
 
 	return 0;
 }

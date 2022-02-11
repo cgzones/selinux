@@ -27,6 +27,7 @@
 
 #include "private.h"
 #include "debug.h"
+#include "kernel_to_common.h"
 
 struct avtab_match_args {
 	sepol_handle_t *handle;
@@ -535,6 +536,72 @@ int check_assertion(policydb_t *p, avrule_t *avrule)
 	return rc;
 }
 
+struct role_check_args {
+	sepol_handle_t *handle;
+	policydb_t *p;
+	unsigned long errors;
+};
+
+static int check_role(__attribute__((unused)) hashtab_key_t k, hashtab_datum_t d, void *args)
+{
+	role_datum_t *role = d;
+	struct role_check_args *roleargs = args;
+	ebitmap_t types_expanded, nevertypes_expanded, overlap;
+	char *types;
+	const char *prefix = "", *suffix = "";
+	int rc;
+
+	ebitmap_init(&types_expanded);
+	ebitmap_init(&nevertypes_expanded);
+	ebitmap_init(&overlap);
+
+	rc = type_set_expand(&role->types_, &types_expanded, roleargs->p, 1);
+	if (rc)
+		goto err;
+
+	rc = type_set_expand(&role->nevertypes_, &nevertypes_expanded, roleargs->p, 1);
+	if (rc)
+		goto err;
+
+	rc = ebitmap_and(&overlap, &types_expanded, &nevertypes_expanded);
+	if (rc)
+		goto err;
+
+	if (!ebitmap_is_empty(&overlap)) {
+		types = ebitmap_to_str(&overlap, roleargs->p->p_type_val_to_name, 0);
+		if (ebitmap_cardinality(&overlap) > 1) {
+			prefix = "{ ";
+			suffix = " }";
+		}
+		ERR(roleargs->handle, "role %s nevertypes %s%s%s violated",
+		    roleargs->p->p_role_val_to_name[role->s.value - 1],
+		    prefix,
+		    types,
+		    suffix);
+		free(types);
+		roleargs->errors++;
+	}
+
+	rc = 0;
+err:
+	ebitmap_destroy(&overlap);
+	ebitmap_destroy(&nevertypes_expanded);
+	ebitmap_destroy(&types_expanded);
+	return rc;
+}
+
+static int check_roles(sepol_handle_t *handle, policydb_t *p)
+{
+	struct role_check_args roleargs = { handle, p, 0 };
+	int rc;
+
+	rc = hashtab_map(p->p_roles.table, check_role, &roleargs);
+	if (rc)
+		return rc;
+
+	return roleargs.errors;
+}
+
 int check_assertions(sepol_handle_t * handle, policydb_t * p,
 		     avrule_t * avrules)
 {
@@ -542,12 +609,7 @@ int check_assertions(sepol_handle_t * handle, policydb_t * p,
 	avrule_t *a;
 	unsigned long errors = 0;
 
-	if (!avrules) {
-		/* Since assertions are stored in avrules, if it is NULL
-		   there won't be any to check. This also prevents an invalid
-		   free if the avtabs are never initialized */
-		return 0;
-	}
+	printf("Checking assertions...\n");
 
 	for (a = avrules; a != NULL; a = a->next) {
 		if (!(a->specified & (AVRULE_NEVERALLOW | AVRULE_XPERMS_NEVERALLOW)))
@@ -569,6 +631,16 @@ int check_assertions(sepol_handle_t * handle, policydb_t * p,
 
 	if (errors)
 		ERR(handle, "%lu neverallow failures occurred", errors);
+
+	rc = check_roles(handle, p);
+	if (rc < 0) {
+		ERR(handle, "Error occured while checking roles");
+		return -1;
+	}
+	if (rc) {
+		ERR(handle, "%d role failures occurred", rc);
+		errors += rc;
+	}
 
 	return errors ? -1 : 0;
 }

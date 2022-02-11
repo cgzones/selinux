@@ -2203,8 +2203,8 @@ static int write_role_decl_rules_to_conf(FILE *out, struct policydb *pdb)
 			rc = -1;
 			goto exit;
 		}
-		if (ebitmap_is_empty(&role->types.types)) continue;
-		types = ebitmap_to_str(&role->types.types, pdb->p_type_val_to_name, 1);
+		if (ebitmap_is_empty(&role->types_.types)) continue;
+		types = ebitmap_to_str(&role->types_.types, pdb->p_type_val_to_name, 1);
 		if (!types) {
 			rc = -1;
 			goto exit;
@@ -2229,6 +2229,7 @@ static int write_role_decl_rules_to_conf(FILE *out, struct policydb *pdb)
 			sepol_printf(out, "role %s types { %s };\n", name, types);
 		}
 		free(types);
+		// TODO: print role nevertypes
 	}
 
 exit:

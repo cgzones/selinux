@@ -54,7 +54,7 @@ int define_devicetree_context(void);
 int define_range_trans(int class_specified);
 int define_role_allow(void);
 int define_role_trans(int class_specified);
-int define_role_types(void);
+int define_role_types(int never);
 int define_role_attr(void);
 int define_roleattribute(void);
 int define_filename_trans(void);

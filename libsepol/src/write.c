@@ -1178,15 +1178,25 @@ static int role_write(hashtab_key_t key, hashtab_datum_t datum, void *ptr)
 			 * ebitmap instead.
 			 */
 			ebitmap_t empty;
+			type_set_t tsempty;
+
 			ebitmap_init(&empty);
 			if (ebitmap_write(&empty, fp))
 				return POLICYDB_ERROR;
+
+			type_set_init(&tsempty);
+			if (type_set_write(&tsempty, fp))
+				return POLICYDB_ERROR;
 		} else {
-			if (ebitmap_write(&role->types.types, fp))
+			if (ebitmap_write(&role->types_.types, fp))
+				return POLICYDB_ERROR;
+			if (type_set_write(&role->nevertypes_, fp))
 				return POLICYDB_ERROR;
 		}
 	} else {
-		if (type_set_write(&role->types, fp))
+		if (type_set_write(&role->types_, fp))
+			return POLICYDB_ERROR;
+		if (type_set_write(&role->nevertypes_, fp))
 			return POLICYDB_ERROR;
 	}
 

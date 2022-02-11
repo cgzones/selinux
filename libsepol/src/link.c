@@ -1121,7 +1121,10 @@ static int role_fix_callback(hashtab_key_t key, hashtab_datum_t datum,
 	if (ebitmap_union(&dest_role->dominates, &e_tmp)) {
 		goto cleanup;
 	}
-	if (type_set_or_convert(&role->types, &dest_role->types, mod, state)) {
+	if (type_set_or_convert(&role->types_, &dest_role->types_, mod, state)) {
+		goto cleanup;
+	}
+	if (type_set_or_convert(&role->nevertypes_, &dest_role->nevertypes_, mod, state)) {
 		goto cleanup;
 	}
 	ebitmap_destroy(&e_tmp);

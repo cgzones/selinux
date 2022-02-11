@@ -138,7 +138,8 @@ typedef struct class_datum {
 typedef struct role_datum {
 	symtab_datum_t s;
 	ebitmap_t dominates;	/* set of roles dominated by this role */
-	type_set_t types;	/* set of authorized types for role */
+	type_set_t types_;	/* set of authorized types for role */
+	type_set_t nevertypes_;	/* set of explicitly unauthorized types for role */
 	ebitmap_t cache;	/* This is an expanded set used for context validation during parsing */
 	uint32_t bounds;	/* bounds role, if exist */
 #define ROLE_ROLE 0		/* regular role in kernel policies */

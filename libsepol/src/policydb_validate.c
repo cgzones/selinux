@@ -430,7 +430,9 @@ static int validate_role_datum(sepol_handle_t *handle, role_datum_t *role, valid
 		goto bad;
 	if (validate_ebitmap(&role->dominates, &flavors[SYM_ROLES]))
 		goto bad;
-	if (validate_type_set(&role->types, &flavors[SYM_TYPES]))
+	if (validate_type_set(&role->types_, &flavors[SYM_TYPES]))
+		goto bad;
+	if (validate_type_set(&role->nevertypes_, &flavors[SYM_TYPES]))
 		goto bad;
 	if (role->bounds && validate_value(role->bounds, &flavors[SYM_ROLES]))
 		goto bad;

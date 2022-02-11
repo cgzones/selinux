@@ -101,6 +101,8 @@ ATTRIBUTE_ROLE |
 attribute_role			{ return(ATTRIBUTE_ROLE);}
 TYPES |
 types				{ return(TYPES); }
+NEVERTYPES |
+nevertypes			{ return(NEVERTYPES); }
 TYPEALIAS |
 typealias			{ return(TYPEALIAS); }
 TYPEATTRIBUTE |

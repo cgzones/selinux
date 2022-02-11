@@ -436,7 +436,7 @@ int cil_roletype_to_policydb(policydb_t *pdb, const struct cil_db *db, struct ci
 			rc = __cil_get_sepol_type_datum(pdb, DATUM(db->val_to_type[i]), &sepol_type);
 			if (rc != SEPOL_OK) goto exit;
 
-			if (ebitmap_set_bit(&sepol_role->types.types, sepol_type->s.value - 1, 1)) {
+			if (ebitmap_set_bit(&sepol_role->types_.types, sepol_type->s.value - 1, 1)) {
 				cil_log(CIL_INFO, "Failed to set type bit for role\n");
 				rc = SEPOL_ERR;
 				goto exit;

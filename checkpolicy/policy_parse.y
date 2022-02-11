@@ -101,6 +101,7 @@ typedef int (* require_func_t)(int pass);
 %token TYPEBOUNDS
 %token TYPE
 %token TYPES
+%token NEVERTYPES
 %token ALIAS
 %token ATTRIBUTE
 %token EXPANDATTRIBUTE
@@ -312,6 +313,7 @@ te_rbac_decl		: te_decl
                         ;
 rbac_decl		: attribute_role_def
 			| role_type_def
+			| role_nevertype_def
                         | role_dominance
                         | role_trans_def
  			| role_allow_def
@@ -506,7 +508,10 @@ attribute_role_def	: ATTRIBUTE_ROLE identifier ';'
 			{if (define_attrib_role()) return -1; }
 		        ;
 role_type_def		: ROLE identifier TYPES names ';'
-			{if (define_role_types()) return -1;}
+			{if (define_role_types(0)) return -1;}
+			;
+role_nevertype_def	: ROLE identifier NEVERTYPES names ';'
+			{if (define_role_types(1)) return -1;}
 			;
 role_attr_def		: ROLE identifier opt_attr_list ';'
  			{if (define_role_attr()) return -1;}
