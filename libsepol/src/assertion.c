@@ -602,6 +602,20 @@ static int check_roles(sepol_handle_t *handle, policydb_t *p)
 	return roleargs.errors;
 }
 
+/*
+static int check_segregate_attributes(sepol_handle_t *handle, policydb_t *p)
+{
+	const segregate_attribute_t *sattr;
+	ebitmap_t overlap;
+	int errors;
+
+	for (sattr = p->segregate_attributes; sattr; sattr = sattr->next) {
+		ebitmap_for_each_positive_bit(
+		p->attr_type_map
+
+}
+*/
+
 int check_assertions(sepol_handle_t * handle, policydb_t * p,
 		     avrule_t * avrules)
 {
@@ -641,6 +655,18 @@ int check_assertions(sepol_handle_t * handle, policydb_t * p,
 		ERR(handle, "%d role failures occurred", rc);
 		errors += rc;
 	}
+
+	/*
+	rc = check_segregate_attributes(handle, p);
+	if (rc < 0) {
+		ERR(handle, "Error occured while checking segregate attributes");
+		return -1;
+	}
+	if (rc) {
+		ERR(handle, "%d segregate attribute failures occurred", rc);
+		errors += rc;
+	}
+	*/
 
 	return errors ? -1 : 0;
 }

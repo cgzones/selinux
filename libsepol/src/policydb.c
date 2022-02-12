@@ -762,6 +762,21 @@ void avrule_list_destroy(avrule_t * x)
 	}
 }
 
+void segregate_attribute_init(segregate_attribute_t * x)
+{
+	memset(x, 0, sizeof(segregate_attribute_t));
+	ebitmap_init(&x->attrs);
+}
+
+
+void segregate_attribute_destroy(segregate_attribute_t * x)
+{
+	if (!x)
+		return;
+	ebitmap_destroy(&x->attrs);
+	free(x->source_filename);
+}
+
 /* 
  * Initialize the role table by implicitly adding role 'object_r'.  If
  * the policy is a module, set object_r's scope to be SCOPE_REQ,
@@ -1494,6 +1509,7 @@ void policydb_destroy(policydb_t * p)
 	unsigned int i;
 	role_allow_t *ra, *lra = NULL;
 	role_trans_t *tr, *ltr = NULL;
+	segregate_attribute_t *sattr, *sattr_next;
 
 	if (!p)
 		return;
@@ -1585,6 +1601,12 @@ void policydb_destroy(policydb_t * p)
 			ebitmap_destroy(&p->attr_type_map[i]);
 		}
 		free(p->attr_type_map);
+	}
+
+	for (sattr = p->segregate_attributes; sattr; sattr = sattr_next) {
+		sattr_next = sattr->next;
+		segregate_attribute_destroy(sattr);
+		free(sattr);
 	}
 
 	return;

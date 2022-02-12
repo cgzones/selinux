@@ -1272,6 +1272,33 @@ bad:
 	return -1;
 }
 
+static int validate_segregate_attributes(sepol_handle_t *handle, policydb_t *p, validate_t flavors[])
+{
+	segregate_attribute_t *sattr;
+	ebitmap_node_t *node;
+	unsigned int i;
+
+	for (sattr = p->segregate_attributes; sattr; sattr = sattr->next) {
+		if (ebitmap_cardinality(&sattr->attrs) < 2)
+			goto bad;
+
+		if (validate_ebitmap(&sattr->attrs, &flavors[SYM_TYPES]))
+			goto bad;
+
+		ebitmap_for_each_positive_bit(&sattr->attrs, node, i) {
+			if (p->type_val_to_struct[i]->flavor != TYPE_ATTRIB) {
+				goto bad;
+			}
+		}
+	}
+
+	return 0;
+
+bad:
+	ERR(handle, "Invalid segregate attribute definition");
+	return -1;
+}
+
 static int validate_properties(sepol_handle_t *handle, policydb_t *p)
 {
 	switch (p->policy_type) {
@@ -1376,6 +1403,9 @@ int validate_policydb(sepol_handle_t *handle, policydb_t *p)
 		goto bad;
 
 	if (validate_permissives(handle, p, flavors))
+		goto bad;
+
+	if (validate_segregate_attributes(handle, p, flavors))
 		goto bad;
 
 	validate_array_destroy(flavors);

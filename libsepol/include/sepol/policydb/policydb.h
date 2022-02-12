@@ -193,6 +193,16 @@ typedef struct type_datum {
 	uint32_t bounds;	/* bounds type, if exist */
 } type_datum_t;
 
+/* Mutual exclusive attributes */
+typedef struct segregate_attribute {
+	ebitmap_t attrs;	/* mutual exclusive attributes */
+	unsigned long line;	/* line number from policy.conf where this rule originated  */
+	/* source file name and line number (e.g. .te file) */
+	char *source_filename;
+	unsigned long source_line;
+	struct segregate_attribute *next;
+} segregate_attribute_t;
+
 /*
  * Properties of type_datum
  * available on the policy version >= (MOD_)POLICYDB_VERSION_BOUNDARY
@@ -606,6 +616,9 @@ typedef struct policydb {
 	   bitmaps.  Someday the 0 bit may be used for global permissive */
 	ebitmap_t permissive_map;
 
+	/* mutual exclusive attributes */
+	segregate_attribute_t *segregate_attributes;
+
 	unsigned policyvers;
 
 	unsigned handle_unknown;
@@ -697,6 +710,8 @@ extern void level_datum_init(level_datum_t * x);
 extern void level_datum_destroy(level_datum_t * x);
 extern void cat_datum_init(cat_datum_t * x);
 extern void cat_datum_destroy(cat_datum_t * x);
+extern void segregate_attribute_init(segregate_attribute_t * x);
+extern void segregate_attribute_destroy(segregate_attribute_t * x);
 extern int check_assertion(policydb_t *p, avrule_t *avrule);
 extern int check_assertions(sepol_handle_t * handle,
 			    policydb_t * p, avrule_t * avrules);
