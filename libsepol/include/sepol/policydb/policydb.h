@@ -342,7 +342,7 @@ typedef struct range_trans_rule {
  */
 typedef struct ocontext {
 	union {
-		char *name;	/* name of initial SID, fs, netif, fstype, path */
+		char *name;	/* name of initial SID (not saved in binary policy), fs, netif, fstype, path */
 		struct {
 			uint8_t protocol;
 			uint16_t low_port;
