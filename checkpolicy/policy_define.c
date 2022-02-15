@@ -53,6 +53,7 @@
 #include <sepol/policydb/services.h>
 #include <sepol/policydb/conditional.h>
 #include <sepol/policydb/hierarchy.h>
+#include <sepol/policydb/initialsids.h>
 #include <sepol/policydb/polcaps.h>
 #include "queue.h"
 #include "module_compiler.h"
@@ -295,6 +296,7 @@ int define_polcap(void)
 int define_initial_sid(void)
 {
 	char *id = 0;
+	sepol_security_id_t sid;
 	ocontext_t *newc = 0, *c, *head;
 
 	if (pass == 2) {
@@ -308,6 +310,21 @@ int define_initial_sid(void)
 		yyerror("no sid name for SID definition?");
 		return -1;
 	}
+
+	sid = selinux_str_to_sid(id);
+	if (sid == 0) {
+		yyerror2("invalid initial SID %s", id);
+		goto bad;
+	}
+
+	head = policydbp->ocontexts[OCON_ISID];
+	for (c = head; c; c = c->next) {
+		if (sid == c->sid[0]) {
+			yyerror2("duplicate initial SID %s", id);
+			goto bad;
+		}
+	}
+
 	newc = (ocontext_t *) malloc(sizeof(ocontext_t));
 	if (!newc) {
 		yyerror("out of memory");
@@ -316,20 +333,7 @@ int define_initial_sid(void)
 	memset(newc, 0, sizeof(ocontext_t));
 	newc->u.name = id;
 	context_init(&newc->context[0]);
-	head = policydbp->ocontexts[OCON_ISID];
-
-	for (c = head; c; c = c->next) {
-		if (!strcmp(newc->u.name, c->u.name)) {
-			yyerror2("duplicate initial SID %s", id);
-			goto bad;
-		}
-	}
-
-	if (head) {
-		newc->sid[0] = head->sid[0] + 1;
-	} else {
-		newc->sid[0] = 1;
-	}
+	newc->sid[0] = sid;
 	newc->next = head;
 	policydbp->ocontexts[OCON_ISID] = newc;
 
@@ -4572,6 +4576,7 @@ static int parse_security_context(context_struct_t * c)
 int define_initial_sid_context(void)
 {
 	char *id;
+	sepol_security_id_t sid;
 	ocontext_t *c, *head;
 
 	if (pass == 1) {
@@ -4586,9 +4591,17 @@ int define_initial_sid_context(void)
 		yyerror("no sid name for SID context definition?");
 		return -1;
 	}
+
+	sid = selinux_str_to_sid(id);
+	if (sid == 0) {
+		yyerror2("invalid initial SID %s", id);
+		free(id);
+		return -1;
+	}
+
 	head = policydbp->ocontexts[OCON_ISID];
 	for (c = head; c; c = c->next) {
-		if (!strcmp(id, c->u.name))
+		if (sid == c->sid[0])
 			break;
 	}
 

@@ -47,6 +47,7 @@
 #include <sepol/module_to_cil.h>
 #include <sepol/policydb/conditional.h>
 #include <sepol/policydb/hashtab.h>
+#include <sepol/policydb/initialsids.h>
 #include <sepol/policydb/polcaps.h>
 #include <sepol/policydb/policydb.h>
 #include <sepol/policydb/services.h>

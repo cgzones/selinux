@@ -1,6 +1,7 @@
 
 #include <sepol/policydb/conditional.h>
 #include <sepol/policydb/ebitmap.h>
+#include <sepol/policydb/initialsids.h>
 #include <sepol/policydb/polcaps.h>
 #include <sepol/policydb/policydb.h>
 #include <sepol/policydb/services.h>
@@ -1370,6 +1371,14 @@ static int validate_ocontexts(sepol_handle_t *handle, const policydb_t *p, valid
 					break;
 				case OCON_XEN_DEVICETREE:
 					if (!octx->u.name)
+						goto bad;
+					break;
+				}
+			}
+			if (p->target_platform == SEPOL_TARGET_XEN) {
+				switch (i) {
+				case OCON_XEN_ISID:
+					if (octx->sid[0] < 1 || octx->sid[0] >= XEN_SID_SZ)
 						goto bad;
 					break;
 				}
