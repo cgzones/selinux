@@ -1,3 +1,4 @@
+#include <ctype.h>
 
 #include <sepol/policydb/conditional.h>
 #include <sepol/policydb/ebitmap.h>
@@ -1744,6 +1745,47 @@ bad:
 	return -1;
 }
 
+static int validate_name(const char *name)
+{
+	if (!name)
+		goto bad;
+
+	for (; *name; name++) {
+		if (!isgraph((unsigned char)*name))
+			goto bad;
+	}
+
+	return 0;
+
+bad:
+	return -1;
+}
+
+static int validate_names(sepol_handle_t *handle, const policydb_t *p)
+{
+	unsigned int i;
+	uint32_t j;
+	const char *name;
+
+	for (i = 0; i < SYM_NUM; i++) {
+		for (j = 0; j < p->symtab[i].nprim; j++) {
+			name = p->sym_val_to_name[i][j];
+
+			if (!name)
+				continue;
+
+			if (validate_name(name))
+				goto bad;
+		}
+	}
+
+	return 0;
+
+bad:
+	ERR(handle, "Invalid symtab name");
+	return -1;
+}
+
 static void validate_array_destroy(validate_t flavors[])
 {
 	unsigned int i;
@@ -1767,6 +1809,9 @@ int policydb_validate(sepol_handle_t *handle, const policydb_t *p)
 		goto bad;
 
 	if (validate_policycaps(handle, p))
+		goto bad;
+
+	if (validate_names(handle, p))
 		goto bad;
 
 	if (p->policy_type == POLICY_KERN) {
