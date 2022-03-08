@@ -26,7 +26,7 @@ static unsigned int symhash(hashtab_t h, const_hashtab_key_t key)
 	size = strlen(keyp);
 	for (p = keyp; ((size_t) (p - keyp)) < size; p++)
 		val =
-		    (val << 4 | (val >> (8 * sizeof(unsigned int) - 4))) ^ (*p);
+		    (val << 4 | (val >> (8 * sizeof(unsigned int) - 4))) ^ (unsigned char)(*p);
 	return val & (h->size - 1);
 }
 
