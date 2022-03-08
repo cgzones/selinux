@@ -2330,9 +2330,9 @@ static int class_read(policydb_t * p, hashtab_t h, struct policy_file *fp)
 		rc = next_entry(buf, fp, sizeof(uint32_t) * 3);
 		if (rc < 0)
 			goto bad;
-		cladatum->default_user = le32_to_cpu(buf[0]);
-		cladatum->default_role = le32_to_cpu(buf[1]);
-		cladatum->default_range = le32_to_cpu(buf[2]);
+		cladatum->default_user = (char)le32_to_cpu(buf[0]);
+		cladatum->default_role = (char)le32_to_cpu(buf[1]);
+		cladatum->default_range = (char)le32_to_cpu(buf[2]);
 	}
 
 	if ((p->policy_type == POLICY_KERN &&
@@ -2342,7 +2342,7 @@ static int class_read(policydb_t * p, hashtab_t h, struct policy_file *fp)
 		rc = next_entry(buf, fp, sizeof(uint32_t));
 		if (rc < 0)
 			goto bad;
-		cladatum->default_type = le32_to_cpu(buf[0]);
+		cladatum->default_type = (char)le32_to_cpu(buf[0]);
 	}
 
 	if (hashtab_insert(h, key, cladatum))
@@ -3419,7 +3419,7 @@ static int cat_read(policydb_t * p
 		goto bad;
 
 	catdatum->s.value = le32_to_cpu(buf[1]);
-	catdatum->isalias = le32_to_cpu(buf[2]);
+	catdatum->isalias = (unsigned char)le32_to_cpu(buf[2]);
 
 	if (hashtab_insert(h, key, catdatum))
 		goto bad;
