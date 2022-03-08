@@ -761,7 +761,7 @@ static int cond_read_node(policydb_t * p, cond_node_t * node, void *fp)
 		goto err;
 
 	/* expr */
-	len = le32_to_cpu(buf[0]);
+	len = (int)le32_to_cpu(buf[0]);
 
 	for (i = 0; i < len; i++) {
 		rc = next_entry(buf, fp, sizeof(uint32_t) * 2);
