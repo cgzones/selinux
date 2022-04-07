@@ -47,16 +47,17 @@ int watch_list_isempty(void) {
 
 void watch_list_add(int fd, const char *path)
 {
-	struct watchList *ptr = NULL;
+	struct watchList *ptr = firstDir;
 	size_t i = 0;
 	struct watchList *prev = NULL;
 	glob_t globbuf;
-	char *x = strdup(path);
-	if (!x) exitApp("Out of Memory");
-	char *file = basename(x);
-	char *dir = dirname(x);
-	ptr = firstDir;
+	char *x, *file, *dir;
 	int len;
+
+	x = strdup(path);
+	if (!x) exitApp("Out of Memory");
+	file = basename(x);
+	dir = dirname(x);
 
 	globbuf.gl_offs = 1;
 	if (glob(path,
@@ -229,12 +230,13 @@ static void process_config(int fd, FILE * cfg)
 	size_t len = 0;
 
 	while (getline(&line_buf, &len, cfg) > 0) {
+		int l;
 		char *buffer = line_buf;
 		while (isspace(*buffer))
 			buffer++;
 		if (buffer[0] == '#')
 			continue;
-		int l = strlen(buffer) - 1;
+		l = strlen(buffer) - 1;
 		if (l <= 0)
 			continue;
 		buffer[l] = 0;

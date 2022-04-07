@@ -617,6 +617,8 @@ cleanup_extract:
 				}
 
 				if (mode_arg == NULL || strcmp(mode_arg, "standard") == 0) {
+					const char *name = NULL;
+
 					result = semanage_module_list(sh,
 								      &modinfos,
 								      &modinfos_len);
@@ -625,8 +627,6 @@ cleanup_extract:
 					if (modinfos_len == 0) {
 						printf("No modules.\n");
 					}
-
-					const char *name = NULL;
 
 					for (j = 0; j < modinfos_len; j++) {
 						m = semanage_module_list_nth(modinfos, j);
@@ -649,6 +649,11 @@ cleanup_extract:
 					}
 				}
 				else if (strcmp(mode_arg, "full") == 0) {
+					const char *tmp = NULL;
+					size_t size;
+					/* calculate column widths */
+					size_t column[5] = { sizeof("000") - 1, 0, 0, sizeof("disabled") - 1, 0 };
+
 					/* get the modules */
 					result = semanage_module_list_all(sh,
 									  &modinfos,
@@ -659,20 +664,11 @@ cleanup_extract:
 						printf("No modules.\n");
 					}
 
-					/* calculate column widths */
-					size_t column[5] = { 0, 0, 0, 0, 0 };
-
-					/* fixed width columns */
-					column[0] = sizeof("000") - 1;
-					column[3] = sizeof("disabled") - 1;
-
 					result = semanage_module_compute_checksum(sh, NULL, 0, NULL,
 										  &column[4]);
 					if (result != 0) goto cleanup_list;
 
 					/* variable width columns */
-					const char *tmp = NULL;
-					size_t size;
 					for (j = 0; j < modinfos_len; j++) {
 						m = semanage_module_list_nth(modinfos, j);
 
@@ -755,13 +751,13 @@ cleanup_list:
 				break;
 			}
 		case ENABLE_M:{
+				semanage_module_key_t *modkey = NULL;
+
 				if (verbose) {
 					printf
 					    ("Attempting to enable module '%s':\n",
 					     mode_arg);
 				}
-
-				semanage_module_key_t *modkey = NULL;
 
 				result = semanage_module_key_create(sh, &modkey);
 				if (result != 0) goto cleanup_enable;
@@ -779,13 +775,13 @@ cleanup_enable:
 				break;
 			}
 		case DISABLE_M:{
+				semanage_module_key_t *modkey = NULL;
+
 				if (verbose) {
 					printf
 					    ("Attempting to disable module '%s':\n",
 					     mode_arg);
 				}
-
-				semanage_module_key_t *modkey = NULL;
 
 				result = semanage_module_key_create(sh, &modkey);
 				if (result != 0) goto cleanup_disable;

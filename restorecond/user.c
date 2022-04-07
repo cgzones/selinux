@@ -213,6 +213,7 @@ int start(void) {
 
 static int local_server(void) {
 	// ! dbus, run as local service
+	GIOChannel *in;
 	char *ptr=NULL;
 	if (asprintf(&ptr, "%s/.restorecond", homedir) < 0) {
 		if (debug_mode)
@@ -237,7 +238,7 @@ static int local_server(void) {
 		return -1;
 	}
 	/* watch for stdin/terminal going away */
-	GIOChannel *in = g_io_channel_unix_new(0);
+	in = g_io_channel_unix_new(0);
 	g_io_channel_set_encoding(in, NULL, NULL);
 	g_io_channel_set_flags(in, g_io_channel_get_flags(in) | G_IO_FLAG_NONBLOCK, NULL);
 	g_io_add_watch_full( in,
@@ -267,6 +268,7 @@ static int sigterm_handler(gpointer user_data)
 
 int server(int master_fd, const char *watch_file) {
 	GMainLoop *loop;
+	GIOChannel *c;
 
 	loop = g_main_loop_new (NULL, FALSE);
 
@@ -283,7 +285,7 @@ int server(int master_fd, const char *watch_file) {
 
 	set_matchpathcon_flags(MATCHPATHCON_NOTRANS);
 
-	GIOChannel *c = g_io_channel_unix_new(master_fd);
+	c = g_io_channel_unix_new(master_fd);
 	g_io_channel_set_encoding(c, NULL, NULL);
 	g_io_channel_set_flags(c, g_io_channel_get_flags(c) | G_IO_FLAG_NONBLOCK, NULL);
 

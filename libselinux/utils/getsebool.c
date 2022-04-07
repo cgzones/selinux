@@ -72,6 +72,8 @@ int main(int argc, char **argv)
 	}
 
 	for (i = 0; i < len; i++) {
+		char *alt_name;
+
 		active = security_get_boolean_active(names[i]);
 		if (active < 0) {
 			if (get_all && errno == EACCES) 
@@ -88,7 +90,7 @@ int main(int argc, char **argv)
 			rc = -1;
 			goto out;
 		}
-		char *alt_name = selinux_boolean_sub(names[i]);
+		alt_name = selinux_boolean_sub(names[i]);
 		if (! alt_name) {
 			perror("Out of memory\n");
 			rc = -1;

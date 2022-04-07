@@ -51,11 +51,13 @@ unsigned int utmpwatcher_handle(int inotify_fd, int wd)
 	struct utmp u;
 	const char *utmp_path = "/run/utmp";
 	struct stringsList *prev_utmp_ptr = utmp_ptr;
+	FILE *cfg;
+
 	if (wd != utmp_wd)
 		return -1;
 
 	utmp_ptr = NULL;
-	FILE *cfg = fopen(utmp_path, "r");
+	cfg = fopen(utmp_path, "r");
 	if (!cfg)
 		exitApp("Error reading utmp file.");
 

@@ -402,7 +402,7 @@ destroy_domain(domain_t *domain) {
 
 static domain_t *
 create_domain(const char *name) {
-	domain_t *domain = calloc(1, sizeof(domain_t));
+	domain_t **d, *domain = calloc(1, sizeof(domain_t));
 	if (!domain) {
 		goto err;
 	}
@@ -411,7 +411,7 @@ create_domain(const char *name) {
 		goto err;
 	}
 
-	domain_t **d = &domains;
+	d = &domains;
 	for (; *d; d = &(*d)->next)
 		;
 	*d = domain;
@@ -426,12 +426,16 @@ err:
 
 static int
 add_word(word_group_t *group, char *raw, char *trans) {
+	word_t *word;
+	ebitmap_t temp;
+	int rc;
+
 	if (strchr(trans,'-')) {
 		log_error("'%s'is invalid because '-' is illegal in modifiers.\n", trans);
 		return -1;
 	}
-	word_t *word = create_word(&group->words, trans);
-	int rc = parse_ebitmap(&word->cat, &group->def, raw);
+	word = create_word(&group->words, trans);
+	rc = parse_ebitmap(&word->cat, &group->def, raw);
 	if (rc < 0) {
 		log_error(" syntax error in %s\n", raw);
 		destroy_word(&group->words, word);
@@ -440,7 +444,6 @@ add_word(word_group_t *group, char *raw, char *trans) {
 	if (ebitmap_andnot(&word->normal, &word->cat, &group->def, maxbit) < 0)
 		return -1;
 
-	ebitmap_t temp;
 	if (ebitmap_xor(&temp, &word->cat, &group->def) < 0)
 		return -1;
 	if (ebitmap_and(&word->inverse, &temp, &group->def) < 0)
@@ -452,15 +455,17 @@ add_word(word_group_t *group, char *raw, char *trans) {
 
 static int
 add_constraint(char op, char *raw, char *tok) {
-	log_debug("%s\n", "add_constraint");
 	ebitmap_t empty;
 	ebitmap_init(&empty);
+
+	log_debug("%s\n", "add_constraint");
+
 	if (!raw || !*raw) {
 		syslog(LOG_ERR, "unable to parse line");
 		return -1;
 	}
 	if (*raw == 's') {
-		sens_constraint_t *constraint = calloc(1, sizeof(sens_constraint_t));
+		sens_constraint_t **p, *constraint = calloc(1, sizeof(sens_constraint_t));
 		if (!constraint) {
 			log_error("allocation error %s", strerror(errno));
 			return -1;
@@ -481,13 +486,12 @@ add_constraint(char op, char *raw, char *tok) {
 			return -1;
 		}
 		constraint->op = op;
-		sens_constraint_t **p;
 		for (p= &sens_constraints; *p; p = &(*p)->next)
                         ;
                 *p = constraint;
 		return 0;
 	} else if (*raw == 'c' ) {
-		cat_constraint_t *constraint = calloc(1, sizeof(cat_constraint_t));
+		cat_constraint_t **p, *constraint = calloc(1, sizeof(cat_constraint_t));
 		if (!constraint) {
 			log_error("allocation error %s", strerror(errno));
 			return -1;
@@ -509,7 +513,6 @@ add_constraint(char op, char *raw, char *tok) {
 		}
 		constraint->nbits = ebitmap_cardinality(&constraint->cat);
 		constraint->op = op;
-		cat_constraint_t **p;
 		for (p= &cat_constraints; *p; p = &(*p)->next)
                         ;
                 *p = constraint;
@@ -526,6 +529,8 @@ violates_constraints(mls_level_t *l) {
 	int nbits;
 	sens_constraint_t *s;
 	ebitmap_t common;
+	cat_constraint_t *c;
+
 	for (s=sens_constraints; s; s=s->next) {
 		if (s->sens == l->sens) {
 			if (ebitmap_and(&common, &s->cat, &l->cat) < 0)
@@ -540,7 +545,6 @@ violates_constraints(mls_level_t *l) {
 			}
 		}
 	}
-	cat_constraint_t *c;
 	for (c=cat_constraints; c; c=c->next) {
 		if (ebitmap_and(&common, &c->mask, &l->cat) < 0)
 			return 1;
@@ -732,6 +736,7 @@ process_trans(char *buffer) {
 	static int base_classification;
 	static int lineno = 0;
 	char op='\0';
+	char *comment, *delim, *raw, *tok;
 
 	lineno++;
 	log_debug("%d: %s", lineno, buffer);
@@ -741,7 +746,7 @@ process_trans(char *buffer) {
 
 	/* Ignore comments */
 	if (*buffer == '#') return 0;
-	char *comment = strpbrk (buffer, "#");
+	comment = strpbrk (buffer, "#");
 	if (comment) {
 		*comment = '\0';
 	}
@@ -751,7 +756,7 @@ process_trans(char *buffer) {
 
 	if (*buffer == 0) return 0;
 
-	char *delim = strpbrk (buffer, "=!>");
+	delim = strpbrk (buffer, "=!>");
 	if (! delim) {
 		syslog(LOG_ERR, "invalid line (no !, = or >) %d", lineno);
 		return -1;
@@ -759,8 +764,8 @@ process_trans(char *buffer) {
 
 	op = *delim;
 	*delim = '\0';
-	char *raw = buffer;
-	char *tok = delim+1;
+	raw = buffer;
+	tok = delim+1;
 
 	/* remove trailing/leading whitespace from the split tokens */
 	trim(raw, "\t ");
@@ -896,19 +901,21 @@ init_translations(void) {
 
 static char *
 extract_range(const char *incon) {
+	const char *range;
+	char *r;
 	context_t con = context_new(incon);
 	if (!con) {
 		syslog(LOG_ERR, "extract_range context_new(%s) failed: %s", incon, strerror(errno));
 		return NULL;
 	}
 
-	const char *range = context_range_get(con);
+	range = context_range_get(con);
 	if (!range) {
 		syslog(LOG_ERR, "extract_range: context_range_get(%s) failed", incon);
 		context_free(con);
 		return NULL;
 	}
-	char *r = strdup(range);
+	r = strdup(range);
 	if (!r) {
 		log_error("extract_range: allocation error %s", strerror(errno));
 		return NULL;
@@ -991,18 +998,20 @@ build_regexp(pcre2_code **r, char *buffer) {
 static int
 build_regexps(domain_t *domain) {
 	char buffer[1024 * 128];
-	buffer[0] = '\0';
 	base_classification_t *bc;
 	word_group_t *g;
 	affix_t *a;
 	word_t *w;
 	size_t n_el, i;
+	char **sortable;
+
+	buffer[0] = '\0';
 
 	for (n_el = 0, bc = domain->base_classifications; bc; bc = bc->next) {
 		n_el++;
 	}
 
-	char **sortable = calloc(n_el, sizeof(char *));
+	sortable = calloc(n_el, sizeof(char *));
 	if (!sortable) {
 		log_error("allocation error %s", strerror(errno));
 		return -1;
@@ -1100,7 +1109,7 @@ compute_raw_from_trans(const char *level, domain_t *domain) {
 	gettimeofday(&startTime, 0);
 #endif
 
-	int rc = 0;
+	int rc = 0, complete, change;
 	pcre2_match_data *match_data = NULL;
 	word_group_t *g = NULL;
 	char *work = NULL;
@@ -1134,6 +1143,8 @@ compute_raw_from_trans(const char *level, domain_t *domain) {
 	}
 	rc = pcre2_match(domain->base_classification_regexp, (PCRE2_SPTR8)work, work_len, 0, PCRE2_ANCHORED, match_data, NULL);
 	if (rc > 0) {
+		base_classification_t *bc;
+		char *p;
 		const PCRE2_SIZE *ovector = pcre2_get_ovector_pointer(match_data);
 		match = strndup(work + ovector[0], ovector[1] - ovector[0]);
 		if (!match) {
@@ -1141,7 +1152,6 @@ compute_raw_from_trans(const char *level, domain_t *domain) {
 			goto err;
 		}
 		log_debug(" compute_raw_from_trans match = %s len = %zu\n", match, strlen(match));
-		base_classification_t *bc;
 		for (bc = domain->base_classifications; bc; bc = bc->next) {
 			if (!strcmp(bc->trans, match)) {
 				log_debug(" compute_raw_from_trans base classification %s matched %s\n", level, bc->trans);
@@ -1157,7 +1167,7 @@ compute_raw_from_trans(const char *level, domain_t *domain) {
 		}
 
 		memset(work + ovector[0], '#', ovector[1] - ovector[0]);
-		char *p=work + ovector[0] + ovector[1];
+		p=work + ovector[0] + ovector[1];
 		while (*p && (strchr(" 	", *p) != NULL))
 			*p++ = '#';
 
@@ -1181,14 +1191,16 @@ compute_raw_from_trans(const char *level, domain_t *domain) {
 		goto err;
 	}
 
-	int complete = 0;
-	int change = 1;
+	complete = 0;
+	change = 1;
 	while(change && !complete) {
 		change = 0;
 		for (g = domain->groups; g && !change && !complete; g = g->next) {
 			int prefix = 0, suffix = 0;
 			PCRE2_SIZE prefix_offset = 0, prefix_len = 0;
 			PCRE2_SIZE suffix_offset = 0, suffix_len = 0;
+			const char *q;
+
 			if (g->prefix_regexp) {
 				match_data = pcre2_match_data_create_from_pattern(g->prefix_regexp, NULL);
 				if (!match_data) {
@@ -1295,9 +1307,9 @@ compute_raw_from_trans(const char *level, domain_t *domain) {
 			}
 /* YYY */
 			complete=1;
-			char *p = work;
-			while(*p) {
-				if (isalnum(*p++)) {
+			q = work;
+			while(*q) {
+				if (isalnum(*q++)) {
 					complete=0;
 					break;
 				}
@@ -1351,6 +1363,8 @@ compute_trans_from_raw(const char *level, domain_t *domain) {
 	char *rval = NULL;
 	word_group_t *groups = NULL;
 	ebitmap_t bit_diff, temp, handled, nothandled, unhandled, orig_unhandled;
+	base_classification_t *bc, *last = NULL;
+	int doInverse, done;
 
 	ebitmap_init(&bit_diff);
 	ebitmap_init(&temp);
@@ -1374,12 +1388,12 @@ compute_trans_from_raw(const char *level, domain_t *domain) {
 		goto err;
 	}
 
-	int doInverse = l->sens > 0;
-
-	base_classification_t *bc, *last = NULL;
-	int done = 0;
+	doInverse = l->sens > 0;
+	done = 0;
 	for (bc = domain->base_classifications; bc && !done; bc = bc->next) {
 		if (l->sens == bc->level->sens) {
+			int loops, change=1;
+
 			/* skip if alias of last bc */
 			if (last &&
 			    last->level->sens == bc->level->sens &&
@@ -1413,16 +1427,17 @@ compute_trans_from_raw(const char *level, domain_t *domain) {
 				}
 			}
 
-			int loops, hamming, change=1;
 			for (loops = 50; ebitmap_cardinality(&unhandled) && loops > 0 && change; loops--) {
+				word_group_t *currentGroup = NULL;
+				word_t *currentWord = NULL;
+
+				int hamming = 10000;
 				change = 0;
-				hamming = 10000;
+
 				if (ebitmap_xor(&handled, &unhandled, &orig_unhandled) < 0)
 					goto err;
 				if (ebitmap_not(&nothandled, &handled, maxbit) < 0)
 					goto err;
-				word_group_t *currentGroup = NULL;
-				word_t *currentWord = NULL;
 				for (g = domain->groups; g && hamming; g = g->next) {
 					word_t *w;
 					for (w = g->words; w && hamming; w = w->next) {
@@ -1457,6 +1472,8 @@ compute_trans_from_raw(const char *level, domain_t *domain) {
 				ebitmap_destroy(&nothandled);
 
 				if (currentWord) {
+					word_group_t **t;
+
 					if (ebitmap_xor(&bit_diff, &currentWord->cat, &bc->level->cat) < 0)
 						goto err;
 
@@ -1469,7 +1486,6 @@ compute_trans_from_raw(const char *level, domain_t *domain) {
 					ebitmap_destroy(&bit_diff);
 					ebitmap_destroy(&temp);
 
-					word_group_t **t;
 					for (t = &groups; *t; t = &(*t)->next)
 						if (!strcmp(currentGroup->name, (*t)->name))
 							break;
@@ -1487,11 +1503,13 @@ compute_trans_from_raw(const char *level, domain_t *domain) {
 				strcat(buffer, bc->trans);
 				strcat(buffer, " ");
 				for (g=groups; g; g = g->next) {
+					word_group_t *n;
+					word_t *w;
+
 					if (g->words && g->prefixes) {
 						strcat(buffer, g->prefixes->text);
 						strcat(buffer, " ");
 					}
-					word_t *w;
 					for (w=g->words; w; w = w->next) {
 						strcat(buffer, w->text);
 						if (w->next)
@@ -1501,7 +1519,7 @@ compute_trans_from_raw(const char *level, domain_t *domain) {
 						strcat(buffer, " ");
 						strcat(buffer, g->suffixes->text);
 					}
-					word_group_t *n = g->next;
+					n = g->next;
 					while(g->words && n) {
 						if (n->words) {
 							strcat(buffer, " ");
@@ -1551,7 +1569,9 @@ err:
 
 int
 trans_context(const char *incon, char **rcon) {
-	char *trans = NULL;
+	char *trans = NULL, *range;
+	domain_t *domain;
+
 	*rcon = NULL;
 
 #ifdef DEBUG
@@ -1560,18 +1580,20 @@ trans_context(const char *incon, char **rcon) {
 #endif
 
 	log_debug(" trans_context input = %s\n", incon);
-	char *range = extract_range(incon);
+	range = extract_range(incon);
 	if (!range) return -1;
 
-	domain_t *domain = domains;
+	domain = domains;
 	for (;domain; domain = domain->next) {
+		char *lrange = NULL, *urange = NULL;
+		char *ltrans = NULL, *utrans = NULL;
+		char *dashp;
+
 		trans = find_in_hashtable(range, domain, domain->raw_to_trans);
 		if (trans) break;
 
 		/* try split and translate */
-		char *lrange = NULL, *urange = NULL;
-		char *ltrans = NULL, *utrans = NULL;
-		char *dashp = strchr(range,'-');
+		dashp = strchr(range,'-');
 		if (dashp) {
 			*dashp = 0;
 			lrange = range;
@@ -1681,7 +1703,9 @@ trans_context(const char *incon, char **rcon) {
 
 int
 untrans_context(const char *incon, char **rcon) {
-	char *raw = NULL;
+	char *raw = NULL, *range;
+	domain_t *domain;
+
 	*rcon = NULL;
 
 #ifdef DEBUG
@@ -1690,19 +1714,21 @@ untrans_context(const char *incon, char **rcon) {
 #endif
 
 	log_debug(" untrans_context incon = %s\n", incon);
-	char *range = extract_range(incon);
+	range = extract_range(incon);
 	if (!range) return -1;
 	log_debug(" untrans_context range = %s\n", range);
 
-	domain_t *domain = domains;
+	domain = domains;
 	for (;domain; domain = domain->next) {
+		char *lrange = NULL, *urange = NULL;
+		char *lraw = NULL, *uraw = NULL;
+		char *dashp;
+
 		raw = find_in_hashtable(range, domain, domain->trans_to_raw);
 		if (raw) break;
 
 		/* try split and translate */
-		char *lrange = NULL, *urange = NULL;
-		char *lraw = NULL, *uraw = NULL;
-		char *dashp = strchr(range,'-');
+		dashp = strchr(range,'-');
 		if (dashp) {
 			*dashp = 0;
 			lrange = range;
