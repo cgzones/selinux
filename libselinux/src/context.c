@@ -22,11 +22,13 @@ typedef struct {
 context_t context_new(const char *str)
 {
 	int i, count;
-	errno = 0;
-	context_private_t *n =
-	    (context_private_t *) malloc(sizeof(context_private_t));
-	context_t result = (context_t) malloc(sizeof(context_s_t));
+	context_private_t *n;
+	context_t result;
 	const char *p, *tok;
+
+	errno = 0;
+	n = (context_private_t *) malloc(sizeof(context_private_t));
+	result = (context_t) malloc(sizeof(context_s_t));
 
 	if (result)
 		result->ptr = n;

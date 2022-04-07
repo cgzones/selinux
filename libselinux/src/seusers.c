@@ -96,13 +96,17 @@ int require_seusers  = 0;
 static gid_t get_default_gid(const char *name) {
 	struct passwd pwstorage, *pwent = NULL;
 	gid_t gid = -1;
+	long rbuflen;
+	char *rbuf;
+	int retval;
+
 	/* Allocate space for the getpwnam_r buffer */
-	long rbuflen = sysconf(_SC_GETPW_R_SIZE_MAX);
+	rbuflen = sysconf(_SC_GETPW_R_SIZE_MAX);
 	if (rbuflen <= 0) return -1;
-	char *rbuf = malloc(rbuflen);
+	rbuf = malloc(rbuflen);
 	if (rbuf == NULL) return -1;
 
-	int retval = getpwnam_r(name, &pwstorage, rbuf, rbuflen, &pwent);
+	retval = getpwnam_r(name, &pwstorage, rbuf, rbuflen, &pwent);
 	if (retval == 0 && pwent) {
 		gid = pwent->pw_gid;
 	}
@@ -115,17 +119,19 @@ static int check_group(const char *group, const char *name, const gid_t gid) {
 	int i, ng = 0;
 	gid_t *groups = NULL;
 	struct group gbuf, *grent = NULL;
+	char *rbuf;
 
 	long rbuflen = sysconf(_SC_GETGR_R_SIZE_MAX);
 	if (rbuflen <= 0)
 		return 0;
-	char *rbuf;
 
 	while(1) {
+		int retval;
+
 		rbuf = malloc(rbuflen);
 		if (rbuf == NULL)
 			return 0;
-		int retval = getgrnam_r(group, &gbuf, rbuf, 
+		retval = getgrnam_r(group, &gbuf, rbuf,
 				rbuflen, &grent);
 		if ( retval == ERANGE )
 		{

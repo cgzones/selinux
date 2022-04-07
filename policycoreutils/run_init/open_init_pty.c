@@ -318,7 +318,7 @@ int main(int argc, char *argv[])
 
 	do {
 		/* Accept events only on fds, that we can handle now. */
-		int do_select = 0;
+		int select_rc, do_select = 0;
 		FD_ZERO(&readfds);
 		FD_ZERO(&writefds);
 
@@ -354,7 +354,7 @@ int main(int argc, char *argv[])
 		}
 
 		errno = 0;
-		int select_rc = select(pty_master + 1, &readfds, &writefds, NULL, NULL);
+		select_rc = select(pty_master + 1, &readfds, &writefds, NULL, NULL);
 		if (select_rc < 0 && errno != EINTR) {
 			perror("select()");
 			exit(EX_IOERR);

@@ -28,10 +28,12 @@ static int ibpkey_print(semanage_handle_t *handle,
 	int low = semanage_ibpkey_get_low(ibpkey);
 	int high = semanage_ibpkey_get_high(ibpkey);
 
+	semanage_context_t *con;
+
 	if (semanage_ibpkey_get_subnet_prefix(handle, ibpkey, &subnet_prefix_str) != 0)
 		goto err;
 
-	semanage_context_t *con = semanage_ibpkey_get_con(ibpkey);
+	con = semanage_ibpkey_get_con(ibpkey);
 
 	if (fprintf(str, "ibpkeycon %s ", subnet_prefix_str) < 0)
 		goto err;

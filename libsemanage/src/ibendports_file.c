@@ -26,11 +26,12 @@ static int ibendport_print(semanage_handle_t *handle,
 	char *con_str = NULL;
 	char *ibdev_name_str = NULL;
 	int port = semanage_ibendport_get_port(ibendport);
+	semanage_context_t *con;
 
 	if (semanage_ibendport_get_ibdev_name(handle, ibendport, &ibdev_name_str) != 0)
 		goto err;
 
-	semanage_context_t *con = semanage_ibendport_get_con(ibendport);
+	con = semanage_ibendport_get_con(ibendport);
 
 	if (fprintf(str, "ibendportcon %s ", ibdev_name_str) < 0)
 		goto err;

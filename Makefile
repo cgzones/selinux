@@ -10,6 +10,7 @@ ifeq ($(DEBUG),1)
 else
 	export CFLAGS ?= -O2 -Werror -Wall -Wextra \
 		-Wcast-align \
+		-Wdeclaration-after-statement \
 		-Wfloat-equal \
 		-Wformat=2 \
 		-Winit-self \
