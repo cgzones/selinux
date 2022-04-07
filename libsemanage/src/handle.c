@@ -139,15 +139,15 @@ int semanage_get_hll_compiler_path(semanage_handle_t *sh,
 				char *lang_ext,
 				char **compiler_path)
 {
-	assert(sh != NULL);
-	assert(lang_ext != NULL);
-
 	int i;
 	int status = 0;
 	int num_printed = 0;
 	size_t len;
 	char *compiler = NULL;
 	char *lower_lang_ext = NULL;
+
+	assert(sh != NULL);
+	assert(lang_ext != NULL);
 
 	lower_lang_ext = strdup(lang_ext);
 	if (lower_lang_ext == NULL) {

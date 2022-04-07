@@ -23,8 +23,8 @@
  */
 static inline int read_spec_entry(char **entry, char **ptr, int *len, const char **errbuf)
 {
-	*entry = NULL;
 	char *tmp_buf = NULL;
+	*entry = NULL;
 
 	while (isspace((unsigned char)**ptr) && **ptr != '\0')
 		(*ptr)++;

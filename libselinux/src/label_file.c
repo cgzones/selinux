@@ -491,6 +491,7 @@ static char *rolling_append(char *current, const char *suffix, size_t max)
 	size_t size;
 	size_t suffix_size;
 	size_t current_size;
+	char *to;
 
 	if (!suffix)
 		return current;
@@ -512,7 +513,7 @@ static char *rolling_append(char *current, const char *suffix, size_t max)
 		return NULL;
 
 	/* Append any given suffix */
-	char *to = current + current_size;
+	to = current + current_size;
 	*to++ = '.';
 	strcpy(to, suffix);
 
@@ -824,7 +825,6 @@ static int init(struct selabel_handle *rec, const struct selinux_opt *opts,
 	}
 
 #if !defined(BUILD_HOST) && !defined(ANDROID)
-	char subs_file[PATH_MAX + 1];
 	/* Process local and distribution substitution files */
 	if (!path) {
 		status = selabel_subs_init(
@@ -838,6 +838,7 @@ static int init(struct selabel_handle *rec, const struct selinux_opt *opts,
 			goto finish;
 		path = selinux_file_context_path();
 	} else {
+		char subs_file[PATH_MAX + 1];
 		snprintf(subs_file, sizeof(subs_file), "%s.subs_dist", path);
 		status = selabel_subs_init(subs_file, rec->digest,
 					   &data->dist_subs);
@@ -1095,11 +1096,11 @@ static struct spec *lookup_common(struct selabel_handle *rec,
                                   const char *key,
                                   int type,
                                   bool partial) {
-	struct spec **matches = lookup_all(rec, key, type, partial, NULL);
+	struct spec *result, **matches = lookup_all(rec, key, type, partial, NULL);
 	if (!matches) {
 		return NULL;
 	}
-	struct spec *result = matches[0];
+	result = matches[0];
 	free(matches);
 	return result;
 }
@@ -1159,17 +1160,19 @@ oom:
 
 static bool hash_all_partial_matches(struct selabel_handle *rec, const char *key, uint8_t *digest)
 {
+	Sha1Context context;
+	SHA1_HASH sha1_hash;
+	size_t total_matches, i;
+	struct spec **matches;
+
 	assert(digest);
 
-	size_t total_matches;
-	struct spec **matches = lookup_all(rec, key, 0, true, &total_matches);
+	matches = lookup_all(rec, key, 0, true, &total_matches);
 	if (!matches) {
 		return false;
 	}
 
-	Sha1Context context;
 	Sha1Initialise(&context);
-	size_t i;
 	for (i = 0; i < total_matches; i++) {
 		char* regex_str = matches[i]->regex_str;
 		mode_t mode = matches[i]->mode;
@@ -1180,7 +1183,6 @@ static bool hash_all_partial_matches(struct selabel_handle *rec, const char *key
 		Sha1Update(&context, ctx_raw, strlen(ctx_raw) + 1);
 	}
 
-	SHA1_HASH sha1_hash;
 	Sha1Finalise(&context, &sha1_hash);
 	memcpy(digest, sha1_hash.bytes, SHA1_HASH_SIZE);
 

@@ -1012,6 +1012,11 @@ static int selinux_restorecon_common(const char *pathname_orig,
 				     size_t nthreads)
 {
 	struct rest_state state;
+	struct stat sb;
+	char *pathname = NULL, *pathdnamer = NULL, *pathdname, *pathbname;
+	char *paths[2] = { NULL, NULL };
+	int fts_flags, error;
+	struct dir_hash_node *current = NULL;
 
 	state.flags.nochange = (restorecon_flags &
 		    SELINUX_RESTORECON_NOCHANGE) ? true : false;
@@ -1056,12 +1061,6 @@ static int selinux_restorecon_common(const char *pathname_orig,
 	state.error = 0;
 	state.skipped_errors = 0;
 	state.saved_errno = 0;
-
-	struct stat sb;
-	char *pathname = NULL, *pathdnamer = NULL, *pathdname, *pathbname;
-	char *paths[2] = { NULL, NULL };
-	int fts_flags, error;
-	struct dir_hash_node *current = NULL;
 
 	if (state.flags.verbose && state.flags.progress)
 		state.flags.verbose = false;
@@ -1456,6 +1455,14 @@ int selinux_restorecon_set_alt_rootpath(const char *alt_rootpath)
 int selinux_restorecon_xattr(const char *pathname, unsigned int xattr_flags,
 			     struct dir_xattr ***xattr_list)
 {
+	int rc, fts_flags;
+	struct stat sb;
+	struct statfs sfsb;
+	struct dir_xattr *current, *next;
+	FTS *fts;
+	FTSENT *ftsent;
+	char *paths[2] = { NULL, NULL };
+
 	bool recurse = (xattr_flags &
 	    SELINUX_RESTORECON_XATTR_RECURSE) ? true : false;
 	bool delete_nonmatch = (xattr_flags &
@@ -1464,14 +1471,6 @@ int selinux_restorecon_xattr(const char *pathname, unsigned int xattr_flags,
 	    SELINUX_RESTORECON_XATTR_DELETE_ALL_DIGESTS) ? true : false;
 	ignore_mounts = (xattr_flags &
 	   SELINUX_RESTORECON_XATTR_IGNORE_MOUNTS) ? true : false;
-
-	int rc, fts_flags;
-	struct stat sb;
-	struct statfs sfsb;
-	struct dir_xattr *current, *next;
-	FTS *fts;
-	FTSENT *ftsent;
-	char *paths[2] = { NULL, NULL };
 
 	__selinux_once(fc_once, restorecon_init);
 
