@@ -2550,8 +2550,6 @@ int semanage_fc_sort(semanage_handle_t * sh, const char *buf, size_t buf_len,
 	semanage_file_context_bucket_t *main;
 	semanage_file_context_bucket_t *bcurrent;
 
-	i = 0;
-
 	if (sh == NULL) {
 		return -1;
 	}
