@@ -223,12 +223,12 @@ int semanage_module_info_clone(semanage_handle_t *sh,
 			       const semanage_module_info_t *source,
 			       semanage_module_info_t *target)
 {
+	int status = 0;
+	int ret = 0;
+
 	assert(sh);
 	assert(source);
 	assert(target);
-
-	int status = 0;
-	int ret = 0;
 
 	ret = semanage_module_info_destroy(sh, target);
 	if (ret != 0) {
@@ -345,11 +345,11 @@ int semanage_module_info_set_name(semanage_handle_t *sh,
 				  semanage_module_info_t *modinfo,
 				  const char *name)
 {
+	char * tmp;
+
 	assert(sh);
 	assert(modinfo);
 	assert(name);
-
-	char * tmp;
 
 	/* Verify name */
 	if (semanage_module_validate_name(name) < 0) {
@@ -375,11 +375,11 @@ int semanage_module_info_set_lang_ext(semanage_handle_t *sh,
 				      semanage_module_info_t *modinfo,
 				      const char *lang_ext)
 {
+	char * tmp;
+
 	assert(sh);
 	assert(modinfo);
 	assert(lang_ext);
-
-	char * tmp;
 
 	/* Verify extension */
 	if (semanage_module_validate_lang_ext(lang_ext) < 0) {
@@ -427,15 +427,15 @@ int semanage_module_get_path(semanage_handle_t *sh,
 			     char *path,
 			     size_t len)
 {
-	assert(sh);
-	assert(modinfo);
-	assert(path);
-
 	int status = 0;
 	int ret = 0;
 
 	const char *modules_path = NULL;
 	const char *file = NULL;
+
+	assert(sh);
+	assert(modinfo);
+	assert(path);
 
 	modules_path = sh->is_in_transaction ?
 		semanage_path(SEMANAGE_TMP, SEMANAGE_MODULES):
@@ -644,12 +644,12 @@ int semanage_module_key_set_name(semanage_handle_t *sh,
 				 semanage_module_key_t *modkey,
 				 const char *name)
 {
+	int status = 0;
+	char *tmp = NULL;
+
 	assert(sh);
 	assert(modkey);
 	assert(name);
-
-	int status = 0;
-	char *tmp = NULL;
 
 	if (semanage_module_validate_name(name) < 0) {
 		errno = 0;

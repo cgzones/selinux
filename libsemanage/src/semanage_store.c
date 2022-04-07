@@ -206,11 +206,13 @@ static int semanage_init_store_paths(const char *root)
 
 static int semanage_init_final(semanage_handle_t *sh, const char *prefix)
 {
+	int status = 0;
+	const char *store_path;
+
 	assert(sh);
 	assert(prefix);
 
-	int status = 0;
-	const char *store_path = sh->conf->store_path;
+	store_path = sh->conf->store_path;
 
 	/* SEMANAGE_FINAL_TMP */
 	if (asprintf(&semanage_final[SEMANAGE_FINAL_TMP], "%s%s%s/%s",
@@ -976,7 +978,7 @@ int semanage_make_sandbox(semanage_handle_t * sh)
 int semanage_make_final(semanage_handle_t *sh)
 {
 	int status = 0;
-	int ret = 0;
+	int ret = 0, i;
 	char fn[PATH_MAX];
 
 	/* Create tmp dir if it does not exist. */
@@ -1009,7 +1011,6 @@ int semanage_make_final(semanage_handle_t *sh)
 	}
 
 	// Build final directory structure
-	int i;
 	for (i = 1; i < SEMANAGE_FINAL_PATH_NUM; i++) {
 		if (strlen(semanage_final_path(SEMANAGE_FINAL_TMP, i)) >= sizeof(fn)) {
 			ERR(sh, "Unable to compose the final paths.");
@@ -1099,12 +1100,6 @@ int semanage_get_active_modules(semanage_handle_t * sh,
 				semanage_module_info_t ** modinfo,
 				int *num_modules)
 {
-	assert(sh);
-	assert(modinfo);
-	assert(num_modules);
-	*modinfo = NULL;
-	*num_modules = 0;
-
 	int status = 0;
 	int ret = 0;
 
@@ -1118,6 +1113,13 @@ int semanage_get_active_modules(semanage_handle_t * sh,
 	int all_modinfos_len = 0;
 
 	void *tmp = NULL;
+
+	assert(sh);
+	assert(modinfo);
+	assert(num_modules);
+
+	*modinfo = NULL;
+	*num_modules = 0;
 
 	/* get all modules */
 	ret = semanage_module_list_all(sh, &all_modinfos, &all_modinfos_len);
@@ -1622,6 +1624,10 @@ static int semanage_install_final_tmp(semanage_handle_t * sh)
 	const char *dst = NULL;
 	struct stat sb;
 	char fn[PATH_MAX];
+	const char *really_active_store;
+	struct stat astore;
+	struct stat istore;
+	const char *storepath;
 
 	/* For each of the final files install it if it exists.
 	 * i = 1 to avoid copying the top level directory.
@@ -1663,11 +1669,9 @@ static int semanage_install_final_tmp(semanage_handle_t * sh)
 	 * and what we are installing to, to decide if they are the same store. If
 	 * they are not then we do not reload policy.
 	 */
-	const char *really_active_store = selinux_policy_root();
-	struct stat astore;
-	struct stat istore;
-	const char *storepath = semanage_final_path(SEMANAGE_FINAL_SELINUX,
-						    SEMANAGE_FINAL_TOPLEVEL);
+	really_active_store = selinux_policy_root();
+	storepath = semanage_final_path(SEMANAGE_FINAL_SELINUX,
+					SEMANAGE_FINAL_TOPLEVEL);
 
 	if (stat(really_active_store, &astore) == 0) {
 		if (stat(storepath, &istore)) {

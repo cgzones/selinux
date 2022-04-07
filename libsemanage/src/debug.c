@@ -54,6 +54,7 @@ void semanage_msg_default_handler(void *varg __attribute__ ((unused)),
 {
 
 	FILE *stream = NULL;
+	va_list ap;
 	int errsv = 0;
 
 	switch (semanage_msg_get_level(handle)) {
@@ -74,7 +75,6 @@ void semanage_msg_default_handler(void *varg __attribute__ ((unused)),
 		semanage_msg_get_channel(handle),
 		semanage_msg_get_fname(handle));
 
-	va_list ap;
 	va_start(ap, fmt);
 	vfprintf(stream, fmt, ap);
 	va_end(ap);

@@ -128,6 +128,8 @@ int main(int argc, char **argv)
 	in = NULL;
 
 	if (ofile) {
+		char *cil_name;
+		char *separator;
 		char *mod_name = mod_pkg->policy->p.name;
 		char *cil_path = strdup(ofile);
 		if (cil_path == NULL) {
@@ -135,8 +137,8 @@ int main(int argc, char **argv)
 			rc = -1;
 			goto exit;
 		}
-		char *cil_name = basename(cil_path);
-		char *separator = strrchr(cil_name, '.');
+		cil_name = basename(cil_path);
+		separator = strrchr(cil_name, '.');
 		if (separator) {
 			*separator = '\0';
 		}

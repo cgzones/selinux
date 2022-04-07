@@ -59,10 +59,12 @@ static int lookup_seuser(semanage_handle_t * handle, const semanage_user_key_t *
 int semanage_user_del_local(semanage_handle_t * handle,
 			    const semanage_user_key_t * key)
 {
+	dbase_config_t *dconfig;
+
 	if (lookup_seuser(handle, key))
 		return -1;
 
-	dbase_config_t *dconfig = semanage_user_dbase_local(handle);
+	dconfig = semanage_user_dbase_local(handle);
 	return dbase_del(handle, dconfig, key);
 }
 

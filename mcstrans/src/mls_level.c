@@ -32,6 +32,8 @@ mls_level_t *mls_level_from_string(char *mls_context)
 	if (delim == ':') {
 		/* Extract category set. */
 		while (1) {
+			int bit;
+
 			scontextp = p;
 			while (*p && *p != ',' && *p != '-')
 				p++;
@@ -47,16 +49,17 @@ mls_level_t *mls_level_from_string(char *mls_context)
 
 			if (*scontextp != 'c')
 				goto err;
-			int bit = atoi(scontextp + 1);
+			bit = atoi(scontextp + 1);
 			if (ebitmap_set_bit(&l->cat, bit, 1))
 				goto err;
 
 			/* If level, set all categories in level */
 			if (lptr) {
+				int ubit, i;
+
 				if (*lptr != 'c')
 					goto err;
-				int ubit = atoi(lptr + 1);
-				int i;
+				ubit = atoi(lptr + 1);
 				for (i = bit + 1; i <= ubit; i++) {
 					if (ebitmap_set_bit
 					    (&l->cat, i, 1))
@@ -118,19 +121,19 @@ unsigned int mls_compute_string_len(mls_level_t *l)
 
 char *mls_level_to_string(mls_level_t *l)
 {
-	unsigned int wrote_sep, len = mls_compute_string_len(l);
+	unsigned int wrote_sep = 0, len;
 	unsigned int i, level = 0;
 	ebitmap_node_t *cnode;
-	wrote_sep = 0;
+	char *result, *p;
 
+	len = mls_compute_string_len(l);
 	if (len == 0)
 		return NULL;
-	char *result = (char *)malloc(len + 1);
+	result = (char *)malloc(len + 1);
 	if (!result)
 		return NULL;
 
-	char *p = result;
-
+	p = result;
 	p += sprintf(p, "s%d", l->sens);
 
 	/* categories */

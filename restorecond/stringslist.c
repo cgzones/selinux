@@ -61,8 +61,7 @@ int strings_list_find(struct stringsList *ptr, const char *string, int *exact)
 {
 	while (ptr) {
 		*exact = strcmp(ptr->string, string) == 0;
-		int cmp = fnmatch(ptr->string, string, 0);
-		if (cmp == 0) 
+		if (fnmatch(ptr->string, string, 0) == 0)
 			return 0;	/* Match found */
 		ptr = ptr->next;
 	}

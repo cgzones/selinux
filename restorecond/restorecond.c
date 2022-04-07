@@ -143,6 +143,8 @@ int main(int argc, char **argv)
 {
 	int opt;
 	struct sigaction sa;
+	uid_t uid;
+	struct passwd *pwd;
 
 	/* If we are not running SELinux then just exit */
 	if (is_selinux_enabled() != 1)
@@ -193,8 +195,8 @@ int main(int argc, char **argv)
 	if (master_fd < 0)
 		exitApp("inotify_init");
 
-	uid_t uid = getuid();
-	struct passwd *pwd = getpwuid(uid);
+	uid = getuid();
+	pwd = getpwuid(uid);
 	if (!pwd)
 		exitApp("getpwuid");
 

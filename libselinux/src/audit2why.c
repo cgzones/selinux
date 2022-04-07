@@ -148,6 +148,8 @@ static int check_booleans(struct boolean_t **bools)
 		sepol_bool_free(boolean);
 
 	if (fcnt > 0) {
+		struct boolean_t *b;
+
 		*bools = calloc(fcnt + 1, sizeof(struct boolean_t));
 		if (!*bools) {
 			PyErr_SetString( PyExc_MemoryError, "Out of memory\n");
@@ -155,7 +157,7 @@ static int check_booleans(struct boolean_t **bools)
 			return 0;
 		}
 
-		struct boolean_t *b = *bools;
+		b = *bools;
 		for (i = 0; i < fcnt; i++) {
 			int ctr = foundlist[i];
 			b[i].name = strdup(boollist[ctr]->name);

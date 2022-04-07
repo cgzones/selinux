@@ -9,6 +9,7 @@ ifeq ($(DEBUG),1)
 	export LDFLAGS = -g
 else
 	export CFLAGS ?= -O2 -Werror -Wall -Wextra \
+		-Wdeclaration-after-statement \
 		-Wfloat-equal \
 		-Wformat=2 \
 		-Winit-self \

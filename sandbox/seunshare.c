@@ -346,10 +346,11 @@ static int rsynccmd(const char * src, const char *dst, char **cmdbuf)
 	char *buf = NULL;
 	char *newbuf = NULL;
 	glob_t fglob;
-	fglob.gl_offs = 0;
 	int flags = GLOB_PERIOD;
 	unsigned int i = 0;
 	int rc = -1;
+
+	fglob.gl_offs = 0;
 
 	/* match glob for all files in src dir */
 	if (asprintf(&buf, "%s/*", src) == -1) {
@@ -588,6 +589,9 @@ killall (const char *execcon)
 	int i;
 	int pids, max_pids;
 	int running = 0;
+	context_t con;
+	const char *mcs;
+
 	self = getpid();
 	if (!(dir = opendir(PROC_BASE))) {
 		return -1;
@@ -599,9 +603,8 @@ killall (const char *execcon)
 		return -1;
 	}
 	pids = 0;
-	context_t con;
 	con = context_new(execcon);
-	const char *mcs = context_range_get(con);
+	mcs = context_range_get(con);
 	printf("mcs=%s\n", mcs);
 	while ((de = readdir (dir)) != NULL) {
 		if (!(pid = (pid_t)atoi(de->d_name)) || pid == self)

@@ -70,7 +70,7 @@ static int semanage_seuser_audit(semanage_handle_t * handle,
 	char *proles = NULL;
 	char msg[1024];
 	const char *sep = "-";
-	int rc = -1;
+	int fd, rc = -1;
 	strcpy(msg, "login");
 	if (previous) {
 		name = semanage_seuser_get_name(previous);
@@ -101,7 +101,7 @@ static int semanage_seuser_audit(semanage_handle_t * handle,
 		}
 	}
 
-	int fd = audit_open();
+	fd = audit_open();
 	if (fd < 0)
 	{
 		/* If kernel doesn't support audit, bail out */

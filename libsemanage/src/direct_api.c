@@ -1981,16 +1981,16 @@ static int semanage_direct_get_enabled(semanage_handle_t *sh,
 				       const semanage_module_key_t *modkey,
 				       int *enabled)
 {
-	assert(sh);
-	assert(modkey);
-	assert(enabled);
-
 	int status = 0;
 	int ret = 0;
 
 	char path[PATH_MAX];
 	struct stat sb;
 	semanage_module_info_t *modinfo = NULL;
+
+	assert(sh);
+	assert(modkey);
+	assert(enabled);
 
 	/* get module info */
 	ret = semanage_module_get_module_info(
@@ -2038,9 +2038,6 @@ static int semanage_direct_set_enabled(semanage_handle_t *sh,
 				       const semanage_module_key_t *modkey,
 				       int enabled)
 {
-	assert(sh);
-	assert(modkey);
-
 	int status = 0;
 	int ret = 0;
 
@@ -2049,6 +2046,9 @@ static int semanage_direct_set_enabled(semanage_handle_t *sh,
 	FILE *fp = NULL;
 	semanage_module_info_t *modinfo = NULL;
 	mode_t mask;
+
+	assert(sh);
+	assert(modkey);
 
 	/* check transaction */
 	if (!sh->is_in_transaction) {
@@ -2194,10 +2194,6 @@ static int semanage_direct_get_module_info(semanage_handle_t *sh,
 					   const semanage_module_key_t *modkey,
 					   semanage_module_info_t **modinfo)
 {
-	assert(sh);
-	assert(modkey);
-	assert(modinfo);
-
 	int status = 0;
 	int ret = 0;
 
@@ -2212,6 +2208,10 @@ static int semanage_direct_get_module_info(semanage_handle_t *sh,
 	semanage_module_info_t *modinfos = NULL;
 	int modinfos_len = 0;
 	const semanage_module_info_t *highest = NULL;
+
+	assert(sh);
+	assert(modkey);
+	assert(modinfo);
 
 	/* check module name */
 	ret = semanage_module_validate_name(modkey->name);
@@ -2545,18 +2545,12 @@ static int semanage_direct_list_all(semanage_handle_t *sh,
 				    semanage_module_info_t **modinfos,
 				    int *modinfos_len)
 {
-	assert(sh);
-	assert(modinfos);
-	assert(modinfos_len);
-
 	int status = 0;
 	int ret = 0;
 
 	int i = 0;
 	int j = 0;
 
-	*modinfos = NULL;
-	*modinfos_len = 0;
 	void *tmp = NULL;
 
 	const char *toplevel = NULL;
@@ -2573,6 +2567,14 @@ static int semanage_direct_list_all(semanage_handle_t *sh,
 	semanage_module_info_t *modinfo_tmp = NULL;
 
 	semanage_module_info_t modinfo;
+
+	assert(sh);
+	assert(modinfos);
+	assert(modinfos_len);
+
+	*modinfos = NULL;
+	*modinfos_len = 0;
+
 	ret = semanage_module_info_init(sh, &modinfo);
 	if (ret != 0) {
 		status = -1;
@@ -2755,10 +2757,6 @@ static int semanage_direct_install_info(semanage_handle_t *sh,
 					char *data,
 					size_t data_len)
 {
-	assert(sh);
-	assert(modinfo);
-	assert(data);
-
 	int status = 0;
 	int ret = 0;
 	int type;
@@ -2768,6 +2766,11 @@ static int semanage_direct_install_info(semanage_handle_t *sh,
 
 	semanage_module_info_t *higher_info = NULL;
 	semanage_module_key_t higher_key;
+
+	assert(sh);
+	assert(modinfo);
+	assert(data);
+
 	ret = semanage_module_key_init(sh, &higher_key);
 	if (ret != 0) {
 		status = -1;
@@ -2882,9 +2885,6 @@ cleanup:
 static int semanage_direct_remove_key(semanage_handle_t *sh,
 				      const semanage_module_key_t *modkey)
 {
-	assert(sh);
-	assert(modkey);
-
 	int status = 0;
 	int ret = 0;
 
@@ -2892,6 +2892,10 @@ static int semanage_direct_remove_key(semanage_handle_t *sh,
 	semanage_module_info_t *modinfo = NULL;
 
 	semanage_module_key_t modkey_tmp;
+
+	assert(sh);
+	assert(modkey);
+
 	ret = semanage_module_key_init(sh, &modkey_tmp);
 	if (ret != 0) {
 		status = -1;

@@ -38,13 +38,17 @@ int main(int argc, char **argv)
 	unsigned int xattr_flags = 0, delete_digest = 0, recurse = 0;
 	unsigned int delete_all_digests = 0, ignore_mounts = 0;
 	bool display_digest = false;
-	char *sha1_buf, **specfiles, *fc_file = NULL, *pathname = NULL;
+	char *sha1_buf, **specfiles, *pathname = NULL;
 	unsigned char *fc_digest = NULL;
 	size_t i, fc_digest_len = 0, num_specfiles;
 
 	struct stat sb;
 	struct selabel_handle *hnd = NULL;
 	struct dir_xattr *current, *next, **xattr_list = NULL;
+	struct selinux_opt selinux_opts[] = {
+		{ SELABEL_OPT_PATH, NULL },
+		{ SELABEL_OPT_DIGEST, (char *)1 }
+	};
 
 	bool no_comment = true;
 
@@ -90,7 +94,7 @@ int main(int argc, char **argv)
 			add_exclude(optarg);
 			break;
 		case 'f':
-			fc_file = optarg;
+			selinux_opts[0].value = optarg;
 			break;
 		default:
 			usage(argv[0]);
@@ -101,11 +105,6 @@ int main(int argc, char **argv)
 		fprintf(stderr, "No pathname specified\n");
 		exit(-1);
 	}
-
-	struct selinux_opt selinux_opts[] = {
-		{ SELABEL_OPT_PATH, fc_file },
-		{ SELABEL_OPT_DIGEST, (char *)1 }
-	};
 
 	hnd = selabel_open(SELABEL_CTX_FILE, selinux_opts, 2);
 	if (!hnd) {

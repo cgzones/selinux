@@ -70,10 +70,12 @@ int dbase_llist_cache_prepend(semanage_handle_t * handle,
 void dbase_llist_drop_cache(dbase_llist_t * dbase)
 {
 
+	cache_entry_t *prev, *ptr;
+
 	if (dbase->cache_serial < 0)
 		return;
 
-	cache_entry_t *prev, *ptr = dbase->cache;
+	ptr = dbase->cache;
 	while (ptr != NULL) {
 		prev = ptr;
 		ptr = ptr->next;

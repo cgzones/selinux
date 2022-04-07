@@ -134,17 +134,19 @@ static int check_group(const char *group, const char *name, const gid_t gid) {
 	int i, ng = 0;
 	gid_t *groups = NULL;
 	struct group gbuf, *grent = NULL;
+	char *rbuf;
 
 	long rbuflen = sysconf(_SC_GETGR_R_SIZE_MAX);
 	if (rbuflen <= 0)
 		rbuflen = 1024;
-	char *rbuf;
 
 	while(1) {
+		int retval;
+
 		rbuf = malloc(rbuflen);
 		if (rbuf == NULL)
 			return 0;
-		int retval = getgrnam_r(group, &gbuf, rbuf, 
+		retval = getgrnam_r(group, &gbuf, rbuf,
 				rbuflen, &grent);
 		if (retval == ERANGE && rbuflen < LONG_MAX / 2)
 		{

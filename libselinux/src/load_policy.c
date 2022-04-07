@@ -226,6 +226,7 @@ int selinux_init_load_policy(int *enforce)
 	int rc = 0, orig_enforce = 0, seconfig = -2, secmdline = -1;
 	FILE *cfg;
 	char *buf;
+	const char *mntpoint = NULL;
 
 	/*
 	 * Reread the selinux configuration in case it has changed.
@@ -276,7 +277,7 @@ int selinux_init_load_policy(int *enforce)
 	 * Check for the existence of SELinux via selinuxfs, and 
 	 * mount it if present for use in the calls below.  
 	 */
-	const char *mntpoint = NULL;
+
 	/* First make sure /sys is mounted */
 	if (mount("sysfs", "/sys", "sysfs", 0, 0) == 0 || errno == EBUSY) {
 		/* MS_NODEV can't be set because of /sys/fs/selinux/null device, used by Android */
