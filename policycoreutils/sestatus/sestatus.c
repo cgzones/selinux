@@ -27,9 +27,6 @@
 #define PROCS "[process]"
 #define FILES "[files]"
 
-/* buffer size for cmp_cmdline */
-#define BUFSIZE 255
-
 /* column to put the output (must be a multiple of 8) */
 static unsigned int COL = 32;
 
@@ -38,19 +35,18 @@ extern char *selinux_mnt;
 static int cmp_cmdline(const char *command, int pid)
 {
 
-	char buf[BUFSIZE];
-	char filename[BUFSIZE];
+	char buf[PATH_MAX];
+	char filename[256];
 
-	memset(buf, '\0', BUFSIZE);
+	memset(buf, '\0', sizeof(buf));
 
 	/* first read the proc entry */
-	sprintf(filename, "%s/%d/exe", PROC_BASE, pid);
+	snprintf(filename, sizeof(filename), PROC_BASE "/%d/exe", pid);
 
-	if (readlink(filename, buf, BUFSIZE) < 0)
+	if (readlink(filename, buf, sizeof(buf) - 1) < 0)
 		return 0;
 
-	if (buf[BUFSIZE - 1] != '\0')
-		buf[BUFSIZE - 1] = '\0';
+	buf[sizeof(buf) - 1] = '\0';
 
 	/* check if this is the command we're looking for. */
 	if (strcmp(command, buf) == 0)
