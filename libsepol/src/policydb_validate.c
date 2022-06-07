@@ -1,6 +1,7 @@
 
 #include <sepol/policydb/conditional.h>
 #include <sepol/policydb/ebitmap.h>
+#include <sepol/policydb/initialsids.h>
 #include <sepol/policydb/policydb.h>
 #include <sepol/policydb/services.h>
 
@@ -1041,6 +1042,10 @@ static int validate_ocontexts(sepol_handle_t *handle, policydb_t *p, validate_t 
 
 			if (p->target_platform == SEPOL_TARGET_SELINUX) {
 				switch (i) {
+				case OCON_ISID:
+					if (octx->sid[0] < 1 || octx->sid[0] >= SELINUX_SID_SZ)
+						goto bad;
+					break;
 				case OCON_FS:
 				case OCON_NETIF:
 					if (validate_context(&octx->context[1], flavors, p->mls))
@@ -1055,6 +1060,14 @@ static int validate_ocontexts(sepol_handle_t *handle, policydb_t *p, validate_t 
 					default:
 						goto bad;
 					}
+				}
+			}
+			if (p->target_platform == SEPOL_TARGET_XEN) {
+				switch (i) {
+				case OCON_XEN_ISID:
+					if (octx->sid[0] < 1 || octx->sid[0] >= XEN_SID_SZ)
+						goto bad;
+					break;
 				}
 			}
 		}
