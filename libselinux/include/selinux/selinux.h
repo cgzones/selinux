@@ -266,10 +266,12 @@ __attribute__ ((deprecated))
 #endif
 extern int security_compute_user(const char * scon,
 				 const char *username,
-				 char *** con) selinux_nonnull((1,2,3)) selinux_nodiscard;
+				 char *** con) selinux_nonnull((1,2,3)) selinux_nodiscard
+					       selinux_deprecated("Use get_ordered_context_list(3) family");
 extern int security_compute_user_raw(const char * scon,
 				     const char *username,
-				     char *** con) selinux_nonnull((1,2,3)) selinux_nodiscard;
+				     char *** con) selinux_nonnull((1,2,3)) selinux_nodiscard
+						   selinux_deprecated("Use get_ordered_context_list(3) family");
 
 /* Validate a transition. This determines whether a transition from scon to newcon
    using tcon as the target for object class tclass is valid in the loaded policy.
@@ -448,7 +450,7 @@ extern void set_matchpathcon_printf(void
 #ifdef __GNUC__
    __attribute__ ((format(printf, 1, 2)))
 #endif
-   (*f) (const char *fmt, ...));
+   (*f) (const char *fmt, ...)) selinux_deprecated("matchpathcon family is deprecated");
 
 /* Set the function used by matchpathcon_init when checking the
    validity of a context in the file contexts configuration.  If not set,
@@ -457,7 +459,7 @@ extern void set_matchpathcon_printf(void
    may include the 'path' and 'lineno' in such error messages. */
 extern void set_matchpathcon_invalidcon(int (*f) (const char *path,
 						  unsigned lineno,
-						  char *context));
+						  char *context)) selinux_deprecated("matchpathcon family is deprecated");
 
 /* Same as above, but also allows canonicalization of the context,
    by changing *context to refer to the canonical form.  If not set,
@@ -465,13 +467,13 @@ extern void set_matchpathcon_invalidcon(int (*f) (const char *path,
    security_canonicalize_context(). */
 extern void set_matchpathcon_canoncon(int (*f) (const char *path,
 						unsigned lineno,
-						char **context));
+						char **context)) selinux_deprecated("matchpathcon family is deprecated");
 
 /* Set flags controlling operation of matchpathcon_init or matchpathcon. */
 #define MATCHPATHCON_BASEONLY 1	/* Only process the base file_contexts file. */
 #define MATCHPATHCON_NOTRANS  2	/* Do not perform any context translation. */
 #define MATCHPATHCON_VALIDATE 4	/* Validate/canonicalize contexts at init time. */
-extern void set_matchpathcon_flags(unsigned int flags);
+extern void set_matchpathcon_flags(unsigned int flags) selinux_deprecated("matchpathcon family is deprecated");
 
 /* Load the file contexts configuration specified by 'path'
    into memory for use by subsequent matchpathcon calls.  
@@ -485,7 +487,7 @@ extern int matchpathcon_init(const char *path) selinux_nodiscard selinux_depreca
 
 /* Same as matchpathcon_init, but only load entries with
    regexes that have stems that are prefixes of 'prefix'. */
-extern int matchpathcon_init_prefix(const char *path, const char *prefix) selinux_nodiscard;
+extern int matchpathcon_init_prefix(const char *path, const char *prefix) selinux_nodiscard selinux_deprecated("Use selabel_open(3) with backend SELABEL_CTX_FILE");
 
 /* Free the memory allocated by matchpathcon_init. */
 extern void matchpathcon_fini(void) selinux_deprecated("Use selabel_close(3)");
@@ -493,7 +495,7 @@ extern void matchpathcon_fini(void) selinux_deprecated("Use selabel_close(3)");
 /* Resolve all of the symlinks and relative portions of a pathname, but NOT
  * the final component (same a realpath() unless the final component is a
  * symlink.  Resolved path must be a path of size PATH_MAX + 1 */
-extern int realpath_not_final(const char *name, char *resolved_path) selinux_nonnull((1,2)) selinux_nodiscard;
+extern int realpath_not_final(const char *name, char *resolved_path) selinux_nonnull((1,2)) selinux_nodiscard selinux_deprecated("Not meant for external use");
 
 /* Match the specified pathname and mode against the file contexts
    configuration and set *con to refer to the resulting context.
@@ -507,7 +509,7 @@ extern int matchpathcon(const char *path,
 /* Same as above, but return a specification index for 
    later use in a matchpathcon_filespec_add() call - see below. */
 extern int matchpathcon_index(const char *path,
-			      mode_t mode, char ** con) selinux_nonnull((1,3)) selinux_nodiscard;
+			      mode_t mode, char ** con) selinux_nonnull((1,3)) selinux_nodiscard selinux_deprecated("Use selabel_lookup(3)");
 
 /* Maintain an association between an inode and a specification index,
    and check whether a conflicting specification is already associated
@@ -517,18 +519,18 @@ extern int matchpathcon_index(const char *path,
 #if defined(_FILE_OFFSET_BITS) && _FILE_OFFSET_BITS == 64 && __BITS_PER_LONG < 64
 #define matchpathcon_filespec_add matchpathcon_filespec_add64
 #endif
-extern int matchpathcon_filespec_add(ino_t ino, int specind, const char *file) selinux_nonnull((3)) selinux_nodiscard;
+extern int matchpathcon_filespec_add(ino_t ino, int specind, const char *file) selinux_nonnull((3)) selinux_nodiscard selinux_deprecated("matchpathcon family is deprecated");
 
 /* Destroy any inode associations that have been added, e.g. to restart
    for a new filesystem. */
-extern void matchpathcon_filespec_destroy(void);
+extern void matchpathcon_filespec_destroy(void) selinux_deprecated("matchpathcon family is deprecated");
 
 /* Display statistics on the hash table usage for the associations. */
-extern void matchpathcon_filespec_eval(void);
+extern void matchpathcon_filespec_eval(void) selinux_deprecated("matchpathcon family is deprecated");
 
 /* Check to see whether any specifications had no matches and report them.
    The 'str' is used as a prefix for any warning messages. */
-extern void matchpathcon_checkmatches(char *str);
+extern void matchpathcon_checkmatches(char *str) selinux_deprecated("matchpathcon family is deprecated");
 
 /* Match the specified media and against the media contexts 
    configuration and set *con to refer to the resulting context.
