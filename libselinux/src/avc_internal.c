@@ -103,6 +103,8 @@ int avc_netlink_open(int blocking)
 	int len, rc = 0;
 	struct sockaddr_nl addr;
 
+	avc_netlink_close();
+
 	fd = socket(PF_NETLINK, SOCK_RAW | SOCK_CLOEXEC, NETLINK_SELINUX);
 	if (fd < 0) {
 		rc = fd;
@@ -146,6 +148,11 @@ static int avc_netlink_receive(void *buf, unsigned buflen, int blocking)
 	struct sockaddr_nl nladdr;
 	socklen_t nladdrlen = sizeof nladdr;
 	struct nlmsghdr *nlh = (struct nlmsghdr *)buf;
+
+	if (fd < 0) {
+		errno = EBADFD;
+		return -1;
+	}
 
 	do {
 		rc = poll(&pfd, 1, (blocking ? -1 : 0));
@@ -292,8 +299,8 @@ void avc_netlink_loop(void)
 			break;
 	}
 
-	close(fd);
-	fd = -1;
+	avc_netlink_close();
+
 	avc_log(SELINUX_ERROR,
 		"%s:  netlink thread: errors encountered, terminating\n",
 		avc_prefix);
