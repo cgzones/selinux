@@ -3,6 +3,7 @@
 #include "debug.h"
 #include <sepol/policydb/policydb.h>
 #include "policydb_internal.h"
+#include "policydb_validate.h"
 
 /* Policy file interfaces. */
 
@@ -171,6 +172,11 @@ int sepol_policydb_set_target_platform(sepol_policydb_t * sp,
 int sepol_policydb_optimize(sepol_policydb_t * p)
 {
 	return policydb_optimize(&p->p);
+}
+
+int sepol_policydb_validate(sepol_handle_t * handle, const sepol_policydb_t * p)
+{
+	return policydb_validate(handle, &p->p);
 }
 
 int sepol_policydb_read(sepol_policydb_t * p, sepol_policy_file_t * pf)

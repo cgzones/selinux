@@ -294,3 +294,8 @@ LIBSEPOL_3.6 {
   global:
 	cil_write_post_ast;
 } LIBSEPOL_3.4;
+
+LIBSEPOL_3.8 {
+  global:
+	sepol_policydb_validate;
+} LIBSEPOL_3.6;
