@@ -457,7 +457,7 @@ static int write_file(semanage_handle_t * sh,
 	int out;
 
 	if ((out =
-	     open(filename, O_WRONLY | O_CREAT | O_TRUNC,
+	     open(filename, O_WRONLY | O_CREAT | O_TRUNC | O_CLOEXEC,
 		  S_IRUSR | S_IWUSR)) == -1) {
 		ERR(sh, "Could not open %s for writing.", filename);
 		return -1;
@@ -640,17 +640,17 @@ static int semanage_pipe_data(semanage_handle_t *sh, char *path, char *in_data, 
 	 */
 	sigaction(SIGPIPE, &new_signal, &old_signal);
 
-	retval = pipe(input_fd);
+	retval = pipe2(input_fd, O_CLOEXEC);
 	if (retval == -1) {
 		ERR(sh, "Unable to create pipe for input pipe: %s\n", strerror(errno));
 		goto cleanup;
 	}
-	retval = pipe(output_fd);
+	retval = pipe2(output_fd, O_CLOEXEC);
 	if (retval == -1) {
 		ERR(sh, "Unable to create pipe for output pipe: %s\n", strerror(errno));
 		goto cleanup;
 	}
-	retval = pipe(err_fd);
+	retval = pipe2(err_fd, O_CLOEXEC);
 	if (retval == -1) {
 		ERR(sh, "Unable to create pipe for error pipe: %s\n", strerror(errno));
 		goto cleanup;
@@ -662,17 +662,17 @@ static int semanage_pipe_data(semanage_handle_t *sh, char *path, char *in_data, 
 		retval = -1;
 		goto cleanup;
 	} else if (pid == 0) {
-		retval = dup2(input_fd[PIPE_READ], STDIN_FILENO);
+		retval = dup3(input_fd[PIPE_READ], STDIN_FILENO, O_CLOEXEC);
 		if (retval == -1) {
 			ERR(sh, "Unable to dup2 input pipe: %s\n", strerror(errno));
 			goto cleanup;
 		}
-		retval = dup2(output_fd[PIPE_WRITE], STDOUT_FILENO);
+		retval = dup3(output_fd[PIPE_WRITE], STDOUT_FILENO, O_CLOEXEC);
 		if (retval == -1) {
 			ERR(sh, "Unable to dup2 output pipe: %s\n", strerror(errno));
 			goto cleanup;
 		}
-		retval = dup2(err_fd[PIPE_WRITE], STDERR_FILENO);
+		retval = dup3(err_fd[PIPE_WRITE], STDERR_FILENO, O_CLOEXEC);
 		if (retval == -1) {
 			ERR(sh, "Unable to dup2 error pipe: %s\n", strerror(errno));
 			goto cleanup;
@@ -822,7 +822,7 @@ static int semanage_direct_write_langext(semanage_handle_t *sh,
 		goto cleanup;
 	}
 
-	fp = fopen(fn, "w");
+	fp = fopen(fn, "we");
 	if (fp == NULL) {
 		ERR(sh, "Unable to open %s module ext file.", modinfo->name);
 		ret = -1;
@@ -1073,7 +1073,7 @@ static int semanage_compare_checksum(semanage_handle_t *sh, const char *referenc
 	int fd, retval;
 	char *data;
 
-	fd = open(path, O_RDONLY);
+	fd = open(path, O_RDONLY | O_CLOEXEC);
 	if (fd == -1) {
 		if (errno != ENOENT) {
 			ERR(sh, "Unable to open %s: %s\n", path, strerror(errno));
@@ -1214,7 +1214,7 @@ static int semanage_direct_commit(semanage_handle_t * sh)
 	}
 	if (sepol_get_disable_dontaudit(sh->sepolh) == 1) {
 		FILE *touch;
-		touch = fopen(path, "w");
+		touch = fopen(path, "we");
 		if (touch != NULL) {
 			if (fclose(touch) != 0) {
 				ERR(sh, "Error attempting to create disable_dontaudit flag.");
@@ -1246,7 +1246,7 @@ static int semanage_direct_commit(semanage_handle_t * sh)
 
 	if (sepol_get_preserve_tunables(sh->sepolh) == 1) {
 		FILE *touch;
-		touch = fopen(path, "w");
+		touch = fopen(path, "we");
 		if (touch != NULL) {
 			if (fclose(touch) != 0) {
 				ERR(sh, "Error attempting to create preserve_tunable flag.");
@@ -2108,7 +2108,7 @@ static int semanage_direct_set_enabled(semanage_handle_t *sh,
 	switch (enabled) {
 		case 0: /* disable the module */
 			mask = umask(0077);
-			fp = fopen(fn, "w");
+			fp = fopen(fn, "we");
 			umask(mask);
 
 			if (fp == NULL) {
@@ -2295,7 +2295,7 @@ static int semanage_direct_get_module_info(semanage_handle_t *sh,
 		goto cleanup;
 	}
 
-	fp = fopen(fn, "r");
+	fp = fopen(fn, "re");
 
 	if (fp == NULL) {
 		ERR(sh,
