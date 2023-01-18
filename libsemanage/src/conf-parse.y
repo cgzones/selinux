@@ -241,7 +241,7 @@ handle_unknown: HANDLE_UNKNOWN '=' ARG {
 bzip_blocksize:  BZIP_BLOCKSIZE '=' ARG {
 	int blocksize = atoi($3);
 	free($3);
-	if (blocksize > 9)
+	if (blocksize > 9 || blocksize < 0)
 		yyerror("bzip-blocksize can only be in the range 0-9");
 	else
 		current_conf->bzip_blocksize = blocksize;
