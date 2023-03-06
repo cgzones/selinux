@@ -202,9 +202,9 @@ char *sepol_extended_perms_to_string(avtab_extended_perms_t *xperms)
  */
 
 /* Read a token from a buffer */
-static inline int tokenize_str(char delim, char **str, char **ptr, size_t *len)
+static inline int tokenize_str(char delim, char **str, const char **ptr, size_t *len)
 {
-	char *tmp_buf = *ptr;
+	const char *tmp_buf = *ptr;
 	*str = NULL;
 
 	while (**ptr != '\0') {
@@ -254,9 +254,10 @@ static inline int tokenize_str(char delim, char **str, char **ptr, size_t *len)
  * contain the remaining content of line_buf. If the delimiter is any whitespace
  * character, then all whitespace will be squashed.
  */
-int tokenize(char *line_buf, char delim, int num_args, ...)
+int tokenize(const char *line_buf, char delim, int num_args, ...)
 {
-	char **arg, *buf_p;
+	char **arg;
+	const char *buf_p;
 	int rc, items;
 	size_t arg_len = 0;
 	va_list ap;
