@@ -13,6 +13,8 @@ mls_level_t *mls_level_from_string(char *mls_context)
 	}
 
 	l = (mls_level_t *) calloc(1, sizeof(mls_level_t));
+	if (!l)
+		return NULL;
 
 	/* Extract low sensitivity. */
 	scontextp = p = mls_context;
