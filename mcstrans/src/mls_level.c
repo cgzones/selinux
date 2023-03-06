@@ -130,6 +130,8 @@ char *mls_level_to_string(mls_level_t *l)
 	if (len == 0)
 		return NULL;
 	result = (char *)malloc(len + 1);
+	if (!result)
+		return NULL;
 	p = result;
 
 	p += sprintf(p, "s%d", l->sens);
