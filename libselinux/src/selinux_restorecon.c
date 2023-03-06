@@ -779,6 +779,17 @@ struct dir_hash_node {
 	uint8_t digest[SHA1_HASH_SIZE];
 	struct dir_hash_node *next;
 };
+
+/* Frees a single dir-hash node (not the entire linked list) */
+static void free_dir_hash_node(struct dir_hash_node *node)
+{
+	if (!node)
+		return;
+
+	free(node->path);
+	free(node);
+}
+
 /*
  * Returns true if the digest of all partial matched contexts is the same as
  * the one saved by setxattr. Otherwise returns false and constructs a
@@ -941,6 +952,7 @@ loop_body:
 					selinux_log(SELINUX_INFO,
 						"Skipping restorecon on directory(%s)\n",
 						    ftsent->fts_path);
+					free_dir_hash_node(new_node);
 					fts_set(fts, ftsent, FTS_SKIP);
 					continue;
 				}
@@ -953,6 +965,8 @@ loop_body:
 						state->current->next = new_node;
 						state->current = new_node;
 					}
+				} else {
+					free_dir_hash_node(new_node);
 				}
 			}
 			/* fall through */
@@ -1311,8 +1325,7 @@ cleanup:
 	while (current != NULL) {
 		struct dir_hash_node *next = current->next;
 
-		free(current->path);
-		free(current);
+		free_dir_hash_node(current);
 		current = next;
 	}
 	return error;
