@@ -200,8 +200,11 @@ static int process_avtab_datum(uint16_t specified,
 	return 0;
 }
 
+#define PERMISSION_MASK(nprim) ((nprim) == PERM_SYMTAB_SIZE ? (~UINT32_C(0)) : ((UINT32_C(1) << (nprim)) - 1))
+
 /* checks if avtab contains a rule that covers the given rule */
 static int is_avrule_redundant(avtab_ptr_t entry, avtab_t *tab,
+			       const policydb_t *p,
 			       const struct type_vec *type_map,
 			       unsigned char not_cond)
 {
@@ -221,6 +224,18 @@ static int is_avrule_redundant(avtab_ptr_t entry, avtab_t *tab,
 	key.specified    = entry->key.specified;
 
 	d1 = &entry->datum;
+
+	/*
+	 * Drop permission bits not available for class.
+	 * (Might be set by wildcard permission and hinder removing otherwise
+	 * empty avrule)
+	 */
+	if (entry->key.specified & AVTAB_AV) {
+		const class_datum_t *cladatum = p->class_val_to_struct[entry->key.target_class - 1];
+		d1->data &= PERMISSION_MASK(cladatum->permissions.nprim);
+		if (d1->data == 0)
+			return 1;
+	}
 
 	for (i = 0; i < type_map[s_idx].count; i++) {
 		st = type_map[s_idx].types[i];
@@ -306,7 +321,7 @@ static void optimize_avtab(policydb_t *p, const struct type_vec *type_map)
 	for (i = 0; i < tab->nslot; i++) {
 		cur = &tab->htable[i];
 		while (*cur) {
-			if (is_avrule_redundant(*cur, tab, type_map, 1)) {
+			if (is_avrule_redundant(*cur, tab, p, type_map, 1)) {
 				/* redundant rule -> remove it */
 				avtab_ptr_t tmp = *cur;
 
@@ -362,7 +377,7 @@ static void optimize_cond_av_list(cond_av_list_t **cond, cond_av_list_t **del,
 		 * First check if covered by an unconditional rule, then also
 		 * check if covered by another rule in the same list.
 		 */
-		if (is_avrule_redundant((*cond)->node, &p->te_avtab, type_map, 0) ||
+		if (is_avrule_redundant((*cond)->node, &p->te_avtab, p, type_map, 0) ||
 		    is_cond_rule_redundant((*cond)->node, *pcov_cur, type_map)) {
 			cond_av_list_t *tmp = *cond;
 
