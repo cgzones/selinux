@@ -1731,7 +1731,7 @@ int define_compute_type(int which, int has_filename, uint8_t name_match)
 	return 0;
 }
 
-avrule_t *define_cond_compute_type(int which)
+avrule_t *define_cond_compute_type(int which, int has_filename, uint8_t name_match)
 {
 	char *id;
 	avrule_t *avrule;
@@ -1745,11 +1745,14 @@ avrule_t *define_cond_compute_type(int which)
 			free(id);
 		id = queue_remove(id_queue);
 		free(id);
+		if (has_filename) {
+			id = queue_remove(id_queue);
+			free(id);
+		}
 		return (avrule_t *) 1;
 	}
 
-	if (define_compute_type_helper(which, &avrule, 0,
-				       NAME_TRANS_MATCH_EXACT))
+	if (define_compute_type_helper(which, &avrule, has_filename, name_match))
 		return COND_ERR;
 
 	return avrule;
@@ -3358,13 +3361,6 @@ int define_role_allow(void)
 
 	append_role_allow(ra);
 	return 0;
-}
-
-avrule_t *define_cond_filename_trans(void)
-{
-	yyerror("type transitions with a filename not allowed inside "
-		"conditionals\n");
-	return COND_ERR;
 }
 
 static constraint_expr_t *constraint_expr_clone(const constraint_expr_t * expr)

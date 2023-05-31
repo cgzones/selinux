@@ -43,6 +43,7 @@
 
 #include <stdlib.h>
 #include <sepol/policydb/avtab.h>
+#include <sepol/policydb/conditional.h>
 #include <sepol/policydb/policydb.h>
 #include <sepol/errcodes.h>
 
@@ -770,6 +771,7 @@ int avtab_read(avtab_t * a, struct policy_file *fp, uint32_t vers)
 /* policydb filename transition compatibility */
 
 int avtab_insert_filename_trans(avtab_t *a, avtab_key_t *key,
+				cond_av_list_t ** cond, int enabled,
 				uint32_t otype, const char *name,
 				uint8_t name_match, uint32_t *present_otype)
 {
@@ -792,6 +794,24 @@ int avtab_insert_filename_trans(avtab_t *a, avtab_key_t *key,
 		if (!node)
 			return SEPOL_ENOMEM;
 		datum = &node->datum;
+		if (cond) {
+			cond_av_list_t *nl;
+
+			node->parse_context = cond;
+			nl = malloc(sizeof(cond_av_list_t));
+			if (!nl)
+				return SEPOL_ENOMEM;
+			*nl = (cond_av_list_t) {
+				.node = node,
+				.next = *cond,
+			};
+			*cond = nl;
+
+			if (enabled)
+				node->key.specified |= AVTAB_ENABLED;
+			else
+				node->key.specified &= ~AVTAB_ENABLED;
+		}
 	}
 
 	switch (name_match) {
@@ -843,7 +863,7 @@ bad:
 	return rc;
 }
 
-static int filename_trans_read_one(avtab_t *a, void *fp)
+static int filename_trans_read_one(avtab_t *a, cond_av_list_t ** cond, int enabled, void *fp)
 {
 	int rc;
 	uint32_t buf[4], len, otype;
@@ -870,7 +890,7 @@ static int filename_trans_read_one(avtab_t *a, void *fp)
 	key.target_class = le32_to_cpu(buf[2]);
 	otype = le32_to_cpu(buf[3]);
 
-	rc = avtab_insert_filename_trans(a, &key, otype, name,
+	rc = avtab_insert_filename_trans(a, &key, cond, enabled, otype, name,
 					 NAME_TRANS_MATCH_EXACT, NULL);
 	if (rc)
 		goto err;
@@ -882,7 +902,7 @@ err:
 	return SEPOL_ERR;
 }
 
-static int filename_trans_comp_read_one(avtab_t *a, void *fp)
+static int filename_trans_comp_read_one(avtab_t *a, cond_av_list_t ** cond, int enabled, void *fp)
 {
 	int rc;
 	uint32_t buf[3], len, ndatum, i, bit, otype;
@@ -923,7 +943,7 @@ static int filename_trans_comp_read_one(avtab_t *a, void *fp)
 		ebitmap_for_each_positive_bit(&stypes, node, bit) {
 			key.source_type = bit + 1;
 
-			rc = avtab_insert_filename_trans(a, &key, otype, name,
+			rc = avtab_insert_filename_trans(a, &key, cond, enabled, otype, name,
 							 NAME_TRANS_MATCH_EXACT,
 							 NULL);
 			if (rc < 0)
@@ -941,7 +961,7 @@ err:
 	return rc;
 }
 
-int avtab_filename_trans_read(void *fp, uint32_t vers, avtab_t *a)
+int avtab_filename_trans_read(void *fp, uint32_t vers, avtab_t *a, cond_av_list_t ** cond, int enabled)
 {
 	uint32_t buf[1], nel, i;
 	int rc;
@@ -953,13 +973,13 @@ int avtab_filename_trans_read(void *fp, uint32_t vers, avtab_t *a)
 
 	if (vers < POLICYDB_VERSION_COMP_FTRANS) {
 		for (i = 0; i < nel; i++) {
-			rc = filename_trans_read_one(a, fp);
+			rc = filename_trans_read_one(a, cond, enabled, fp);
 			if (rc < 0)
 				return rc;
 		}
 	} else {
 		for (i = 0; i < nel; i++) {
-			rc = filename_trans_comp_read_one(a, fp);
+			rc = filename_trans_comp_read_one(a, cond, enabled, fp);
 			if (rc < 0)
 				return rc;
 		}

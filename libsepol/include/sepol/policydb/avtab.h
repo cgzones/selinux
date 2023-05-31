@@ -154,11 +154,16 @@ extern avtab_ptr_t avtab_search_node_next(avtab_ptr_t node, int specified);
 /* avtab_alloc uses one bucket per 2-4 elements, so adjust to get maximum buckets */
 #define MAX_AVTAB_SIZE (MAX_AVTAB_HASH_BUCKETS << 1)
 
+/* forward declaration to avoid avtab.h <-> conditional.h include cycle */
+struct cond_av_list;
+typedef struct cond_av_list cond_av_list_t;
+
 extern int avtab_insert_filename_trans(avtab_t *a, avtab_key_t *key,
+				       cond_av_list_t ** cond, int enabled,
 				       uint32_t otype, const char *name,
 				       uint8_t name_match,
 				       uint32_t *present_otype);
-extern int avtab_filename_trans_read(void *fp, uint32_t vers, avtab_t *a);
+extern int avtab_filename_trans_read(void *fp, uint32_t vers, avtab_t *a, cond_av_list_t ** cond, int enabled);
 
 #ifdef __cplusplus
 }

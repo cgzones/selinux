@@ -413,17 +413,26 @@ cond_rule_def           : cond_transition_def
 			{ $$ = NULL; }
                         ;
 cond_transition_def	: TYPE_TRANSITION names names ':' names identifier filename ';'
-                        { $$ = define_cond_filename_trans() ;
-                          if ($$ == COND_ERR) return -1;}
+			{ $$ = define_cond_compute_type(AVRULE_TRANSITION, 1, NAME_TRANS_MATCH_EXACT);
+			  if ($$ == COND_ERR) return -1;}
+			| TYPE_TRANSITION names names ':' names identifier filename MATCH_EXACT ';'
+			{ $$ = define_cond_compute_type(AVRULE_TRANSITION, 1, NAME_TRANS_MATCH_EXACT);
+			  if ($$ == COND_ERR) return -1;}
+			| TYPE_TRANSITION names names ':' names identifier filename MATCH_PREFIX ';'
+			{ $$ = define_cond_compute_type(AVRULE_TRANSITION, 1, NAME_TRANS_MATCH_PREFIX);
+			  if ($$ == COND_ERR) return -1;}
+			| TYPE_TRANSITION names names ':' names identifier filename MATCH_SUFFIX ';'
+			{ $$ = define_cond_compute_type(AVRULE_TRANSITION, 1, NAME_TRANS_MATCH_SUFFIX);
+			  if ($$ == COND_ERR) return -1; }
 			| TYPE_TRANSITION names names ':' names identifier ';'
-                        { $$ = define_cond_compute_type(AVRULE_TRANSITION) ;
-                          if ($$ == COND_ERR) return -1;}
-                        | TYPE_MEMBER names names ':' names identifier ';'
-                        { $$ = define_cond_compute_type(AVRULE_MEMBER) ;
-                          if ($$ ==  COND_ERR) return -1;}
-                        | TYPE_CHANGE names names ':' names identifier ';'
-                        { $$ = define_cond_compute_type(AVRULE_CHANGE) ;
-                          if ($$ == COND_ERR) return -1;}
+			{ $$ = define_cond_compute_type(AVRULE_TRANSITION, 0, NAME_TRANS_MATCH_EXACT) ;
+			  if ($$ == COND_ERR) return -1;}
+			| TYPE_MEMBER names names ':' names identifier ';'
+			{ $$ = define_cond_compute_type(AVRULE_MEMBER, 0, NAME_TRANS_MATCH_EXACT) ;
+			  if ($$ ==  COND_ERR) return -1;}
+			| TYPE_CHANGE names names ':' names identifier ';'
+			{ $$ = define_cond_compute_type(AVRULE_CHANGE, 0, NAME_TRANS_MATCH_EXACT) ;
+			  if ($$ == COND_ERR) return -1;}
     			;
 cond_te_avtab_def	: cond_allow_def
                           { $$ = $1; }

@@ -1651,6 +1651,8 @@ static int expand_terule_helper(sepol_handle_t * handle,
 		 */
 		if (specified & AVRULE_TRANSITION && object_name) {
 			int rc = avtab_insert_filename_trans(avtab, &avkey,
+							     cond,
+							     enabled,
 							     remapped_data,
 							     object_name,
 							     name_match,
@@ -1696,10 +1698,15 @@ static int expand_terule_helper(sepol_handle_t * handle,
 			if (node && node->parse_context != other) {
 				conflict = 2;
 			}
+
 			/*
-			 * conditional avtab does not contain filename
-			 * transitions, no need to check for otype == 0
-			 */
+			* if node does not already contain transition, it is not a
+			* conflict and transition otype will be set to node found by
+			* find_avtab_node()
+			*/
+			if (specified & AVRULE_TRANSITION && node &&
+			         !node->datum.trans->otype)
+				conflict = 0;
 		}
 
 		if (conflict) {

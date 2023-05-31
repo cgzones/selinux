@@ -125,11 +125,18 @@ static int render_key(avtab_key_t * key, policydb_t * p, FILE * fp)
 	return 0;
 }
 
+/* 'what' values for this function */
+#define	RENDER_UNCONDITIONAL	0x0001	/* render all regardless of enabled state */
+#define RENDER_ENABLED		0x0002
+#define RENDER_DISABLED		0x0004
+#define RENDER_CONDITIONAL	(RENDER_ENABLED|RENDER_DISABLED)
+
 typedef struct {
 	avtab_key_t *key;
 	policydb_t *p;
 	FILE *fp;
 	uint8_t match;
+	uint32_t what;
 } render_name_trans_args_t;
 
 static int render_name_trans_helper(hashtab_key_t k, hashtab_datum_t d, void *a)
@@ -137,6 +144,13 @@ static int render_name_trans_helper(hashtab_key_t k, hashtab_datum_t d, void *a)
 	char *name = k;
 	uint32_t *otype = d;
 	render_name_trans_args_t *args = a;
+
+	if (!(args->what & RENDER_UNCONDITIONAL)) {
+		if (args->key->specified & AVTAB_ENABLED)
+			fprintf(args->fp, "[enabled] ");
+		else if (!(args->key->specified & AVTAB_ENABLED))
+			fprintf(args->fp, "[disabled] ");
+	}
 
 	fprintf(args->fp, "type_transition ");
 	render_key(args->key, args->p, args->fp);
@@ -160,12 +174,6 @@ static int render_name_trans_helper(hashtab_key_t k, hashtab_datum_t d, void *a)
 
 	return 0;
 }
-
-/* 'what' values for this function */
-#define	RENDER_UNCONDITIONAL	0x0001	/* render all regardless of enabled state */
-#define RENDER_ENABLED		0x0002
-#define RENDER_DISABLED		0x0004
-#define RENDER_CONDITIONAL	(RENDER_ENABLED|RENDER_DISABLED)
 
 static int render_av_rule(avtab_key_t * key, avtab_datum_t * datum, uint32_t what,
 		   policydb_t * p, FILE * fp)
@@ -224,6 +232,7 @@ static int render_av_rule(avtab_key_t * key, avtab_datum_t * datum, uint32_t wha
 				.p = p,
 				.fp = fp,
 				.match = NAME_TRANS_MATCH_EXACT,
+				.what = what,
 			};
 			hashtab_map(datum->trans->name_trans.table,
 				    render_name_trans_helper, &args);

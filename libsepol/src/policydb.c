@@ -4163,7 +4163,7 @@ int policydb_read(policydb_t * p, struct policy_file *fp, unsigned verbose)
 			goto bad;
 		if (r_policyvers >= POLICYDB_VERSION_FILENAME_TRANS &&
 		    r_policyvers < POLICYDB_VERSION_AVTAB_FTRANS &&
-		    avtab_filename_trans_read(fp, r_policyvers, &p->te_avtab))
+		    avtab_filename_trans_read(fp, r_policyvers, &p->te_avtab, NULL, 0))
 			goto bad;
 	} else {
 		/* first read the AV rule blocks, then the scope tables */
