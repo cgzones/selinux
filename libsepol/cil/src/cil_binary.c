@@ -4917,8 +4917,11 @@ static int cil_check_neverallow(const struct cil_db *db, policydb_t *pdb, struct
 
 		rc = check_assertion(pdb, rule);
 		if (rc == CIL_TRUE) {
-			*violation = CIL_TRUE;
-			rc = __cil_print_neverallow_failure(db, node);
+			#pragma omp critical (output)
+			{
+				*violation = CIL_TRUE;
+				rc = __cil_print_neverallow_failure(db, node);
+			}
 			if (rc != SEPOL_OK) {
 				goto exit;
 			}
@@ -4939,8 +4942,11 @@ static int cil_check_neverallow(const struct cil_db *db, policydb_t *pdb, struct
 			rule->xperms = item->data;
 			rc = check_assertion(pdb, rule);
 			if (rc == CIL_TRUE) {
-				*violation = CIL_TRUE;
-				rc = __cil_print_neverallow_failure(db, node);
+				#pragma omp critical (output)
+				{
+					*violation = CIL_TRUE;
+					rc = __cil_print_neverallow_failure(db, node);
+				}
 				if (rc != SEPOL_OK) {
 					goto exit;
 				}
@@ -4965,18 +4971,48 @@ exit:
 
 static int cil_check_neverallows(const struct cil_db *db, policydb_t *pdb, struct cil_list *neverallows, int *violation)
 {
-	int rc = SEPOL_OK;
-	struct cil_list_item *item;
+	int rc_sync = SEPOL_OK;
 
-	cil_list_for_each(item, neverallows) {
-		rc = cil_check_neverallow(db, pdb, item->data, violation);
-		if (rc != SEPOL_OK) {
-			goto exit;
+	#pragma omp parallel
+	{
+
+		#pragma omp single
+		{
+
+			struct cil_list_item *item;
+			cil_list_for_each(item, neverallows) {
+
+				struct cil_tree_node *node = item->data;
+				int rc_test;
+
+				#pragma omp task default(none) firstprivate(node, db, pdb, violation) shared(rc_sync) untied
+				{
+					int rc_task = cil_check_neverallow(
+						db,
+						pdb,
+						node,
+						violation);
+
+					if (rc_task != SEPOL_OK) {
+						#pragma omp atomic write
+						rc_sync = rc_task;
+					}
+				}
+
+				#pragma omp atomic read
+				rc_test = rc_sync;
+
+				if (rc_test != SEPOL_OK)
+					break;
+
+			}
+
 		}
+
+		#pragma omp taskwait
 	}
 
-exit:
-	return rc;
+	return rc_sync;
 }
 
 static struct cil_list *cil_classperms_from_sepol(policydb_t *pdb, uint16_t class, uint32_t data, struct cil_class *class_value_to_cil[], struct cil_perm **perm_value_to_cil[])
