@@ -664,7 +664,7 @@ extern int policydb_context_isvalid(const policydb_t * p,
 				    const context_struct_t * c);
 
 extern void symtabs_destroy(symtab_t * symtab);
-extern int scope_destroy(hashtab_key_t key, hashtab_datum_t datum, void *p);
+extern void scope_destroy(hashtab_key_t key, hashtab_datum_t datum, void *p);
 
 extern void class_perm_node_init(class_perm_node_t * x);
 extern void type_set_init(type_set_t * x);

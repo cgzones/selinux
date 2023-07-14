@@ -87,12 +87,11 @@ char *cil_strpool_add(const char *str)
 	return strpool_ref->str;
 }
 
-static int cil_strpool_entry_destroy(hashtab_key_t k __attribute__ ((unused)), hashtab_datum_t d, void *args __attribute__ ((unused)))
+static void cil_strpool_entry_destroy(hashtab_key_t k __attribute__ ((unused)), hashtab_datum_t d, void *args __attribute__ ((unused)))
 {
 	struct cil_strpool_entry *strpool_ref = (struct cil_strpool_entry*)d;
 	free(strpool_ref->str);
 	free(strpool_ref);
-	return SEPOL_OK;
 }
 
 void cil_strpool_init(void)
@@ -115,8 +114,7 @@ void cil_strpool_destroy(void)
 	pthread_mutex_lock(&cil_strpool_mutex);
 	cil_strpool_readers--;
 	if (cil_strpool_readers == 0) {
-		hashtab_map(cil_strpool_tab, cil_strpool_entry_destroy, NULL);
-		hashtab_destroy(cil_strpool_tab);
+		hashtab_destroy(cil_strpool_tab, cil_strpool_entry_destroy, NULL);
 		cil_strpool_tab = NULL;
 	}
 	pthread_mutex_unlock(&cil_strpool_mutex);

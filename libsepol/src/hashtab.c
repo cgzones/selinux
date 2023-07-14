@@ -199,7 +199,10 @@ hashtab_datum_t hashtab_search(hashtab_t h, const_hashtab_key_t key)
 	return cur->datum;
 }
 
-void hashtab_destroy(hashtab_t h)
+void hashtab_destroy(hashtab_t h,
+		     void (*destroy) (hashtab_key_t k,
+				      hashtab_datum_t d,
+				      void *args), void *args)
 {
 	unsigned int i;
 	hashtab_ptr_t cur, temp;
@@ -212,6 +215,8 @@ void hashtab_destroy(hashtab_t h)
 		while (cur != NULL) {
 			temp = cur;
 			cur = cur->next;
+			if (destroy)
+				destroy(temp->key, temp->datum, args);
 			free(temp);
 		}
 		h->htable[i] = NULL;

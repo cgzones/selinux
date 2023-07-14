@@ -2037,13 +2037,11 @@ exit:
 	return rc;
 }
 
-static int __cil_avrulex_ioctl_destroy(hashtab_key_t k, hashtab_datum_t datum, __attribute__((unused)) void *args)
+static void __cil_avrulex_ioctl_destroy(hashtab_key_t k, hashtab_datum_t datum, __attribute__((unused)) void *args)
 {
 	free(k);
 	ebitmap_destroy(datum);
 	free(datum);
-
-	return SEPOL_OK;
 }
 
 static int __cil_cond_to_policydb_helper(struct cil_tree_node *node, __attribute__((unused)) uint32_t *finished, void *extra_args)
@@ -5288,9 +5286,8 @@ int cil_binary_create_allocated_pdb(const struct cil_db *db, sepol_policydb_t *p
 	rc = SEPOL_OK;
 
 exit:
-	hashtab_destroy(role_trans_table);
-	hashtab_map(avrulex_ioctl_table, __cil_avrulex_ioctl_destroy, NULL);
-	hashtab_destroy(avrulex_ioctl_table);
+	hashtab_destroy(role_trans_table, NULL, NULL);
+	hashtab_destroy(avrulex_ioctl_table, __cil_avrulex_ioctl_destroy, NULL);
 	free(type_value_to_cil);
 	free(class_value_to_cil);
 	if (perm_value_to_cil != NULL) {

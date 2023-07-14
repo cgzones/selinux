@@ -89,8 +89,14 @@ extern hashtab_datum_t hashtab_search(hashtab_t h, const_hashtab_key_t k);
 
 /*
    Destroys the specified hash table.
+   Applies the specified destroy function to (key,datum,args) for
+   all entries.
+
  */
-extern void hashtab_destroy(hashtab_t h);
+extern void hashtab_destroy(hashtab_t h,
+			    void (*destroy) (hashtab_key_t k,
+					    hashtab_datum_t d,
+					    void *args), void *args);
 
 /*
    Applies the specified apply function to (key,datum,args)

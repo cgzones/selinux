@@ -761,20 +761,18 @@ int add_perm_to_class(uint32_t perm_value, uint32_t class_value)
 	return 0;
 }
 
-static int perm_destroy(hashtab_key_t key, hashtab_datum_t datum, void *p
+static void perm_destroy(hashtab_key_t key, hashtab_datum_t datum, void *p
 			__attribute__ ((unused)))
 {
 	if (key)
 		free(key);
 	free(datum);
-	return 0;
 }
 
 static void class_datum_destroy(class_datum_t * cladatum)
 {
 	if (cladatum != NULL) {
-		hashtab_map(cladatum->permissions.table, perm_destroy, NULL);
-		hashtab_destroy(cladatum->permissions.table);
+		hashtab_destroy(cladatum->permissions.table, perm_destroy, NULL);
 		free(cladatum);
 	}
 }

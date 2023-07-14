@@ -528,13 +528,12 @@ int cond_init_bool_indexes(policydb_t * p)
 	return 0;
 }
 
-int cond_destroy_bool(hashtab_key_t key, hashtab_datum_t datum, void *p
+void cond_destroy_bool(hashtab_key_t key, hashtab_datum_t datum, void *p
 		      __attribute__ ((unused)))
 {
 	if (key)
 		free(key);
 	free(datum);
-	return 0;
 }
 
 int cond_index_bool(hashtab_key_t key, hashtab_datum_t datum, void *datap)

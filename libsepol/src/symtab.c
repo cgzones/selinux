@@ -51,7 +51,6 @@ void symtab_destroy(symtab_t * s)
 	if (!s)
 		return;
 	if (s->table)
-		hashtab_destroy(s->table);
-	return;
+		hashtab_destroy(s->table, NULL, NULL);
 }
 /* FLASK */

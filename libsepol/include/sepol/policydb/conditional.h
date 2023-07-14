@@ -127,7 +127,7 @@ extern void cond_policydb_destroy(policydb_t * p);
 extern void cond_list_destroy(cond_list_t * list);
 
 extern int cond_init_bool_indexes(policydb_t * p);
-extern int cond_destroy_bool(hashtab_key_t key, hashtab_datum_t datum, void *p);
+extern void cond_destroy_bool(hashtab_key_t key, hashtab_datum_t datum, void *p);
 
 extern int cond_index_bool(hashtab_key_t key, hashtab_datum_t datum,
 			   void *datap);

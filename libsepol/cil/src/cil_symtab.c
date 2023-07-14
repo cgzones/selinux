@@ -133,18 +133,16 @@ int cil_symtab_map(symtab_t *symtab,
 	return hashtab_map(symtab->table, apply, args);
 }
 
-static int __cil_symtab_destroy_helper(__attribute__((unused)) hashtab_key_t k, hashtab_datum_t d, __attribute__((unused)) void *args)
+static void __cil_symtab_destroy_helper(__attribute__((unused)) hashtab_key_t k, hashtab_datum_t d, __attribute__((unused)) void *args)
 {
 	struct cil_symtab_datum *datum = d;
 	datum->symtab = NULL;
-	return SEPOL_OK;
 }
 
 void cil_symtab_destroy(symtab_t *symtab)
 {
 	if (symtab->table != NULL){
-		cil_symtab_map(symtab, __cil_symtab_destroy_helper, NULL);
-		hashtab_destroy(symtab->table);
+		hashtab_destroy(symtab->table, __cil_symtab_destroy_helper, NULL);
 		symtab->table = NULL;
 	}
 }

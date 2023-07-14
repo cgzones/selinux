@@ -926,11 +926,11 @@ int policydb_init(policydb_t * p)
 
 	return 0;
 err:
-	hashtab_destroy(p->filename_trans);
-	hashtab_destroy(p->range_tr);
+	hashtab_destroy(p->filename_trans, NULL, NULL);
+	hashtab_destroy(p->range_tr, NULL, NULL);
 	for (i = 0; i < SYM_NUM; i++) {
-		hashtab_destroy(p->symtab[i].table);
-		hashtab_destroy(p->scope[i].table);
+		hashtab_destroy(p->symtab[i].table, NULL, NULL);
+		hashtab_destroy(p->scope[i].table, NULL, NULL);
 	}
 	avrule_block_list_destroy(p->global);
 	return rc;
@@ -1296,16 +1296,15 @@ int policydb_index_others(sepol_handle_t * handle,
  * symbol data in the policy database.
  */
 
-static int perm_destroy(hashtab_key_t key, hashtab_datum_t datum, void *p
+static void perm_destroy(hashtab_key_t key, hashtab_datum_t datum, void *p
 			__attribute__ ((unused)))
 {
 	if (key)
 		free(key);
 	free(datum);
-	return 0;
 }
 
-static int common_destroy(hashtab_key_t key, hashtab_datum_t datum, void *p
+static void common_destroy(hashtab_key_t key, hashtab_datum_t datum, void *p
 			  __attribute__ ((unused)))
 {
 	common_datum_t *comdatum;
@@ -1313,13 +1312,11 @@ static int common_destroy(hashtab_key_t key, hashtab_datum_t datum, void *p
 	if (key)
 		free(key);
 	comdatum = (common_datum_t *) datum;
-	(void)hashtab_map(comdatum->permissions.table, perm_destroy, 0);
-	hashtab_destroy(comdatum->permissions.table);
+	hashtab_destroy(comdatum->permissions.table, perm_destroy, NULL);
 	free(datum);
-	return 0;
 }
 
-static int class_destroy(hashtab_key_t key, hashtab_datum_t datum, void *p
+static void class_destroy(hashtab_key_t key, hashtab_datum_t datum, void *p
 			 __attribute__ ((unused)))
 {
 	class_datum_t *cladatum;
@@ -1329,10 +1326,9 @@ static int class_destroy(hashtab_key_t key, hashtab_datum_t datum, void *p
 		free(key);
 	cladatum = (class_datum_t *) datum;
 	if (cladatum == NULL) {
-		return 0;
+		return;
 	}
-	(void)hashtab_map(cladatum->permissions.table, perm_destroy, 0);
-	hashtab_destroy(cladatum->permissions.table);
+	hashtab_destroy(cladatum->permissions.table, perm_destroy, NULL);
 	constraint = cladatum->constraints;
 	while (constraint) {
 		constraint_expr_destroy(constraint->expr);
@@ -1352,37 +1348,33 @@ static int class_destroy(hashtab_key_t key, hashtab_datum_t datum, void *p
 	if (cladatum->comkey)
 		free(cladatum->comkey);
 	free(datum);
-	return 0;
 }
 
-static int role_destroy(hashtab_key_t key, hashtab_datum_t datum, void *p
+static void role_destroy(hashtab_key_t key, hashtab_datum_t datum, void *p
 			__attribute__ ((unused)))
 {
 	free(key);
 	role_datum_destroy((role_datum_t *) datum);
 	free(datum);
-	return 0;
 }
 
-static int type_destroy(hashtab_key_t key, hashtab_datum_t datum, void *p
+static void type_destroy(hashtab_key_t key, hashtab_datum_t datum, void *p
 			__attribute__ ((unused)))
 {
 	free(key);
 	type_datum_destroy((type_datum_t *) datum);
 	free(datum);
-	return 0;
 }
 
-static int user_destroy(hashtab_key_t key, hashtab_datum_t datum, void *p
+static void user_destroy(hashtab_key_t key, hashtab_datum_t datum, void *p
 			__attribute__ ((unused)))
 {
 	free(key);
 	user_datum_destroy((user_datum_t *) datum);
 	free(datum);
-	return 0;
 }
 
-static int sens_destroy(hashtab_key_t key, hashtab_datum_t datum, void *p
+static void sens_destroy(hashtab_key_t key, hashtab_datum_t datum, void *p
 			__attribute__ ((unused)))
 {
 	level_datum_t *levdatum;
@@ -1394,25 +1386,23 @@ static int sens_destroy(hashtab_key_t key, hashtab_datum_t datum, void *p
 	free(levdatum->level);
 	level_datum_destroy(levdatum);
 	free(levdatum);
-	return 0;
 }
 
-static int cat_destroy(hashtab_key_t key, hashtab_datum_t datum, void *p
+static void cat_destroy(hashtab_key_t key, hashtab_datum_t datum, void *p
 		       __attribute__ ((unused)))
 {
 	if (key)
 		free(key);
 	cat_datum_destroy((cat_datum_t *) datum);
 	free(datum);
-	return 0;
 }
 
-static int (*destroy_f[SYM_NUM]) (hashtab_key_t key, hashtab_datum_t datum,
+static void (*destroy_f[SYM_NUM]) (hashtab_key_t key, hashtab_datum_t datum,
 				  void *datap) = {
 common_destroy, class_destroy, role_destroy, type_destroy, user_destroy,
 	    cond_destroy_bool, sens_destroy, cat_destroy,};
 
-static int filenametr_destroy(hashtab_key_t key, hashtab_datum_t datum,
+static void filenametr_destroy(hashtab_key_t key, hashtab_datum_t datum,
 			      void *p __attribute__ ((unused)))
 {
 	filename_trans_key_t *ft = (filename_trans_key_t *)(void *)key;
@@ -1426,10 +1416,9 @@ static int filenametr_destroy(hashtab_key_t key, hashtab_datum_t datum,
 		free(fd);
 		fd = next;
 	} while (fd);
-	return 0;
 }
 
-static int range_tr_destroy(hashtab_key_t key, hashtab_datum_t datum,
+static void range_tr_destroy(hashtab_key_t key, hashtab_datum_t datum,
 			    void *p __attribute__ ((unused)))
 {
 	struct mls_range *rt = (struct mls_range *)datum;
@@ -1437,7 +1426,6 @@ static int range_tr_destroy(hashtab_key_t key, hashtab_datum_t datum,
 	ebitmap_destroy(&rt->level[0].cat);
 	ebitmap_destroy(&rt->level[1].cat);
 	free(datum);
-	return 0;
 }
 
 static void ocontext_selinux_free(ocontext_t **ocontexts)
@@ -1517,8 +1505,7 @@ void policydb_destroy(policydb_t * p)
 	free(p->decl_val_to_struct);
 
 	for (i = 0; i < SYM_NUM; i++) {
-		(void)hashtab_map(p->scope[i].table, scope_destroy, 0);
-		hashtab_destroy(p->scope[i].table);
+		hashtab_destroy(p->scope[i].table, scope_destroy, NULL);
 	}
 	avrule_block_list_destroy(p->global);
 	free(p->name);
@@ -1564,11 +1551,8 @@ void policydb_destroy(policydb_t * p)
 	if (lra)
 		free(lra);
 
-	hashtab_map(p->filename_trans, filenametr_destroy, NULL);
-	hashtab_destroy(p->filename_trans);
-
-	hashtab_map(p->range_tr, range_tr_destroy, NULL);
-	hashtab_destroy(p->range_tr);
+	hashtab_destroy(p->filename_trans, filenametr_destroy, NULL);
+	hashtab_destroy(p->range_tr, range_tr_destroy, NULL);
 
 	if (p->type_attr_map) {
 		for (i = 0; i < p->p_types.nprim; i++) {
@@ -1591,12 +1575,11 @@ void symtabs_destroy(symtab_t * symtab)
 {
 	int i;
 	for (i = 0; i < SYM_NUM; i++) {
-		(void)hashtab_map(symtab[i].table, destroy_f[i], 0);
-		hashtab_destroy(symtab[i].table);
+		hashtab_destroy(symtab[i].table, destroy_f[i], NULL);
 	}
 }
 
-int scope_destroy(hashtab_key_t key, hashtab_datum_t datum, void *p
+void scope_destroy(hashtab_key_t key, hashtab_datum_t datum, void *p
 		  __attribute__ ((unused)))
 {
 	scope_datum_t *cur = (scope_datum_t *) datum;
@@ -1605,7 +1588,6 @@ int scope_destroy(hashtab_key_t key, hashtab_datum_t datum, void *p
 		free(cur->decl_ids);
 	}
 	free(cur);
-	return 0;
 }
 
 /*
