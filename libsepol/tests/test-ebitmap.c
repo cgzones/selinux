@@ -9,6 +9,33 @@
 #define RANDOM_ROUNDS 10
 
 
+static void ebitmap_validate_and_destroy(ebitmap_t *e)
+{
+	const ebitmap_node_t *n;
+
+	CU_ASSERT_EQUAL(e->node == NULL, e->highbit == 0);
+	CU_ASSERT_EQUAL(e->highbit % MAPSIZE, 0);
+
+	for (n = e->node; n; n = n->next) {
+		int match = 0;
+
+		for (unsigned int i = 0; i < MAPELEMNUM; i++)
+			if (n->map[i] != 0)
+				match = 1;
+
+		CU_ASSERT_EQUAL(match, 1);
+		CU_ASSERT_EQUAL(n->startbit % MAPSIZE, 0);
+		CU_ASSERT(n->startbit < e->highbit);
+		if (n->next) {
+			CU_ASSERT(n->startbit < n->next->startbit);
+		} else {
+			CU_ASSERT_EQUAL(n->startbit + MAPSIZE, e->highbit);
+		}
+	}
+
+	ebitmap_destroy(e);
+}
+
 static int ebitmap_init_random(ebitmap_t *e, unsigned int length, int set_chance)
 {
 	unsigned int i;
@@ -43,9 +70,9 @@ static void test_ebitmap_init_destroy(void)
 	CU_ASSERT_PTR_NULL(ebitmap_startnode(&e));
 
 	/* verify idempotence */
-	ebitmap_destroy(&e);
-	ebitmap_destroy(&e);
-	ebitmap_destroy(&e);
+	ebitmap_validate_and_destroy(&e);
+	ebitmap_validate_and_destroy(&e);
+	ebitmap_validate_and_destroy(&e);
 
 	CU_ASSERT(ebitmap_is_empty(&e));
 	CU_ASSERT_PTR_NULL(ebitmap_startnode(&e));
@@ -120,11 +147,11 @@ static void test_ebitmap_cmp(void)
 	CU_ASSERT_EQUAL(ebitmap_set_bit(&e2, 900, 1), 0);
 	CU_ASSERT(ebitmap_cmp(&e1, &e2));
 
-	ebitmap_destroy(&e2);
+	ebitmap_validate_and_destroy(&e2);
 
 	CU_ASSERT_FALSE(ebitmap_cmp(&e1, &e2));
 
-	ebitmap_destroy(&e1);
+	ebitmap_validate_and_destroy(&e1);
 
 	CU_ASSERT(ebitmap_cmp(&e1, &e2));
 }
@@ -160,30 +187,45 @@ static void test_ebitmap_set_and_get(void)
 	CU_ASSERT_EQUAL(ebitmap_cardinality(&e), 2);
 	CU_ASSERT_EQUAL(ebitmap_highest_set_bit(&e), 100);
 	CU_ASSERT_EQUAL(ebitmap_get_bit(&e, 100), 1);
+	CU_ASSERT_EQUAL(ebitmap_get_bit(&e, 10), 1);
 
 	CU_ASSERT_EQUAL(ebitmap_set_bit(&e, 50, 1), 0);
 	CU_ASSERT_FALSE(ebitmap_is_empty(&e));
 	CU_ASSERT_EQUAL(ebitmap_cardinality(&e), 3);
 	CU_ASSERT_EQUAL(ebitmap_highest_set_bit(&e), 100);
 	CU_ASSERT_EQUAL(ebitmap_get_bit(&e, 50), 1);
+	CU_ASSERT_EQUAL(ebitmap_get_bit(&e, 100), 1);
+	CU_ASSERT_EQUAL(ebitmap_get_bit(&e, 10), 1);
 
 	CU_ASSERT_EQUAL(ebitmap_set_bit(&e, 1023, 1), 0);
 	CU_ASSERT_FALSE(ebitmap_is_empty(&e));
 	CU_ASSERT_EQUAL(ebitmap_cardinality(&e), 4);
 	CU_ASSERT_EQUAL(ebitmap_highest_set_bit(&e), 1023);
 	CU_ASSERT_EQUAL(ebitmap_get_bit(&e, 1023), 1);
+	CU_ASSERT_EQUAL(ebitmap_get_bit(&e, 50), 1);
+	CU_ASSERT_EQUAL(ebitmap_get_bit(&e, 100), 1);
+	CU_ASSERT_EQUAL(ebitmap_get_bit(&e, 10), 1);
 
 	CU_ASSERT_EQUAL(ebitmap_set_bit(&e, 1024, 1), 0);
 	CU_ASSERT_FALSE(ebitmap_is_empty(&e));
 	CU_ASSERT_EQUAL(ebitmap_cardinality(&e), 5);
 	CU_ASSERT_EQUAL(ebitmap_highest_set_bit(&e), 1024);
 	CU_ASSERT_EQUAL(ebitmap_get_bit(&e, 1024), 1);
+	CU_ASSERT_EQUAL(ebitmap_get_bit(&e, 1023), 1);
+	CU_ASSERT_EQUAL(ebitmap_get_bit(&e, 50), 1);
+	CU_ASSERT_EQUAL(ebitmap_get_bit(&e, 100), 1);
+	CU_ASSERT_EQUAL(ebitmap_get_bit(&e, 10), 1);
 
 	CU_ASSERT_EQUAL(ebitmap_set_bit(&e, 1050, 1), 0);
 	CU_ASSERT_FALSE(ebitmap_is_empty(&e));
 	CU_ASSERT_EQUAL(ebitmap_cardinality(&e), 6);
 	CU_ASSERT_EQUAL(ebitmap_highest_set_bit(&e), 1050);
 	CU_ASSERT_EQUAL(ebitmap_get_bit(&e, 1050), 1);
+	CU_ASSERT_EQUAL(ebitmap_get_bit(&e, 1024), 1);
+	CU_ASSERT_EQUAL(ebitmap_get_bit(&e, 1023), 1);
+	CU_ASSERT_EQUAL(ebitmap_get_bit(&e, 50), 1);
+	CU_ASSERT_EQUAL(ebitmap_get_bit(&e, 100), 1);
+	CU_ASSERT_EQUAL(ebitmap_get_bit(&e, 10), 1);
 
 	{
 		ebitmap_node_t *n, *p = NULL;
@@ -193,7 +235,8 @@ static void test_ebitmap_set_and_get(void)
 		bit_count = 0;
 		node_count = 0;
 		ebitmap_for_each_bit(&e, n, bit) {
-			CU_ASSERT((rounddown(  10, MAPSIZE) <= bit && bit < roundup(  10, MAPSIZE)) ||
+			CU_ASSERT_EQUAL(n->startbit % MAPSIZE, 0);
+			CU_ASSERT_FATAL((rounddown(  10, MAPSIZE) <= bit && bit < roundup(  10, MAPSIZE)) ||
 			          (rounddown(  50, MAPSIZE) <= bit && bit < roundup(  50, MAPSIZE)) ||
 			          (rounddown( 100, MAPSIZE) <= bit && bit < roundup( 100, MAPSIZE)) ||
 			          (rounddown(1023, MAPSIZE) <= bit && bit < roundup(1023, MAPSIZE)) ||
@@ -259,7 +302,7 @@ static void test_ebitmap_set_and_get(void)
 	CU_ASSERT_EQUAL(ebitmap_highest_set_bit(&e), 0);
 	CU_ASSERT_EQUAL(ebitmap_get_bit(&e, 1023), 0);
 
-	ebitmap_destroy(&e);
+	ebitmap_validate_and_destroy(&e);
 }
 
 static void test_ebitmap_init_range(void)
@@ -285,12 +328,12 @@ static void test_ebitmap_init_range(void)
 	CU_ASSERT_EQUAL(ebitmap_init_range(&e5, 10, 5), -EINVAL);
 	CU_ASSERT_EQUAL(ebitmap_init_range(&e6, 0, UINT32_MAX), -EOVERFLOW);
 
-	ebitmap_destroy(&e6);
-	ebitmap_destroy(&e5);
-	ebitmap_destroy(&e4);
-	ebitmap_destroy(&e3);
-	ebitmap_destroy(&e2);
-	ebitmap_destroy(&e1);
+	ebitmap_validate_and_destroy(&e6);
+	ebitmap_validate_and_destroy(&e5);
+	ebitmap_validate_and_destroy(&e4);
+	ebitmap_validate_and_destroy(&e3);
+	ebitmap_validate_and_destroy(&e2);
+	ebitmap_validate_and_destroy(&e1);
 }
 
 static void test_ebitmap_or(void)
@@ -336,7 +379,7 @@ static void test_ebitmap_or(void)
 		CU_ASSERT_EQUAL(ebitmap_or(&dst, &e1, &e1), 0);
 		CU_ASSERT(ebitmap_cmp(&dst, &e1));
 
-		ebitmap_destroy(&dst);
+		ebitmap_validate_and_destroy(&dst);
 	}
 
 	{
@@ -345,7 +388,7 @@ static void test_ebitmap_or(void)
 		CU_ASSERT_EQUAL(ebitmap_or(&dst, &e2, &e2), 0);
 		CU_ASSERT(ebitmap_cmp(&dst, &e2));
 
-		ebitmap_destroy(&dst);
+		ebitmap_validate_and_destroy(&dst);
 	}
 
 	{
@@ -354,7 +397,7 @@ static void test_ebitmap_or(void)
 		CU_ASSERT_EQUAL(ebitmap_or(&dst, &e1, &e2), 0);
 		CU_ASSERT(ebitmap_cmp(&dst, &e3));
 
-		ebitmap_destroy(&dst);
+		ebitmap_validate_and_destroy(&dst);
 	}
 
 	{
@@ -363,7 +406,7 @@ static void test_ebitmap_or(void)
 		CU_ASSERT_EQUAL(ebitmap_or(&dst, &e3, &e3), 0);
 		CU_ASSERT(ebitmap_cmp(&dst, &e3));
 
-		ebitmap_destroy(&dst);
+		ebitmap_validate_and_destroy(&dst);
 	}
 
 	{
@@ -372,7 +415,7 @@ static void test_ebitmap_or(void)
 		CU_ASSERT_EQUAL(ebitmap_or(&dst, &e3, &e4), 0);
 		CU_ASSERT(ebitmap_cmp(&dst, &e3));
 
-		ebitmap_destroy(&dst);
+		ebitmap_validate_and_destroy(&dst);
 	}
 
 	{
@@ -381,13 +424,13 @@ static void test_ebitmap_or(void)
 		CU_ASSERT_EQUAL(ebitmap_or(&dst, &e4, &e4), 0);
 		CU_ASSERT(ebitmap_cmp(&dst, &e4));
 
-		ebitmap_destroy(&dst);
+		ebitmap_validate_and_destroy(&dst);
 	}
 
-	ebitmap_destroy(&e4);
-	ebitmap_destroy(&e3);
-	ebitmap_destroy(&e2);
-	ebitmap_destroy(&e1);
+	ebitmap_validate_and_destroy(&e4);
+	ebitmap_validate_and_destroy(&e3);
+	ebitmap_validate_and_destroy(&e2);
+	ebitmap_validate_and_destroy(&e1);
 }
 
 static void test_ebitmap_and(void)
@@ -438,7 +481,7 @@ static void test_ebitmap_and(void)
 			CU_ASSERT_EQUAL(ebitmap_and(&dst, &e1, &e1), 0);
 			CU_ASSERT(ebitmap_cmp(&dst, &e1));
 
-			ebitmap_destroy(&dst);
+			ebitmap_validate_and_destroy(&dst);
 		}
 
 		{
@@ -447,7 +490,7 @@ static void test_ebitmap_and(void)
 			CU_ASSERT_EQUAL(ebitmap_and(&dst, &e2, &e2), 0);
 			CU_ASSERT(ebitmap_cmp(&dst, &e2));
 
-			ebitmap_destroy(&dst);
+			ebitmap_validate_and_destroy(&dst);
 		}
 
 		{
@@ -456,7 +499,7 @@ static void test_ebitmap_and(void)
 			CU_ASSERT_EQUAL(ebitmap_and(&dst, &e1, &e2), 0);
 			CU_ASSERT(ebitmap_cmp(&dst, &e12));
 
-			ebitmap_destroy(&dst);
+			ebitmap_validate_and_destroy(&dst);
 		}
 
 		{
@@ -465,7 +508,7 @@ static void test_ebitmap_and(void)
 			CU_ASSERT_EQUAL(ebitmap_and(&dst, &e3, &e3), 0);
 			CU_ASSERT(ebitmap_cmp(&dst, &e3));
 
-			ebitmap_destroy(&dst);
+			ebitmap_validate_and_destroy(&dst);
 		}
 
 		{
@@ -474,7 +517,7 @@ static void test_ebitmap_and(void)
 			CU_ASSERT_EQUAL(ebitmap_and(&dst, &e1, &e3), 0);
 			CU_ASSERT(ebitmap_cmp(&dst, &e1));
 
-			ebitmap_destroy(&dst);
+			ebitmap_validate_and_destroy(&dst);
 		}
 
 		{
@@ -483,7 +526,7 @@ static void test_ebitmap_and(void)
 			CU_ASSERT_EQUAL(ebitmap_and(&dst, &e2, &e3), 0);
 			CU_ASSERT(ebitmap_cmp(&dst, &e2));
 
-			ebitmap_destroy(&dst);
+			ebitmap_validate_and_destroy(&dst);
 		}
 
 		{
@@ -492,7 +535,7 @@ static void test_ebitmap_and(void)
 			CU_ASSERT_EQUAL(ebitmap_and(&dst, &e4, &e4), 0);
 			CU_ASSERT(ebitmap_cmp(&dst, &e4));
 
-			ebitmap_destroy(&dst);
+			ebitmap_validate_and_destroy(&dst);
 		}
 
 		{
@@ -501,14 +544,14 @@ static void test_ebitmap_and(void)
 			CU_ASSERT_EQUAL(ebitmap_and(&dst, &e3, &e4), 0);
 			CU_ASSERT(ebitmap_cmp(&dst, &e4));
 
-			ebitmap_destroy(&dst);
+			ebitmap_validate_and_destroy(&dst);
 		}
 
-		ebitmap_destroy(&e4);
-		ebitmap_destroy(&e3);
-		ebitmap_destroy(&e12);
-		ebitmap_destroy(&e2);
-		ebitmap_destroy(&e1);
+		ebitmap_validate_and_destroy(&e4);
+		ebitmap_validate_and_destroy(&e3);
+		ebitmap_validate_and_destroy(&e12);
+		ebitmap_validate_and_destroy(&e2);
+		ebitmap_validate_and_destroy(&e1);
 	}
 
 	{
@@ -538,10 +581,10 @@ static void test_ebitmap_and(void)
 		CU_ASSERT_EQUAL(ebitmap_and(&dst, &e5, &e6), 0);
 		CU_ASSERT(ebitmap_cmp(&dst, &e56));
 
-		ebitmap_destroy(&dst);
-		ebitmap_destroy(&e56);
-		ebitmap_destroy(&e6);
-		ebitmap_destroy(&e5);
+		ebitmap_validate_and_destroy(&dst);
+		ebitmap_validate_and_destroy(&e56);
+		ebitmap_validate_and_destroy(&e6);
+		ebitmap_validate_and_destroy(&e5);
 	}
 }
 
@@ -578,8 +621,8 @@ static void test_ebitmap_xor(void)
 			CU_ASSERT_EQUAL(ebitmap_xor(&dst2, &dst1, &e1), 0);
 			CU_ASSERT(ebitmap_cmp(&dst2, &e1));
 
-			ebitmap_destroy(&dst2);
-			ebitmap_destroy(&dst1);
+			ebitmap_validate_and_destroy(&dst2);
+			ebitmap_validate_and_destroy(&dst1);
 		}
 
 		{
@@ -588,7 +631,7 @@ static void test_ebitmap_xor(void)
 			CU_ASSERT_EQUAL(ebitmap_xor(&dst, &e2, &e2), 0);
 			CU_ASSERT(ebitmap_cmp(&dst, &e4));
 
-			ebitmap_destroy(&dst);
+			ebitmap_validate_and_destroy(&dst);
 		}
 
 		{
@@ -597,7 +640,7 @@ static void test_ebitmap_xor(void)
 			CU_ASSERT_EQUAL(ebitmap_xor(&dst, &e3, &e3), 0);
 			CU_ASSERT(ebitmap_cmp(&dst, &e4));
 
-			ebitmap_destroy(&dst);
+			ebitmap_validate_and_destroy(&dst);
 		}
 
 		{
@@ -606,7 +649,7 @@ static void test_ebitmap_xor(void)
 			CU_ASSERT_EQUAL(ebitmap_xor(&dst, &e4, &e4), 0);
 			CU_ASSERT(ebitmap_cmp(&dst, &e4));
 
-			ebitmap_destroy(&dst);
+			ebitmap_validate_and_destroy(&dst);
 		}
 
 		{
@@ -615,7 +658,7 @@ static void test_ebitmap_xor(void)
 			CU_ASSERT_EQUAL(ebitmap_xor(&dst, &e1, &e2), 0);
 			CU_ASSERT(ebitmap_cmp(&dst, &e3));
 
-			ebitmap_destroy(&dst);
+			ebitmap_validate_and_destroy(&dst);
 		}
 
 		{
@@ -624,13 +667,13 @@ static void test_ebitmap_xor(void)
 			CU_ASSERT_EQUAL(ebitmap_xor(&dst, &e2, &e4), 0);
 			CU_ASSERT(ebitmap_cmp(&dst, &e2));
 
-			ebitmap_destroy(&dst);
+			ebitmap_validate_and_destroy(&dst);
 		}
 
-		ebitmap_destroy(&e4);
-		ebitmap_destroy(&e3);
-		ebitmap_destroy(&e2);
-		ebitmap_destroy(&e1);
+		ebitmap_validate_and_destroy(&e4);
+		ebitmap_validate_and_destroy(&e3);
+		ebitmap_validate_and_destroy(&e2);
+		ebitmap_validate_and_destroy(&e1);
 	}
 
 	{
@@ -663,10 +706,10 @@ static void test_ebitmap_xor(void)
 		CU_ASSERT_EQUAL(ebitmap_xor(&dst, &e5, &e6), 0);
 		CU_ASSERT(ebitmap_cmp(&dst, &e56));
 
-		ebitmap_destroy(&dst);
-		ebitmap_destroy(&e56);
-		ebitmap_destroy(&e6);
-		ebitmap_destroy(&e5);
+		ebitmap_validate_and_destroy(&dst);
+		ebitmap_validate_and_destroy(&e56);
+		ebitmap_validate_and_destroy(&e6);
+		ebitmap_validate_and_destroy(&e5);
 	}
 }
 
@@ -703,8 +746,8 @@ static void test_ebitmap_not(void)
 			CU_ASSERT_EQUAL(ebitmap_not(&dst2, &dst1, 10), 0);
 			CU_ASSERT(ebitmap_cmp(&dst2, &e3));
 
-			ebitmap_destroy(&dst2);
-			ebitmap_destroy(&dst1);
+			ebitmap_validate_and_destroy(&dst2);
+			ebitmap_validate_and_destroy(&dst1);
 		}
 
 		{
@@ -715,8 +758,8 @@ static void test_ebitmap_not(void)
 			CU_ASSERT_EQUAL(ebitmap_not(&dst2, &dst1, 11), 0);
 			CU_ASSERT(ebitmap_cmp(&dst2, &e1));
 
-			ebitmap_destroy(&dst2);
-			ebitmap_destroy(&dst1);
+			ebitmap_validate_and_destroy(&dst2);
+			ebitmap_validate_and_destroy(&dst1);
 		}
 
 		{
@@ -726,7 +769,7 @@ static void test_ebitmap_not(void)
 			CU_ASSERT_EQUAL(ebitmap_highest_set_bit(&dst), 7);
 			CU_ASSERT_EQUAL(ebitmap_cardinality(&dst), 5);
 
-			ebitmap_destroy(&dst);
+			ebitmap_validate_and_destroy(&dst);
 		}
 
 		{
@@ -736,12 +779,12 @@ static void test_ebitmap_not(void)
 			CU_ASSERT_EQUAL(ebitmap_highest_set_bit(&dst), 11);
 			CU_ASSERT_EQUAL(ebitmap_cardinality(&dst), 8);
 
-			ebitmap_destroy(&dst);
+			ebitmap_validate_and_destroy(&dst);
 		}
 
-		ebitmap_destroy(&e3);
-		ebitmap_destroy(&e2);
-		ebitmap_destroy(&e1);
+		ebitmap_validate_and_destroy(&e3);
+		ebitmap_validate_and_destroy(&e2);
+		ebitmap_validate_and_destroy(&e1);
 	}
 
 	{
@@ -770,7 +813,7 @@ static void test_ebitmap_not(void)
 			CU_ASSERT_EQUAL(ebitmap_not(&dst, &e5, 317), 0);
 			CU_ASSERT(ebitmap_cmp(&dst, &e5not));
 
-			ebitmap_destroy(&dst);
+			ebitmap_validate_and_destroy(&dst);
 		}
 
 		{
@@ -782,7 +825,7 @@ static void test_ebitmap_not(void)
 			CU_ASSERT_EQUAL(ebitmap_set_bit(&e5not, 317, 1), 0);
 			CU_ASSERT(ebitmap_cmp(&dst, &e5not));
 
-			ebitmap_destroy(&dst);
+			ebitmap_validate_and_destroy(&dst);
 		}
 
 		{
@@ -791,11 +834,11 @@ static void test_ebitmap_not(void)
 			CU_ASSERT_EQUAL(ebitmap_not(&dst, &e5, 319), 0);
 			CU_ASSERT(ebitmap_cmp(&dst, &e5not));
 
-			ebitmap_destroy(&dst);
+			ebitmap_validate_and_destroy(&dst);
 		}
 
-		ebitmap_destroy(&e5not);
-		ebitmap_destroy(&e5);
+		ebitmap_validate_and_destroy(&e5not);
+		ebitmap_validate_and_destroy(&e5);
 	}
 }
 
@@ -839,7 +882,7 @@ static void test_ebitmap_andnot(void)
 			CU_ASSERT_EQUAL(ebitmap_andnot(&dst, &e1, &e1, 1024), 0);
 			CU_ASSERT(ebitmap_cmp(&dst, &e4));
 
-			ebitmap_destroy(&dst);
+			ebitmap_validate_and_destroy(&dst);
 		}
 
 		{
@@ -848,7 +891,7 @@ static void test_ebitmap_andnot(void)
 			CU_ASSERT_EQUAL(ebitmap_andnot(&dst, &e2, &e2, 1024), 0);
 			CU_ASSERT(ebitmap_cmp(&dst, &e4));
 
-			ebitmap_destroy(&dst);
+			ebitmap_validate_and_destroy(&dst);
 		}
 
 		{
@@ -857,7 +900,7 @@ static void test_ebitmap_andnot(void)
 			CU_ASSERT_EQUAL(ebitmap_andnot(&dst, &e1, &e2, 1024), 0);
 			CU_ASSERT(ebitmap_cmp(&dst, &e12));
 
-			ebitmap_destroy(&dst);
+			ebitmap_validate_and_destroy(&dst);
 		}
 
 		{
@@ -866,7 +909,7 @@ static void test_ebitmap_andnot(void)
 			CU_ASSERT_EQUAL(ebitmap_andnot(&dst, &e3, &e3, 1024), 0);
 			CU_ASSERT(ebitmap_cmp(&dst, &e4));
 
-			ebitmap_destroy(&dst);
+			ebitmap_validate_and_destroy(&dst);
 		}
 
 		{
@@ -875,7 +918,7 @@ static void test_ebitmap_andnot(void)
 			CU_ASSERT_EQUAL(ebitmap_andnot(&dst, &e1, &e3, 1024), 0);
 			CU_ASSERT(ebitmap_cmp(&dst, &e4));
 
-			ebitmap_destroy(&dst);
+			ebitmap_validate_and_destroy(&dst);
 		}
 
 		{
@@ -884,7 +927,7 @@ static void test_ebitmap_andnot(void)
 			CU_ASSERT_EQUAL(ebitmap_andnot(&dst, &e2, &e12, 1024), 0);
 			CU_ASSERT(ebitmap_cmp(&dst, &e2));
 
-			ebitmap_destroy(&dst);
+			ebitmap_validate_and_destroy(&dst);
 		}
 
 		{
@@ -893,7 +936,7 @@ static void test_ebitmap_andnot(void)
 			CU_ASSERT_EQUAL(ebitmap_andnot(&dst, &e4, &e4, 1024), 0);
 			CU_ASSERT(ebitmap_cmp(&dst, &e4));
 
-			ebitmap_destroy(&dst);
+			ebitmap_validate_and_destroy(&dst);
 		}
 
 		{
@@ -902,14 +945,14 @@ static void test_ebitmap_andnot(void)
 			CU_ASSERT_EQUAL(ebitmap_andnot(&dst, &e3, &e4, 1024), 0);
 			CU_ASSERT(ebitmap_cmp(&dst, &e3));
 
-			ebitmap_destroy(&dst);
+			ebitmap_validate_and_destroy(&dst);
 		}
 
-		ebitmap_destroy(&e4);
-		ebitmap_destroy(&e3);
-		ebitmap_destroy(&e12);
-		ebitmap_destroy(&e2);
-		ebitmap_destroy(&e1);
+		ebitmap_validate_and_destroy(&e4);
+		ebitmap_validate_and_destroy(&e3);
+		ebitmap_validate_and_destroy(&e12);
+		ebitmap_validate_and_destroy(&e2);
+		ebitmap_validate_and_destroy(&e1);
 	}
 
 	{
@@ -941,7 +984,7 @@ static void test_ebitmap_andnot(void)
 			CU_ASSERT_EQUAL(ebitmap_andnot(&dst, &e5, &e6, 317), 0);
 			CU_ASSERT(ebitmap_cmp(&dst, &e56));
 
-			ebitmap_destroy(&dst);
+			ebitmap_validate_and_destroy(&dst);
 		}
 
 		{
@@ -950,7 +993,7 @@ static void test_ebitmap_andnot(void)
 			CU_ASSERT_EQUAL(ebitmap_andnot(&dst, &e5, &e6, 318), 0);
 			CU_ASSERT(ebitmap_cmp(&dst, &e56));
 
-			ebitmap_destroy(&dst);
+			ebitmap_validate_and_destroy(&dst);
 		}
 
 		{
@@ -962,7 +1005,7 @@ static void test_ebitmap_andnot(void)
 			CU_ASSERT_EQUAL(ebitmap_set_bit(&e56, 318, 1), 0);
 			CU_ASSERT(ebitmap_cmp(&dst, &e56));
 
-			ebitmap_destroy(&dst);
+			ebitmap_validate_and_destroy(&dst);
 		}
 
 		{
@@ -971,12 +1014,12 @@ static void test_ebitmap_andnot(void)
 			CU_ASSERT_EQUAL(ebitmap_andnot(&dst, &e5, &e6, 320), 0);
 			CU_ASSERT(ebitmap_cmp(&dst, &e56));
 
-			ebitmap_destroy(&dst);
+			ebitmap_validate_and_destroy(&dst);
 		}
 
-		ebitmap_destroy(&e56);
-		ebitmap_destroy(&e6);
-		ebitmap_destroy(&e5);
+		ebitmap_validate_and_destroy(&e56);
+		ebitmap_validate_and_destroy(&e6);
+		ebitmap_validate_and_destroy(&e5);
 	}
 }
 
@@ -1015,16 +1058,16 @@ static void test_ebitmap__random_impl(unsigned int length, int set_chance)
 	for (i = 0; i < length; i++)
 		CU_ASSERT_EQUAL(ebitmap_get_bit(&dst_andnot, i), ebitmap_get_bit(&e1, i) & !ebitmap_get_bit(&e2, i));
 
-	ebitmap_destroy(&dst_andnot);
-	ebitmap_destroy(&dst_not2);
-	ebitmap_destroy(&dst_not1);
-	ebitmap_destroy(&dst_xor2);
-	ebitmap_destroy(&dst_xor1);
-	ebitmap_destroy(&dst_and);
-	ebitmap_destroy(&dst_or);
-	ebitmap_destroy(&dst_cpy);
-	ebitmap_destroy(&e2);
-	ebitmap_destroy(&e1);
+	ebitmap_validate_and_destroy(&dst_andnot);
+	ebitmap_validate_and_destroy(&dst_not2);
+	ebitmap_validate_and_destroy(&dst_not1);
+	ebitmap_validate_and_destroy(&dst_xor2);
+	ebitmap_validate_and_destroy(&dst_xor1);
+	ebitmap_validate_and_destroy(&dst_and);
+	ebitmap_validate_and_destroy(&dst_or);
+	ebitmap_validate_and_destroy(&dst_cpy);
+	ebitmap_validate_and_destroy(&e2);
+	ebitmap_validate_and_destroy(&e1);
 }
 
 static void test_ebitmap__random(void)
