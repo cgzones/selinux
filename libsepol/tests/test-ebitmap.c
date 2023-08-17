@@ -186,21 +186,30 @@ static void test_ebitmap_set_and_get(void)
 	CU_ASSERT_EQUAL(ebitmap_get_bit(&e, 1050), 1);
 
 	{
-		ebitmap_node_t *n;
-		unsigned int bit, count;
+		ebitmap_node_t *n, *p = NULL;
+		unsigned int bit, bit_count, node_count;
 
 		/* iterate all allocated bits */
-		count = 0;
+		bit_count = 0;
+		node_count = 0;
 		ebitmap_for_each_bit(&e, n, bit) {
-			CU_ASSERT(                bit <   64  ||
-			          (64   <= bit && bit <  128) ||
-			          (960  <= bit && bit < 1024) ||
-			          (1024 <= bit && bit < 1088));
-			count++;
+			CU_ASSERT((rounddown(  10, MAPSIZE) <= bit && bit < roundup(  10, MAPSIZE)) ||
+			          (rounddown(  50, MAPSIZE) <= bit && bit < roundup(  50, MAPSIZE)) ||
+			          (rounddown( 100, MAPSIZE) <= bit && bit < roundup( 100, MAPSIZE)) ||
+			          (rounddown(1023, MAPSIZE) <= bit && bit < roundup(1023, MAPSIZE)) ||
+			          (rounddown(1024, MAPSIZE) <= bit && bit < roundup(1024, MAPSIZE)) ||
+			          (rounddown(1050, MAPSIZE) <= bit && bit < roundup(1050, MAPSIZE)));
+			bit_count++;
+			if (n != p) {
+				node_count++;
+				p = n;
+			}
 		}
-		CU_ASSERT_EQUAL(count, 4 * 64);
+		CU_ASSERT(bit_count > 0 && node_count > 0);
+		CU_ASSERT_EQUAL(bit_count, node_count * MAPSIZE);
 
-		count = 0;
+		/* iterate all set bits */
+		bit_count = 0;
 		ebitmap_for_each_positive_bit(&e, n, bit) {
 			CU_ASSERT(bit == 10 ||
 			          bit == 50 ||
@@ -209,9 +218,9 @@ static void test_ebitmap_set_and_get(void)
 			          bit == 1024 ||
 			          bit == 1050);
 			CU_ASSERT_EQUAL(ebitmap_get_bit(&e, bit), 1);
-			count++;
+			bit_count++;
 		}
-		CU_ASSERT_EQUAL(count, 6);
+		CU_ASSERT_EQUAL(bit_count, 6);
 	}
 
 	CU_ASSERT_EQUAL(ebitmap_set_bit(&e, 1024, 0), 0);

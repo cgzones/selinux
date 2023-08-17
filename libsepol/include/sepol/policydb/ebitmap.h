@@ -17,6 +17,7 @@
 #ifndef _SEPOL_POLICYDB_EBITMAP_H_
 #define _SEPOL_POLICYDB_EBITMAP_H_
 
+#include <limits.h>
 #include <stdint.h>
 #include <string.h>
 
@@ -24,13 +25,32 @@
 extern "C" {
 #endif
 
+#define rounddown(x, y) (	\
+{				\
+	typeof(x) x_ = (x);	\
+	x_ - (x_ % (y));	\
+}				\
+)
+
+#ifndef roundup
+#define roundup(x, y) (			\
+{					\
+	typeof(y) y_ = y;		\
+	(((x) + (y_ - 1)) / y_) * y_;	\
+}					\
+)
+#endif
+
 #define MAPTYPE uint64_t	/* portion of bitmap in each node */
-#define MAPSIZE (sizeof(MAPTYPE) * 8)	/* number of bits in node bitmap */
+#define MAPELEMNUM 1		/* number of maptypes in a single node */
+#define MAPELEMSIZE (sizeof(MAPTYPE) * CHAR_BIT) /* number of bits in a single bitmap element */
+#define MAPSIZE (MAPELEMSIZE * MAPELEMNUM)	/* number of bits in node bitmap */
 #define MAPBIT  1ULL		/* a bit in the node bitmap */
+#define MAPFORMATSIZE 64	/* number of bits in node bitmap for compiled format */
 
 typedef struct ebitmap_node {
 	uint32_t startbit;	/* starting position in the total bitmap */
-	MAPTYPE map;		/* this node's portion of the bitmap */
+	MAPTYPE map[MAPELEMNUM];	/* this node's portion of the bitmap */
 	struct ebitmap_node *next;
 } ebitmap_node_t;
 
@@ -69,7 +89,9 @@ static inline unsigned int ebitmap_next(ebitmap_node_t ** n, unsigned int bit)
 
 static inline int ebitmap_node_get_bit(const ebitmap_node_t * n, unsigned int bit)
 {
-	if (n->map & (MAPBIT << (bit - n->startbit)))
+	unsigned int offset = bit - n->startbit;
+
+	if (n->map[offset / MAPELEMSIZE] & (MAPBIT << (offset % MAPELEMSIZE)))
 		return 1;
 	return 0;
 }
