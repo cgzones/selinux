@@ -42,7 +42,7 @@ extern "C" {
 #endif
 
 #define MAPTYPE uint64_t	/* portion of bitmap in each node */
-#define MAPELEMNUM 1		/* number of maptypes in a single node */
+#define MAPELEMNUM 7		/* number of maptypes in a single node */
 #define MAPELEMSIZE (sizeof(MAPTYPE) * CHAR_BIT) /* number of bits in a single bitmap element */
 #define MAPSIZE (MAPELEMSIZE * MAPELEMNUM)	/* number of bits in node bitmap */
 #define MAPBIT  1ULL		/* a bit in the node bitmap */
@@ -75,6 +75,7 @@ static inline unsigned int ebitmap_start(const ebitmap_t * e,
 static inline void ebitmap_init(ebitmap_t * e)
 {
 	memset(e, 0, sizeof(*e));
+	// TODO: perf test structured initialization
 }
 
 static inline unsigned int ebitmap_next(ebitmap_node_t ** n, unsigned int bit)
