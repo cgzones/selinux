@@ -58,38 +58,78 @@ struct policy_data {
 static int avrule_write_list(policydb_t *p,
 			     avrule_t * avrules, struct policy_file *fp);
 
-static int ebitmap_write(ebitmap_t * e, struct policy_file *fp)
+static int ebitmap_write(const ebitmap_t *e, struct policy_file *fp)
 {
 	ebitmap_node_t *n;
-	uint32_t buf[32], bit, count;
+	uint32_t buf[3], bit, count, last_bit, last_startbit;
 	uint64_t map;
 	size_t items;
 
-	buf[0] = cpu_to_le32(MAPSIZE);
-	buf[1] = cpu_to_le32(e->highbit);
+	buf[0] = cpu_to_le32(MAPFORMATSIZE);
 
 	count = 0;
-	for (n = e->node; n; n = n->next)
-		count++;
+	last_bit = 0;
+	last_startbit = UINT32_MAX;
+	ebitmap_for_each_positive_bit(e, n, bit) {
+		if (last_startbit == UINT32_MAX || rounddown(bit, MAPFORMATSIZE) > last_startbit) {
+			count++;
+			last_startbit = rounddown(bit, MAPFORMATSIZE);
+		}
+		last_bit = roundup(bit + 1, MAPFORMATSIZE);
+	}
+	buf[1] = cpu_to_le32(last_bit);
 	buf[2] = cpu_to_le32(count);
 
 	items = put_entry(buf, sizeof(uint32_t), 3, fp);
 	if (items != 3)
 		return POLICYDB_ERROR;
 
-	for (n = e->node; n; n = n->next) {
-		bit = cpu_to_le32(n->startbit);
-		items = put_entry(&bit, sizeof(uint32_t), 1, fp);
-		if (items != 1)
-			return POLICYDB_ERROR;
-		map = cpu_to_le64(n->map);
-		items = put_entry(&map, sizeof(uint64_t), 1, fp);
-		if (items != 1)
-			return POLICYDB_ERROR;
+	map = 0;
+	last_startbit = UINT32_MAX;
+	ebitmap_for_each_positive_bit(e, n, bit) {
+		if (last_startbit == UINT32_MAX || rounddown(bit, MAPFORMATSIZE) > last_startbit) {
+			uint64_t buf64[1];
 
+			/* this is the very first bit */
+			if (!map) {
+				last_startbit = rounddown(bit, MAPFORMATSIZE);
+				map = (MAPTYPE)1 << (bit - last_startbit);
+				continue;
+			}
+
+			/* write the last node */
+			buf[0] = cpu_to_le32(last_startbit);
+			items = put_entry(buf, sizeof(uint32_t), 1, fp);
+			if (items != 1)
+				return POLICYDB_ERROR;
+
+			buf64[0] = cpu_to_le64(map);
+			items = put_entry(buf64, sizeof(uint64_t), 1, fp);
+			if (items != 1)
+				return POLICYDB_ERROR;
+
+			/* set up for the next node */
+			map = 0;
+			last_startbit = rounddown(bit, MAPFORMATSIZE);
+		}
+		map |= ((MAPTYPE)1) << (bit - last_startbit);
 	}
+	/* write the last node */
+	if (map) {
+		uint64_t buf64[1];
 
-	return POLICYDB_SUCCESS;
+		/* write the last node */
+		buf[0] = cpu_to_le32(last_startbit);
+		items = put_entry(buf, sizeof(uint32_t), 1, fp);
+		if (items != 1)
+			return POLICYDB_ERROR;
+
+		buf64[0] = cpu_to_le64(map);
+		items = put_entry(buf64, sizeof(uint64_t), 1, fp);
+		if (items != 1)
+			return POLICYDB_ERROR;
+	}
+	return 0;
 }
 
 /* Ordering of datums in the original avtab format in the policy file. */
