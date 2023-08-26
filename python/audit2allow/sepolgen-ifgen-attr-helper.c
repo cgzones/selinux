@@ -148,7 +148,7 @@ static int attribute_callback(hashtab_key_t key, hashtab_datum_t datum, void *da
 static policydb_t *load_policy(const char *filename)
 {
 	policydb_t *policydb;
-	struct policy_file pf;
+	sepol_policy_file_t *pf;
 	FILE *fp;
 	char pathname[PATH_MAX];
 	int suffix_ver;
@@ -187,13 +187,17 @@ static policydb_t *load_policy(const char *filename)
 		return NULL;
 	}
 
-	policy_file_init(&pf);
-	pf.type = PF_USE_STDIO;
-	pf.fp = fp;
+	if (sepol_policy_file_create(&pf) != 0) {
+		fprintf(stderr, "Out of memory!\n");
+		fclose(fp);
+		return NULL;
+	}
+	sepol_policy_file_set_fp(pf, fp);
 
 	policydb = malloc(sizeof(policydb_t));
 	if (policydb == NULL) {
 		fprintf(stderr, "Out of memory!\n");
+		sepol_policy_file_free(pf);
 		fclose(fp);
 		return NULL;
 	}
@@ -201,19 +205,22 @@ static policydb_t *load_policy(const char *filename)
 	if (policydb_init(policydb)) {
 		fprintf(stderr, "Out of memory!\n");
 		free(policydb);
+		sepol_policy_file_free(pf);
 		fclose(fp);
 		return NULL;
 	}
 
-	ret = policydb_read(policydb, &pf, 1);
+	ret = policydb_read(policydb, &pf->pf, 1);
 	if (ret) {
 		fprintf(stderr,
 			"error(s) encountered while parsing configuration\n");
 		free(policydb);
+		sepol_policy_file_free(pf);
 		fclose(fp);
 		return NULL;
 	}
 
+	sepol_policy_file_free(pf);
 	fclose(fp);
 
 	return policydb;
