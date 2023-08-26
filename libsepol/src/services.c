@@ -132,22 +132,28 @@ int sepol_set_policydb(policydb_t * p)
 
 int sepol_set_policydb_from_file(FILE * fp)
 {
-	struct policy_file pf;
+	sepol_policy_file_t *pf;
 
-	policy_file_init(&pf);
-	pf.fp = fp;
-	pf.type = PF_USE_STDIO;
-	if (mypolicydb.policy_type)
-		policydb_destroy(&mypolicydb);
-	if (policydb_init(&mypolicydb)) {
+	if (sepol_policy_file_create(&pf) != 0) {
 		ERR(NULL, "Out of memory!");
 		return -1;
 	}
-	if (policydb_read(&mypolicydb, &pf, 0)) {
+	sepol_policy_file_set_fp(pf, fp);
+
+	if (mypolicydb.policy_type)
 		policydb_destroy(&mypolicydb);
+	if (policydb_init(&mypolicydb)) {
+		sepol_policy_file_free(pf);
+		ERR(NULL, "Out of memory!");
+		return -1;
+	}
+	if (policydb_read(&mypolicydb, &pf->pf, 0)) {
+		policydb_destroy(&mypolicydb);
+		sepol_policy_file_free(pf);
 		ERR(NULL, "can't read binary policy: %m");
 		return -1;
 	}
+	sepol_policy_file_free(pf);
 	policydb = &mypolicydb;
 	return sepol_sidtab_init(sidtab);
 }
