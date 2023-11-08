@@ -56,7 +56,7 @@ static void expand_state_init(expand_state_t * state)
 	memset(state, 0, sizeof(expand_state_t));
 }
 
-static int map_ebitmap(ebitmap_t * src, ebitmap_t * dst, uint32_t * map)
+static int map_ebitmap(const ebitmap_t * src, ebitmap_t * dst, const uint32_t * map)
 {
 	unsigned int i;
 	ebitmap_node_t *tnode;
