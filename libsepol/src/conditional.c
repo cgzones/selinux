@@ -583,7 +583,7 @@ int cond_read_bool(policydb_t * p,
 		goto err;
 
 	booldatum->s.value = le32_to_cpu(buf[0]);
-	booldatum->state = le32_to_cpu(buf[1]);
+	booldatum->state = !!le32_to_cpu(buf[1]);
 
 	if (!bool_isvalid(booldatum))
 		goto err;
@@ -754,7 +754,7 @@ static int cond_read_node(policydb_t * p, cond_node_t * node, void *fp)
 	if (rc < 0)
 		goto err;
 
-	node->cur_state = le32_to_cpu(buf[0]);
+	node->cur_state = !!le32_to_cpu(buf[0]);
 
 	rc = next_entry(buf, fp, sizeof(uint32_t));
 	if (rc < 0)
