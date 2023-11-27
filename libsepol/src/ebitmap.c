@@ -370,9 +370,9 @@ int ebitmap_set_bit(ebitmap_t * e, unsigned int bit, int value)
 {
 	ebitmap_node_t *n, *prev, *new;
 	uint32_t startbit = bit & ~(MAPSIZE - 1);
-	uint32_t highbit = startbit + MAPSIZE;
+	uint32_t highbit;
 
-	if (highbit == 0) {
+	if (__builtin_add_overflow(startbit, MAPSIZE, &highbit)) {
 		ERR(NULL, "bitmap overflow, bit 0x%x", bit);
 		return -EINVAL;
 	}
