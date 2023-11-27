@@ -839,7 +839,7 @@ static unsigned int filenametr_hash(hashtab_t h, const_hashtab_key_t k)
 	hash = ft->ttype ^ ft->tclass;
 
 	byte_num = 0;
-	while ((focus = ft->name[byte_num++]))
+	while ((focus = (unsigned char) ft->name[byte_num++]))
 		hash = partial_name_hash(focus, hash);
 	return hash & (h->size - 1);
 }
@@ -2330,9 +2330,9 @@ static int class_read(policydb_t * p, hashtab_t h, struct policy_file *fp)
 		rc = next_entry(buf, fp, sizeof(uint32_t) * 3);
 		if (rc < 0)
 			goto bad;
-		cladatum->default_user = le32_to_cpu(buf[0]);
-		cladatum->default_role = le32_to_cpu(buf[1]);
-		cladatum->default_range = le32_to_cpu(buf[2]);
+		cladatum->default_user = (char) le32_to_cpu(buf[0]);
+		cladatum->default_role = (char) le32_to_cpu(buf[1]);
+		cladatum->default_range = (char) le32_to_cpu(buf[2]);
 	}
 
 	if ((p->policy_type == POLICY_KERN &&
@@ -2342,7 +2342,7 @@ static int class_read(policydb_t * p, hashtab_t h, struct policy_file *fp)
 		rc = next_entry(buf, fp, sizeof(uint32_t));
 		if (rc < 0)
 			goto bad;
-		cladatum->default_type = le32_to_cpu(buf[0]);
+		cladatum->default_type = (char) le32_to_cpu(buf[0]);
 	}
 
 	if (hashtab_insert(h, key, cladatum))
@@ -2889,7 +2889,7 @@ static int ocontext_read_xen(const struct policydb_compat_info *info,
 				rc = next_entry(buf, fp, sizeof(uint32_t));
 				if (rc < 0)
 					return -1;
-				c->u.pirq = le32_to_cpu(buf[0]);
+				c->u.pirq = (uint16_t) le32_to_cpu(buf[0]);
 				if (context_read_and_validate
 				    (&c->context[0], p, fp))
 					return -1;
@@ -3065,9 +3065,9 @@ static int ocontext_read_selinux(const struct policydb_compat_info *info,
 				rc = next_entry(buf, fp, sizeof(uint32_t) * 3);
 				if (rc < 0)
 					return -1;
-				c->u.port.protocol = le32_to_cpu(buf[0]);
-				c->u.port.low_port = le32_to_cpu(buf[1]);
-				c->u.port.high_port = le32_to_cpu(buf[2]);
+				c->u.port.protocol = (uint8_t) le32_to_cpu(buf[0]);
+				c->u.port.low_port = (uint16_t) le32_to_cpu(buf[1]);
+				c->u.port.high_port = (uint16_t) le32_to_cpu(buf[2]);
 				if (context_read_and_validate
 				    (&c->context[0], p, fp))
 					return -1;
@@ -3379,7 +3379,7 @@ static int sens_read(policydb_t * p
 	if (rc < 0)
 		goto bad;
 
-	levdatum->isalias = le32_to_cpu(buf[1]);
+	levdatum->isalias = !!le32_to_cpu(buf[1]);
 
 	levdatum->level = malloc(sizeof(mls_level_t));
 	if (!levdatum->level || mls_read_level(levdatum->level, fp))
@@ -3419,7 +3419,7 @@ static int cat_read(policydb_t * p
 		goto bad;
 
 	catdatum->s.value = le32_to_cpu(buf[1]);
-	catdatum->isalias = le32_to_cpu(buf[2]);
+	catdatum->isalias = !!le32_to_cpu(buf[2]);
 
 	if (hashtab_insert(h, key, catdatum))
 		goto bad;
