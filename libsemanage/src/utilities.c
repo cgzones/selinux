@@ -216,7 +216,7 @@ int semanage_str_count(const char *data, char what)
 
 void semanage_rtrim(char *str, char trim_to)
 {
-	int len = 0;
+	size_t len;
 
 	if (!str)
 		return;
