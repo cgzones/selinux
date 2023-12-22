@@ -26,7 +26,7 @@ struct dbase_activedb {
 	dbase_llist_t llist;
 
 	/* ACTIVEDB extension */
-	record_activedb_table_t *ratable;
+	const record_activedb_table_t *ratable;
 };
 
 static int dbase_activedb_cache(semanage_handle_t * handle,
@@ -34,7 +34,7 @@ static int dbase_activedb_cache(semanage_handle_t * handle,
 {
 
 	const record_table_t *rtable = dbase_llist_get_rtable(&dbase->llist);
-	record_activedb_table_t *ratable = dbase->ratable;
+	const record_activedb_table_t *ratable = dbase->ratable;
 
 	record_t **records = NULL;
 	unsigned int rcount = 0;
@@ -78,7 +78,7 @@ static int dbase_activedb_flush(semanage_handle_t * handle,
 {
 
 	const record_table_t *rtable = dbase_llist_get_rtable(&dbase->llist);
-	record_activedb_table_t *ratable = dbase->ratable;
+	const record_activedb_table_t *ratable = dbase->ratable;
 
 	record_t **records = NULL;
 	unsigned int rcount = 0;
