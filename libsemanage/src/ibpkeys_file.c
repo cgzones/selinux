@@ -20,7 +20,7 @@ typedef struct dbase_file dbase_t;
 #include "debug.h"
 
 static int ibpkey_print(semanage_handle_t *handle,
-			semanage_ibpkey_t *ibpkey, FILE *str)
+			const semanage_ibpkey_t *ibpkey, FILE *str)
 {
 	char *con_str = NULL;
 	char *subnet_prefix_str = NULL;

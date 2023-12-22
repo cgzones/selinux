@@ -20,7 +20,7 @@ typedef struct dbase_file dbase_t;
 #include "debug.h"
 
 static int ibendport_print(semanage_handle_t *handle,
-			   semanage_ibendport_t *ibendport,
+			   const semanage_ibendport_t *ibendport,
 			   FILE *str)
 {
 	char *con_str = NULL;

@@ -77,13 +77,13 @@ static char *semanage_files[SEMANAGE_NUM_FILES] = { NULL };
 static int semanage_paths_initialized = 0;
 
 /* These are paths relative to the bottom of the module store */
-static const char *semanage_relative_files[SEMANAGE_NUM_FILES] = {
+static const char *const semanage_relative_files[SEMANAGE_NUM_FILES] = {
 	"",
 	"/semanage.trans.LOCK",
 	"/semanage.read.LOCK"
 };
 
-static const char *semanage_store_paths[SEMANAGE_NUM_STORES] = {
+static const char *const semanage_store_paths[SEMANAGE_NUM_STORES] = {
 	"/active",
 	"/previous",
 	"/tmp"
@@ -91,7 +91,7 @@ static const char *semanage_store_paths[SEMANAGE_NUM_STORES] = {
 
 /* relative path names to enum sandbox_paths for special files within
  * a sandbox */
-static const char *semanage_sandbox_paths[SEMANAGE_STORE_NUM_PATHS] = {
+static const char *const semanage_sandbox_paths[SEMANAGE_STORE_NUM_PATHS] = {
 	"",
 	"/modules",
 	"/policy.linked",

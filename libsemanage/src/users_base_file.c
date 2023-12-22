@@ -21,7 +21,7 @@ typedef struct dbase_file dbase_t;
 #include "debug.h"
 
 static int user_base_print(semanage_handle_t * handle,
-			   semanage_user_base_t * user, FILE * str)
+			   const semanage_user_base_t * user, FILE * str)
 {
 
 	const char **roles = NULL;
