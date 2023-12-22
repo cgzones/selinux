@@ -85,7 +85,7 @@ int parse_skip_space(semanage_handle_t * handle, parse_info_t * info)
 
 	size_t buf_len = 0;
 	ssize_t len;
-	int lineno = info->lineno;
+	unsigned int lineno = info->lineno;
 	char *buffer = NULL;
 	char *ptr;
 
