@@ -33,7 +33,7 @@ static int dbase_activedb_cache(semanage_handle_t * handle,
 				dbase_activedb_t * dbase)
 {
 
-	record_table_t *rtable = dbase_llist_get_rtable(&dbase->llist);
+	const record_table_t *rtable = dbase_llist_get_rtable(&dbase->llist);
 	record_activedb_table_t *ratable = dbase->ratable;
 
 	record_t **records = NULL;
@@ -77,7 +77,7 @@ static int dbase_activedb_flush(semanage_handle_t * handle,
 				dbase_activedb_t * dbase)
 {
 
-	record_table_t *rtable = dbase_llist_get_rtable(&dbase->llist);
+	const record_table_t *rtable = dbase_llist_get_rtable(&dbase->llist);
 	record_activedb_table_t *ratable = dbase->ratable;
 
 	record_t **records = NULL;
@@ -111,8 +111,8 @@ static int dbase_activedb_flush(semanage_handle_t * handle,
 }
 
 int dbase_activedb_init(semanage_handle_t * handle,
-			record_table_t * rtable,
-			record_activedb_table_t * ratable,
+			const record_table_t * rtable,
+			const record_activedb_table_t * ratable,
 			dbase_activedb_t ** dbase)
 {
 
@@ -147,7 +147,7 @@ void dbase_activedb_release(dbase_activedb_t * dbase)
 }
 
 /* ACTIVEDB dbase - method table implementation */
-dbase_table_t SEMANAGE_ACTIVEDB_DTABLE = {
+const dbase_table_t SEMANAGE_ACTIVEDB_DTABLE = {
 
 	/* Cache/Transactions */
 	.cache = dbase_activedb_cache,
