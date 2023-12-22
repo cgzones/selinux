@@ -119,4 +119,97 @@ extern int dbase_llist_list(semanage_handle_t * handle,
 			    dbase_llist_t * dbase,
 			    record_t *** records, unsigned int *count);
 
+/* LLIST - wrappers for polymorphism */
+
+static inline void dbase_llist_drop_cache_wrapper(dbase_t * dbase)
+{
+	dbase_llist_drop_cache((dbase_llist_t *)dbase);
+}
+
+static inline int dbase_llist_is_modified_wrapper(dbase_t * dbase)
+{
+	return dbase_llist_is_modified((dbase_llist_t *)dbase);
+}
+
+static inline int dbase_llist_iterate_wrapper(semanage_handle_t * handle,
+			     		      dbase_t * dbase,
+					      int (*fn) (const record_t * record, void *fn_arg),
+					      void *arg)
+{
+	return dbase_llist_iterate(handle, (dbase_llist_t *)dbase, fn, arg);
+}
+
+static inline int dbase_llist_exists_wrapper(semanage_handle_t * handle,
+			     		     dbase_t * dbase,
+			     		     const record_key_t * key,
+					     int *response)
+{
+	return dbase_llist_exists(handle, (dbase_llist_t *)dbase, key, response);
+}
+
+static inline int dbase_llist_list_wrapper(semanage_handle_t * handle,
+			  	 	   dbase_t * dbase,
+			  	  	   record_t *** records,
+					   unsigned int *count)
+{
+	return dbase_llist_list(handle, (dbase_llist_t *)dbase, records, count);
+}
+
+static inline int dbase_llist_add_wrapper(semanage_handle_t * handle,
+			 		  dbase_t * dbase,
+			   		  const record_key_t * key,
+					  const record_t * data)
+{
+	return dbase_llist_add(handle, (dbase_llist_t *)dbase, key, data);
+}
+
+static inline int dbase_llist_set_wrapper(semanage_handle_t * handle,
+					  dbase_t * dbase,
+			  		  const record_key_t * key,
+					  const record_t * data)
+{
+	return dbase_llist_set(handle, (dbase_llist_t *)dbase, key, data);
+}
+
+static inline int dbase_llist_del_wrapper(semanage_handle_t * handle,
+			   	 	  dbase_t * dbase,
+					  const record_key_t * key)
+{
+	return dbase_llist_del(handle, (dbase_llist_t *)dbase, key);
+}
+
+static inline int dbase_llist_clear_wrapper(semanage_handle_t * handle,
+					    dbase_t * dbase)
+{
+	return dbase_llist_clear(handle, (dbase_llist_t *)dbase);
+}
+
+static inline int dbase_llist_modify_wrapper(semanage_handle_t * handle,
+			    		     dbase_t * dbase,
+			     		     const record_key_t * key,
+					     const record_t * data)
+{
+	return dbase_llist_modify(handle, (dbase_llist_t *)dbase, key, data);
+}
+
+static inline int dbase_llist_query_wrapper(semanage_handle_t * handle,
+			     		    dbase_t * dbase,
+			     		    const record_key_t * key,
+					    record_t ** response)
+{
+	return dbase_llist_query(handle, (dbase_llist_t *)dbase, key, response);
+}
+
+static inline int dbase_llist_count_wrapper(semanage_handle_t * handle,
+			     		    dbase_t * dbase,
+					    unsigned int *response)
+{
+	return dbase_llist_count(handle, (dbase_llist_t *)dbase, response);
+}
+
+static inline const record_table_t *dbase_llist_get_rtable_wrapper(dbase_t * dbase)
+{
+	return dbase_llist_get_rtable((dbase_llist_t *)dbase);
+}
+
 #endif

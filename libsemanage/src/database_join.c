@@ -283,22 +283,22 @@ const dbase_table_t SEMANAGE_JOIN_DTABLE = {
 
 	/* Cache/Transactions */
 	.cache = dbase_join_cache,
-	.drop_cache = (void *)dbase_llist_drop_cache,
+	.drop_cache = dbase_llist_drop_cache_wrapper,
 	.flush = dbase_join_flush,
-	.is_modified = (void *)dbase_llist_is_modified,
+	.is_modified = dbase_llist_is_modified_wrapper,
 
 	/* Database API */
-	.iterate = (void *)dbase_llist_iterate,
-	.exists = (void *)dbase_llist_exists,
-	.list = (void *)dbase_llist_list,
-	.add = (void *)dbase_llist_add,
-	.set = (void *)dbase_llist_set,
-	.del = (void *)dbase_llist_del,
-	.clear = (void *)dbase_llist_clear,
-	.modify = (void *)dbase_llist_modify,
-	.query = (void *)dbase_llist_query,
-	.count = (void *)dbase_llist_count,
+	.iterate = dbase_llist_iterate_wrapper,
+	.exists = dbase_llist_exists_wrapper,
+	.list = dbase_llist_list_wrapper,
+	.add = dbase_llist_add_wrapper,
+	.set = dbase_llist_set_wrapper,
+	.del = dbase_llist_del_wrapper,
+	.clear = dbase_llist_clear_wrapper,
+	.modify = dbase_llist_modify_wrapper,
+	.query = dbase_llist_query_wrapper,
+	.count = dbase_llist_count_wrapper,
 
 	/* Polymorphism */
-	.get_rtable = (void *)dbase_llist_get_rtable
+	.get_rtable = dbase_llist_get_rtable_wrapper
 };
