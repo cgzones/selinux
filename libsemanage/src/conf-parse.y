@@ -48,7 +48,7 @@ static semanage_conf_t *current_conf;
 static external_prog_t *new_external;
 static int parse_errors;
 
-#define PASSIGN(p1,p2) { free(p1); p1 = p2; }
+#define PASSIGN(p1,p2) { free(p1); (p1) = (p2); }
 
 %}
 
