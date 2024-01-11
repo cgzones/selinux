@@ -99,7 +99,7 @@ int semanage_check_init(semanage_handle_t *sh, const char *prefix);
 extern const char *semanage_fname(enum semanage_sandbox_defs file_enum);
 
 extern const char *semanage_path(enum semanage_store_defs store,
-				 enum semanage_sandbox_defs file);
+				 enum semanage_sandbox_defs path_name);
 
 extern const char *semanage_final_path(enum semanage_final_defs root,
 				       enum semanage_final_path_defs suffix);
@@ -119,7 +119,7 @@ int semanage_make_sandbox(semanage_handle_t * sh);
 int semanage_make_final(semanage_handle_t * sh);
 
 int semanage_get_cil_paths(semanage_handle_t * sh, semanage_module_info_t *modinfos,
-			       int len, char ***filenames);
+			       int num_modinfos, char ***filenames);
 
 int semanage_get_active_modules(semanage_handle_t *sh,
 			       semanage_module_info_t **modinfo, int *num_modules);
@@ -133,7 +133,7 @@ void semanage_release_active_lock(semanage_handle_t * sh);
 int semanage_direct_get_serial(semanage_handle_t * sh);
 
 int semanage_load_files(semanage_handle_t * sh,
-			    cil_db_t *cildb, char **filenames, int num_modules);
+			    cil_db_t *cildb, char **filenames, int numfiles);
 
 int semanage_read_policydb(semanage_handle_t * sh,
 			   sepol_policydb_t * policydb,

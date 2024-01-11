@@ -55,7 +55,7 @@ extern void semanage_select_store(semanage_handle_t * handle, char *path,
 				  enum semanage_connect_type storetype);
 
 /* Just reload the policy */
-extern int semanage_reload_policy(semanage_handle_t * handle);
+extern int semanage_reload_policy(semanage_handle_t * sh);
 
 /* set whether to reload the policy or not after a commit,
  * 1 for yes (default), 0 for no */

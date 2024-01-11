@@ -496,11 +496,11 @@ const char *semanage_path(enum semanage_store_defs store,
  * This function shall never return a NULL, assuming that
  * semanage_check_init() was previously called.
  */
-const char *semanage_final_path(enum semanage_final_defs store,
-				enum semanage_final_path_defs path_name)
+const char *semanage_final_path(enum semanage_final_defs root,
+				enum semanage_final_path_defs suffix)
 {
-	assert(semanage_final_paths[store][path_name]);
-	return semanage_final_paths[store][path_name];
+	assert(semanage_final_paths[root][suffix]);
+	return semanage_final_paths[root][suffix];
 }
 
 /* Return a fully-qualified path + filename to the semanage
@@ -2100,7 +2100,7 @@ int semanage_load_files(semanage_handle_t * sh, cil_db_t *cildb, char **filename
 /**
  * Read the policy from the sandbox (linked or kernel)
  */
-int semanage_read_policydb(semanage_handle_t * sh, sepol_policydb_t * in,
+int semanage_read_policydb(semanage_handle_t * sh, sepol_policydb_t * policydb,
 			   enum semanage_sandbox_defs file)
 {
 
@@ -2125,7 +2125,7 @@ int semanage_read_policydb(semanage_handle_t * sh, sepol_policydb_t * in,
 	}
 	sepol_policy_file_set_fp(pf, infile);
 	sepol_policy_file_set_handle(pf, sh->sepolh);
-	if (sepol_policydb_read(in, pf) == -1) {
+	if (sepol_policydb_read(policydb, pf) == -1) {
 		ERR(sh, "Error while reading kernel policy from %s.",
 		    kernel_filename);
 		goto cleanup;
@@ -2142,7 +2142,7 @@ int semanage_read_policydb(semanage_handle_t * sh, sepol_policydb_t * in,
 /**
  * Writes the policy to the sandbox (linked or kernel)
  */
-int semanage_write_policydb(semanage_handle_t * sh, sepol_policydb_t * out,
+int semanage_write_policydb(semanage_handle_t * sh, sepol_policydb_t * policydb,
 			    enum semanage_sandbox_defs file)
 {
 
@@ -2168,7 +2168,7 @@ int semanage_write_policydb(semanage_handle_t * sh, sepol_policydb_t * out,
 	}
 	sepol_policy_file_set_fp(pf, outfile);
 	sepol_policy_file_set_handle(pf, sh->sepolh);
-	if (sepol_policydb_write(out, pf) == -1) {
+	if (sepol_policydb_write(policydb, pf) == -1) {
 		ERR(sh, "Error while writing kernel policy to %s.",
 		    kernel_filename);
 		goto cleanup;

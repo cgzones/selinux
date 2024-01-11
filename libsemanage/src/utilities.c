@@ -57,16 +57,16 @@ char *semanage_findval(const char *file, const char *var, const char *delim)
 	return retval;
 }
 
-int semanage_is_prefix(const char *str, const char *prefix)
+int semanage_is_prefix(const char *str, const char *val)
 {
 	if (!str) {
 		return FALSE;
 	}
-	if (!prefix) {
+	if (!val) {
 		return TRUE;
 	}
 
-	return strncmp(str, prefix, strlen(prefix)) == 0;
+	return strncmp(str, val, strlen(val)) == 0;
 }
 
 char *semanage_split_on_space(const char *str)
