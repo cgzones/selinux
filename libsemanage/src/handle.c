@@ -45,6 +45,8 @@ int semanage_set_root(const char *path)
 {
 	free(private_semanage_root);
 	private_semanage_root = strdup(path);
+	if (!private_semanage_root)
+		return -1;
 	return 0;
 }
 
