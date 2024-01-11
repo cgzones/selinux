@@ -2050,7 +2050,7 @@ int semanage_direct_get_serial(semanage_handle_t * sh)
 int semanage_load_files(semanage_handle_t * sh, cil_db_t *cildb, char **filenames, int numfiles)
 {
 	int i, retval = 0;
-	char *filename;
+	const char *filename;
 	struct file_contents contents = {};
 
 	for (i = 0; i < numfiles; i++) {
@@ -2177,7 +2177,7 @@ int semanage_verify_modules(semanage_handle_t * sh,
 		return 0;
 	}
 	for (i = 0; i < num_modules; i++) {
-		char *module = module_filenames[i];
+		const char *module = module_filenames[i];
 		external_prog_t *e;
 		for (e = conf->mod_prog; e != NULL; e = e->next) {
 			if (semanage_exec_prog(sh, e, module, "$<") != 0) {
