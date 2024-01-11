@@ -136,10 +136,10 @@ typedef struct semanage_file_context_node {
 	char *path;
 	char *file_type;
 	char *context;
-	int path_len;
-	int effective_len;
-	int type_len;
-	int context_len;
+	size_t path_len;
+	size_t effective_len;
+	size_t type_len;
+	size_t context_len;
 	int meta;		/* position of first meta char in path, -1 if none */
 	struct semanage_file_context_node *next;
 } semanage_file_context_node_t;
@@ -513,7 +513,7 @@ const char *semanage_final_path(enum semanage_final_defs root,
 char *semanage_conf_path(void)
 {
 	char *semanage_conf = NULL;
-	int len;
+	size_t len;
 	struct stat sb;
 
 	len = strlen(semanage_root()) + strlen(selinux_path()) + strlen(SEMANAGE_CONF_FILE);
