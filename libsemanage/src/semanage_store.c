@@ -1528,9 +1528,11 @@ int semanage_split_fc(semanage_handle_t * sh)
 	if (file_con)
 		fclose(file_con);
 	if (fc >= 0)
-		close(fc);
+		if (close(fc) == -1)
+			retval = -1;
 	if (hd >= 0)
-		close(hd);
+		if (close(hd) == -1)
+			retval = -1;
 
 	return retval;
 
@@ -1723,7 +1725,11 @@ static int semanage_commit_sandbox(semanage_handle_t * sh)
 		close(fd);
 		return -1;
 	}
-	close(fd);
+	if (close(fd) == -1) {
+		ERR(sh, "Error while closing commit number file %s: %m",
+		    commit_filename);
+		return -1;
+	}
 
 	/* sync changes in sandbox to filesystem */
 	fd = open(sandbox, O_DIRECTORY | O_CLOEXEC);
@@ -2150,7 +2156,9 @@ int semanage_write_policydb(semanage_handle_t * sh, sepol_policydb_t * policydb,
 
       cleanup:
 	if (outfile != NULL) {
-		fclose(outfile);
+		if (fclose(outfile) != 0) {
+			retval = STATUS_ERR;
+		}
 	}
 	umask(mask);
 	sepol_policy_file_free(pf);
