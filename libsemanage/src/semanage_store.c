@@ -2854,7 +2854,7 @@ int semanage_nc_sort(semanage_handle_t * sh, const char *buf, size_t buf_len,
 
 	/* parsing bits */
 	const char *priority_names[] = NC_SORT_NAMES;
-	const int priority_names_len[] = NC_SORT_NAMES_LEN;
+	const size_t priority_names_len[] = NC_SORT_NAMES_LEN;
 	size_t line_len, buf_remainder, i, offset;
 	const char *line_buf, *line_end;
 
