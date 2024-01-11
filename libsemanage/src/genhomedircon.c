@@ -1114,7 +1114,7 @@ static int get_group_users(genhomedircon_settings_t * s,
 		goto cleanup;
 
 	if (group == NULL) {
-		ERR(s->h_semanage, "Can't find group named %s\n", grname);
+		ERR(s->h_semanage, "Can't find group named %s.", grname);
 		goto cleanup;
 	}
 

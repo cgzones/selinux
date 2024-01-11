@@ -764,7 +764,7 @@ static int semanage_copy_dir_flags(semanage_handle_t * sh, const char *src, cons
 	mode_t mask;
 
 	if ((len = scandir(src, &names, semanage_filename_select, NULL)) == -1) {
-		ERR(sh, "Could not read the contents of %s.\n", src);
+		ERR(sh, "Could not read the contents of %s.", src);
 		return -1;
 	}
 
@@ -772,7 +772,7 @@ static int semanage_copy_dir_flags(semanage_handle_t * sh, const char *src, cons
 		mask = umask(0077);
 		if (mkdir(dst, S_IRWXU) != 0) {
 			umask(mask);
-			ERR(sh, "Could not create %s.\n", dst);
+			ERR(sh, "Could not create %s.", dst);
 			goto cleanup;
 		}
 		umask(mask);
@@ -1510,14 +1510,14 @@ int semanage_split_fc(semanage_handle_t * sh)
 		    strstr(buf, "USER")) {
 			/* This contains one of the template variables, write it to homedir.template */
 			if (write_full(hd, buf, strlen(buf)) < 0) {
-				ERR(sh, "Write to %s failed: %m",
+				ERR(sh, "Write to %s failed.",
 				    semanage_path(SEMANAGE_TMP,
 						  SEMANAGE_HOMEDIR_TMPL));
 				goto cleanup;
 			}
 		} else {
 			if (write_full(fc, buf, strlen(buf)) < 0) {
-				ERR(sh, "Write to %s failed: %m",
+				ERR(sh, "Write to %s failed.",
 				    semanage_path(SEMANAGE_TMP, SEMANAGE_STORE_FC));
 				goto cleanup;
 			}
@@ -1546,7 +1546,7 @@ static int sefcontext_compile(semanage_handle_t * sh, const char *path) {
 
 	if (stat(path, &sb) < 0) {
 		if (errno != ENOENT) {
-			ERR(sh, "Unable to access %s: %s\n", path, strerror(errno));
+			ERR(sh, "Unable to access %s.", path);
 			return -1;
 		}
 
@@ -1727,7 +1727,7 @@ static int semanage_commit_sandbox(semanage_handle_t * sh)
 		return -1;
 	}
 	if (close(fd) == -1) {
-		ERR(sh, "Error while closing commit number file %s: %m",
+		ERR(sh, "Error while closing commit number file %s.",
 		    commit_filename);
 		return -1;
 	}
@@ -1735,11 +1735,11 @@ static int semanage_commit_sandbox(semanage_handle_t * sh)
 	/* sync changes in sandbox to filesystem */
 	fd = open(sandbox, O_DIRECTORY | O_CLOEXEC);
 	if (fd == -1) {
-		ERR(sh, "Error while opening %s for syncfs(): %d", sandbox, errno);
+		ERR(sh, "Error while opening %s for syncfs().", sandbox);
 		return -1;
 	}
 	if (syncfs(fd) == -1) {
-		ERR(sh, "Error while syncing %s to filesystem: %d", sandbox, errno);
+		ERR(sh, "Error while syncing %s to filesystem.", sandbox);
 		close(fd);
 		return -1;
 	}
