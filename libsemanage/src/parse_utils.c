@@ -271,7 +271,7 @@ int parse_fetch_string(semanage_handle_t * handle,
 {
 
 	char *start = info->ptr;
-	int len = 0;
+	size_t len = 0;
 	char *tmp_str = NULL;
 
 	if (parse_assert_noeof(handle, info) < 0)
