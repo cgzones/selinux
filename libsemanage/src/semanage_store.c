@@ -205,11 +205,11 @@ static int semanage_init_store_paths(const char *root)
 
 static int semanage_init_final(semanage_handle_t *sh, const char *prefix)
 {
-	assert(sh);
-	assert(prefix);
-
 	int status = 0;
 	const char *store_path = sh->conf->store_path;
+
+	assert(sh);
+	assert(prefix);
 
 	/* SEMANAGE_FINAL_TMP */
 	if (asprintf(&semanage_final[SEMANAGE_FINAL_TMP], "%s%s%s/%s",
