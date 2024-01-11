@@ -612,6 +612,9 @@ static int write_contexts(genhomedircon_settings_t *s, FILE *out,
 	char *new_context_str;
 
 	for (; tpl; tpl = tpl->next) {
+		const char *old_context_str;
+		sepol_handle_t *sepolh;
+
 		context = NULL;
 		new_context_str = NULL;
 		line = replace_all(tpl->data, repl);
@@ -619,7 +622,7 @@ static int write_contexts(genhomedircon_settings_t *s, FILE *out,
 			goto fail;
 		}
 
-		const char *old_context_str = extract_context(line);
+		old_context_str = extract_context(line);
 		if (!old_context_str) {
 			goto fail;
 		}
@@ -633,7 +636,7 @@ static int write_contexts(genhomedircon_settings_t *s, FILE *out,
 			continue;
 		}
 
-		sepol_handle_t *sepolh = s->h_semanage->sepolh;
+		sepolh = s->h_semanage->sepolh;
 
 		if (sepol_context_from_string(sepolh, old_context_str,
 					      &context) < 0) {
@@ -962,6 +965,16 @@ static int add_user(genhomedircon_settings_t * s,
 		    const char *sename,
 		    const char *selogin)
 {
+	int len, retval = STATUS_ERR;
+	char *rbuf = NULL;
+	long rbuflen;
+	struct passwd pwstorage, *pwent = NULL;
+	const char *prefix = NULL;
+	const char *level = NULL;
+	const char *homedir_role = NULL;
+	char uid[11];
+	char gid[11];
+
 	if (selogin[0] == '%') {
 		genhomedircon_user_entry_t *orig = find_user(*head, name);
 		if (orig != NULL && orig->login[0] == '%') {
@@ -976,17 +989,6 @@ static int add_user(genhomedircon_settings_t * s,
 			return STATUS_SUCCESS;
 		}
 	}
-
-	int retval = STATUS_ERR;
-
-	char *rbuf = NULL;
-	long rbuflen;
-	struct passwd pwstorage, *pwent = NULL;
-	const char *prefix = NULL;
-	const char *level = NULL;
-	const char *homedir_role = NULL;
-	char uid[11];
-	char gid[11];
 
 	errno = 0;
 	/* Allocate space for the getpwnam_r buffer */
@@ -1035,7 +1037,7 @@ retry:
 		goto cleanup;
 	}
 
-	int len = strlen(pwent->pw_dir) -1;
+	len = strlen(pwent->pw_dir) -1;
 	for(; len > 0 && pwent->pw_dir[len] == '/'; len--) {
 		pwent->pw_dir[len] = '\0';
 	}
@@ -1081,8 +1083,11 @@ static int get_group_users(genhomedircon_settings_t * s,
 
 	long grbuflen;
 	char *grbuf = NULL;
+	const char *grname;
 	struct group grstorage, *group = NULL;
 	struct passwd *pw = NULL;
+	size_t nmembers;
+	char **members;
 
 	errno = 0;
 	grbuflen = sysconf(_SC_GETGR_R_SIZE_MAX);
@@ -1095,7 +1100,7 @@ static int get_group_users(genhomedircon_settings_t * s,
 	if (grbuf == NULL)
 		goto cleanup;
 
-	const char *grname = selogin + 1;
+	grname = selogin + 1;
 
 	errno = 0;
 	while (
@@ -1121,8 +1126,8 @@ static int get_group_users(genhomedircon_settings_t * s,
 		goto cleanup;
 	}
 
-	size_t nmembers = 0;
-	char **members = group->gr_mem;
+	nmembers = 0;
+	members = group->gr_mem;
 
 	while (*members != NULL) {
 		nmembers++;
