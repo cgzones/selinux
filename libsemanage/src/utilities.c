@@ -72,7 +72,7 @@ int semanage_is_prefix(const char *str, const char *prefix)
 char *semanage_split_on_space(const char *str)
 {
 	/* as per the man page, these are the isspace() chars */
-	const char *seps = "\f\n\r\t\v ";
+	const char *const seps = "\f\n\r\t\v ";
 	size_t off = 0;
 
 	if (!str)
