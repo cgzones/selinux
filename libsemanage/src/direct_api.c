@@ -1349,7 +1349,9 @@ static int semanage_direct_commit(semanage_handle_t * sh)
 		cil_set_policy_version(cildb, sh->conf->policyvers);
 
 		if (sh->conf->handle_unknown != -1) {
-			cil_set_handle_unknown(cildb, sh->conf->handle_unknown);
+			retval = cil_set_handle_unknown(cildb, sh->conf->handle_unknown);
+			if (retval < 0)
+				goto cleanup;
 		}
 
 		retval = semanage_load_files(sh, cildb, mod_filenames, num_modinfos);
