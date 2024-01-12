@@ -716,7 +716,7 @@ int semanage_copy_file(const char *src, const char *dst, mode_t mode,
 		errsv = errno;
 		retval = -1;
 	}
-	if (close(out) < 0) {
+	if (close(out) < 0 && errno != EINTR) {
 		errsv = errno;
 		retval = -1;
 	}
@@ -1529,10 +1529,10 @@ int semanage_split_fc(semanage_handle_t * sh)
 	if (file_con)
 		fclose(file_con);
 	if (fc >= 0)
-		if (close(fc) == -1)
+		if (close(fc) == -1 && errno != EINTR)
 			retval = -1;
 	if (hd >= 0)
-		if (close(hd) == -1)
+		if (close(hd) == -1 && errno != EINTR)
 			retval = -1;
 
 	return retval;
@@ -1726,7 +1726,7 @@ static int semanage_commit_sandbox(semanage_handle_t * sh)
 		close(fd);
 		return -1;
 	}
-	if (close(fd) == -1) {
+	if (close(fd) == -1 && errno != EINTR) {
 		ERR(sh, "Error while closing commit number file %s.",
 		    commit_filename);
 		return -1;
@@ -2157,7 +2157,7 @@ int semanage_write_policydb(semanage_handle_t * sh, sepol_policydb_t * policydb,
 
       cleanup:
 	if (outfile != NULL) {
-		if (fclose(outfile) != 0) {
+		if (fclose(outfile) != 0 && errno != EINTR) {
 			retval = STATUS_ERR;
 		}
 	}
