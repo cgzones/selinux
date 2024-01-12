@@ -2050,7 +2050,7 @@ int semanage_direct_get_serial(semanage_handle_t * sh)
 
 int semanage_load_files(semanage_handle_t * sh, cil_db_t *cildb, char **filenames, int numfiles)
 {
-	int i, retval = 0;
+	int i, retval;
 	const char *filename;
 	struct file_contents contents = {};
 

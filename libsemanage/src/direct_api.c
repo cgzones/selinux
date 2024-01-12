@@ -1006,7 +1006,7 @@ static int semanage_compile_hll_modules(semanage_handle_t *sh,
 	/* to be incremented when checksum input data format changes */
 	static const size_t CHECKSUM_EPOCH = 2;
 
-	int i, status = 0;
+	int i, status;
 	char cil_path[PATH_MAX];
 	struct stat sb;
 	Sha256Context context;
