@@ -68,7 +68,7 @@ extern int parse_optional_str(parse_info_t * info, const char *str);
  * the read pointer past it. Stop if
  * the optional character delim is encountered,
  * or if whitespace/eof is encountered */
-int parse_fetch_int(semanage_handle_t * hgandle,
+int parse_fetch_int(semanage_handle_t * handle,
 		    parse_info_t * info, int *num, char delim);
 
 /* Extract the next string and move the read pointer past it.

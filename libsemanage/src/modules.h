@@ -97,7 +97,7 @@ enum semanage_module_path_type {
  * Returns 0 on success and -1 on error.
  */
 int semanage_module_get_path(semanage_handle_t *sh,
-			     const semanage_module_info_t *module,
+			     const semanage_module_info_t *modinfo,
 			     enum semanage_module_path_type type,
 			     char *path,
 			     size_t len);

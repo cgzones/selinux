@@ -83,7 +83,7 @@ extern int semanage_module_info_create(semanage_handle_t *sh,
  *
  * The caller should call free() on the struct.
  */
-extern int semanage_module_info_destroy(semanage_handle_t *handle,
+extern int semanage_module_info_destroy(semanage_handle_t *sh,
 					semanage_module_info_t *modinfo);
 
 /* Module Info Getters */

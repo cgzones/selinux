@@ -41,10 +41,10 @@
 
 static char *private_semanage_root = NULL;
 
-int semanage_set_root(const char *root)
+int semanage_set_root(const char *path)
 {
 	free(private_semanage_root);
-	private_semanage_root = strdup(root);
+	private_semanage_root = strdup(path);
 	return 0;
 }
 
@@ -270,7 +270,7 @@ int semanage_is_connected(semanage_handle_t * sh)
 	return sh->is_connected;
 }
 
-void semanage_select_store(semanage_handle_t * sh, char *storename,
+void semanage_select_store(semanage_handle_t * sh, char *path,
 			   enum semanage_connect_type storetype)
 {
 
@@ -279,7 +279,7 @@ void semanage_select_store(semanage_handle_t * sh, char *storename,
 	/* This just sets the storename to what the user requests, no
 	   verification of existence will be done until connect */
 	free(sh->conf->store_path);
-	sh->conf->store_path = strdup(storename);
+	sh->conf->store_path = strdup(path);
 	assert(sh->conf->store_path); /* no way to return failure */
 	sh->conf->store_type = storetype;
 }

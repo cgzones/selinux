@@ -267,7 +267,7 @@ int parse_fetch_int(semanage_handle_t * handle,
 }
 
 int parse_fetch_string(semanage_handle_t * handle,
-		       parse_info_t * info, char **str, char delim, int allow_spaces)
+		       parse_info_t * info, char **str_ptr, char delim, int allow_spaces)
 {
 
 	const char *start = info->ptr;
@@ -296,7 +296,7 @@ int parse_fetch_string(semanage_handle_t * handle,
 		goto err;
 	}
 
-	*str = tmp_str;
+	*str_ptr = tmp_str;
 	return STATUS_SUCCESS;
 
       err:

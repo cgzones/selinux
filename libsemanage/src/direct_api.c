@@ -70,7 +70,7 @@ static int semanage_direct_begintrans(semanage_handle_t * sh);
 static int semanage_direct_commit(semanage_handle_t * sh);
 static int semanage_direct_install(semanage_handle_t * sh, char *data,
 				   size_t data_len, const char *module_name, const char *lang_ext);
-static int semanage_direct_install_file(semanage_handle_t * sh, const char *module_name);
+static int semanage_direct_install_file(semanage_handle_t * sh, const char *install_filename);
 static int semanage_direct_extract(semanage_handle_t * sh,
 					   semanage_module_key_t *modkey,
 					   int extract_cil,
@@ -93,7 +93,7 @@ static int semanage_direct_get_module_info(semanage_handle_t *sh,
 					   semanage_module_info_t **modinfo);
 
 static int semanage_direct_list_all(semanage_handle_t *sh,
-				    semanage_module_info_t **modinfo,
+				    semanage_module_info_t **modinfos,
 				    int *num_modules);
 
 static int semanage_direct_install_info(semanage_handle_t *sh,
@@ -2541,11 +2541,11 @@ static int semanage_modules_filename_select(const struct dirent *d)
 
 static int semanage_direct_list_all(semanage_handle_t *sh,
 				    semanage_module_info_t **modinfos,
-				    int *modinfos_len)
+				    int *num_modules)
 {
 	assert(sh);
 	assert(modinfos);
-	assert(modinfos_len);
+	assert(num_modules);
 
 	int status = 0;
 	int ret = 0;
@@ -2554,7 +2554,7 @@ static int semanage_direct_list_all(semanage_handle_t *sh,
 	int j = 0;
 
 	*modinfos = NULL;
-	*modinfos_len = 0;
+	*num_modules = 0;
 	void *tmp = NULL;
 
 	const char *toplevel = NULL;
@@ -2654,7 +2654,7 @@ static int semanage_direct_list_all(semanage_handle_t *sh,
 		/* add space for modules */
 		tmp = realloc(*modinfos,
 			      sizeof(semanage_module_info_t) *
-				(*modinfos_len + modules_len));
+				(*num_modules + modules_len));
 		if (tmp == NULL) {
 			ERR(sh, "Error allocating memory for module array.");
 			status = -1;
@@ -2688,7 +2688,7 @@ static int semanage_direct_list_all(semanage_handle_t *sh,
 			/* copy into array */
 			ret = semanage_module_info_init(
 					sh,
-					&((*modinfos)[*modinfos_len]));
+					&((*modinfos)[*num_modules]));
 			if (ret != 0) {
 				status = -1;
 				goto cleanup;
@@ -2697,7 +2697,7 @@ static int semanage_direct_list_all(semanage_handle_t *sh,
 			ret = semanage_module_info_clone(
 					sh,
 					modinfo_tmp,
-					&((*modinfos)[*modinfos_len]));
+					&((*modinfos)[*num_modules]));
 			if (ret != 0) {
 				status = -1;
 				goto cleanup;
@@ -2707,7 +2707,7 @@ static int semanage_direct_list_all(semanage_handle_t *sh,
 			free(modinfo_tmp);
 			modinfo_tmp = NULL;
 
-			*modinfos_len += 1;
+			*num_modules += 1;
 		}
 	}
 
@@ -2734,14 +2734,14 @@ cleanup:
 
 	if (status != 0) {
 		if (modinfos != NULL) {
-			for (i = 0; i < *modinfos_len; i++) {
+			for (i = 0; i < *num_modules; i++) {
 				semanage_module_info_destroy(
 						sh,
 						&(*modinfos)[i]);
 			}
 			free(*modinfos);
 			*modinfos = NULL;
-			*modinfos_len = 0;
+			*num_modules = 0;
 		}
 	}
 
