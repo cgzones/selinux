@@ -1099,7 +1099,7 @@ int semanage_get_active_modules(semanage_handle_t * sh,
 	int j = 0;
 
 	semanage_list_t *list = NULL;
-	semanage_list_t *found = NULL;
+	const semanage_list_t *found = NULL;
 
 	semanage_module_info_t *all_modinfos = NULL;
 	int all_modinfos_len = 0;
@@ -2291,8 +2291,8 @@ static void semanage_fc_bucket_list_destroy(semanage_file_context_bucket_t * x)
  * now.  A proper comparison would determine which (if either)
  * regular expression is a subset of the other.
  */
-static int semanage_fc_compare(semanage_file_context_node_t * a,
-			       semanage_file_context_node_t * b)
+static int semanage_fc_compare(const semanage_file_context_node_t * a,
+			       const semanage_file_context_node_t * b)
 {
 	int a_has_meta = (a->meta >= 0);
 	int b_has_meta = (b->meta >= 0);

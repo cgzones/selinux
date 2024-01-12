@@ -68,7 +68,7 @@ static int user_base_parse(semanage_handle_t * handle,
 
 	int islist = 0;
 	char *str = NULL;
-	char *start;
+	const char *start;
 	char *name_str = NULL;
 
 	if (parse_skip_space(handle, info) < 0)

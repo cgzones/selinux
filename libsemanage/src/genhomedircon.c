@@ -170,7 +170,7 @@ err:
 }
 
 static int ignore(const char *homedir) {
-	ignoredir_t *ptr = ignore_head;
+	const ignoredir_t *ptr = ignore_head;
 	while (ptr) {
 		if (strcmp(ptr->dir, homedir) == 0) {
 			return 1;

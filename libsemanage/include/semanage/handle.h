@@ -74,7 +74,7 @@ extern void semanage_set_check_ext_changes(semanage_handle_t * sh, int do_check)
 /* Fills *compiler_path with the location of the hll compiler sh->conf->compiler_directory_path
  * corresponding to lang_ext.
  * Upon success returns 0, -1 on error. */
-extern int semanage_get_hll_compiler_path(semanage_handle_t *sh, char *lang_ext, char **compiler_path);
+extern int semanage_get_hll_compiler_path(semanage_handle_t *sh, const char *lang_ext, char **compiler_path);
 
 /* create the store if it does not exist, this only has an effect on
  * direct connections and must be called before semanage_connect

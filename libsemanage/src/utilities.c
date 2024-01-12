@@ -88,7 +88,7 @@ char *semanage_split_on_space(const char *str)
 
 char *semanage_split(const char *str, const char *delim)
 {
-	char *retval;
+	const char *retval;
 
 	if (!str)
 		return NULL;

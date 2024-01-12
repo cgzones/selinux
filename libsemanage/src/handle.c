@@ -136,7 +136,7 @@ void semanage_set_check_ext_changes(semanage_handle_t * sh, int do_check)
 }
 
 int semanage_get_hll_compiler_path(semanage_handle_t *sh,
-				char *lang_ext,
+				const char *lang_ext,
 				char **compiler_path)
 {
 	assert(sh != NULL);
