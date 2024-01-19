@@ -211,7 +211,7 @@ int cil_resolve_classpermissionset(struct cil_tree_node *current, struct cil_cla
 	}
 
 	if (!datum->fqn) {
-		cil_tree_log(current, CIL_ERR, "Anonymous classpermission used in a classpermissionset");
+		cil_tree_log(current, CIL_ERR, "Anonymous classpermission used in a classpermissionset %s", cps->set_str);
 		rc = SEPOL_ERR;
 		goto exit;
 	}
@@ -409,7 +409,7 @@ int cil_resolve_type_rule(struct cil_tree_node *current, struct cil_db *db)
 	result_node = NODE(result_datum);
 
 	if (result_node->flavor != CIL_TYPE) {
-		cil_log(CIL_ERR, "Type rule result must be a type [%d]\n",result_node->flavor);
+		cil_log(CIL_ERR, "Type rule result %s must be a type [%d]\n", result_datum->name, result_node->flavor);
 		rc = SEPOL_ERR;
 		goto exit;
 	}
@@ -438,7 +438,7 @@ int cil_resolve_typeattributeset(struct cil_tree_node *current, struct cil_db *d
 
 	if (attr_node->flavor != CIL_TYPEATTRIBUTE) {
 		rc = SEPOL_ERR;
-		cil_log(CIL_ERR, "Attribute type not an attribute\n");
+		cil_log(CIL_ERR, "Attribute type %s not an attribute\n", attrtypes->attr_str);
 		goto exit;
 	}
 
@@ -482,7 +482,7 @@ static int cil_resolve_expandtypeattribute(struct cil_tree_node *current, struct
 
 		if (attr_node->flavor != CIL_TYPEATTRIBUTE) {
 			rc = SEPOL_ERR;
-			cil_log(CIL_ERR, "Attribute type not an attribute\n");
+			cil_log(CIL_ERR, "Attribute type %s not an attribute\n", (char *)curr->data);
 			goto exit;
 		}
 		used = expandattr->expand ? CIL_ATTR_EXPAND_TRUE : CIL_ATTR_EXPAND_FALSE;
@@ -611,7 +611,7 @@ int cil_resolve_typepermissive(struct cil_tree_node *current, struct cil_db *db)
 	type_node = NODE(type_datum);
 
 	if (type_node->flavor != CIL_TYPE && type_node->flavor != CIL_TYPEALIAS) {
-		cil_log(CIL_ERR, "Typepermissive must be a type or type alias\n");
+		cil_log(CIL_ERR, "Typepermissive %s must be a type or type alias\n", type_datum->name);
 		rc = SEPOL_ERR;
 		goto exit;
 	}
@@ -673,7 +673,7 @@ int cil_resolve_nametypetransition(struct cil_tree_node *current, struct cil_db 
 	result_node = NODE(result_datum);
 
 	if (result_node->flavor != CIL_TYPE && result_node->flavor != CIL_TYPEALIAS) {
-		cil_log(CIL_ERR, "typetransition result is not a type or type alias\n");
+		cil_log(CIL_ERR, "typetransition result %s is not a type or type alias\n", result_datum->name);
 		rc = SEPOL_ERR;
 		goto exit;
 	}
@@ -775,7 +775,7 @@ int cil_resolve_classcommon(struct cil_tree_node *current, struct cil_db *db)
 	class = (struct cil_class *)class_datum;
 	common = (struct cil_class *)common_datum;
 	if (class->common != NULL) {
-		cil_log(CIL_ERR, "class cannot be associated with more than one common\n");
+		cil_log(CIL_ERR, "Class %s cannot be associated with more than one common\n", class_datum->name);
 		rc = SEPOL_ERR;
 		goto exit;
 	}
@@ -885,7 +885,7 @@ int cil_resolve_userlevel(struct cil_tree_node *current, struct cil_db *db)
 	user_node = NODE(user_datum);
 
 	if (user_node->flavor != CIL_USER) {
-		cil_log(CIL_ERR, "Userlevel must be a user\n");
+		cil_log(CIL_ERR, "Userlevel must be a user: %s\n", user_datum->fqn);
 		rc = SEPOL_ERR;
 		goto exit;
 	}
@@ -1163,7 +1163,7 @@ int cil_resolve_roleattributeset(struct cil_tree_node *current, struct cil_db *d
 
 	if (attr_node->flavor != CIL_ROLEATTRIBUTE) {
 		rc = SEPOL_ERR;
-		cil_log(CIL_ERR, "Attribute role not an attribute\n");
+		cil_log(CIL_ERR, "Attribute role %s not an attribute\n", attrroles->attr_str);
 		goto exit;
 	}
 	attr = (struct cil_roleattribute*)attr_datum;
@@ -1592,7 +1592,7 @@ int cil_resolve_senscat(struct cil_tree_node *current, struct cil_db *db)
 
 	rc = cil_resolve_name(current, (char*)senscat->sens_str, CIL_SYM_SENS, db, &sens_datum);
 	if (rc != SEPOL_OK) {
-		cil_log(CIL_ERR, "Failed to find sensitivity\n");
+		cil_log(CIL_ERR, "Failed to find sensitivity %s\n", senscat->sens_str);
 		goto exit;
 	}
 
@@ -1626,7 +1626,7 @@ int cil_resolve_level(struct cil_tree_node *current, struct cil_level *level, st
 
 	rc = cil_resolve_name(current, (char*)level->sens_str, CIL_SYM_SENS, db, &sens_datum);
 	if (rc != SEPOL_OK) {
-		cil_log(CIL_ERR, "Failed to find sensitivity\n");
+		cil_log(CIL_ERR, "Failed to find sensitivity %s\n", level->sens_str);
 		goto exit;
 	}
 
@@ -1791,7 +1791,7 @@ int cil_resolve_context(struct cil_tree_node *current, struct cil_context *conte
 
 	if (node->flavor != CIL_TYPE && node->flavor != CIL_TYPEALIAS) {
 		rc = SEPOL_ERR;
-		cil_log(CIL_ERR, "Type not a type or type alias\n");
+		cil_log(CIL_ERR, "Type %s not a type or type alias\n", type_datum->name);
 		goto exit;
 	}
 	context->type = type_datum;
@@ -1966,7 +1966,7 @@ int cil_resolve_nodecon(struct cil_tree_node *current, struct cil_db *db)
 	}
 
 	if (nodecon->addr->family != nodecon->mask->family) {
-		cil_log(CIL_ERR, "Nodecon ip address not in the same family\n");
+		cil_log(CIL_ERR, "Nodecon ip address %s not in the same family\n", nodecon->addr_str);
 		rc = SEPOL_ERR;
 		goto exit;
 	}
@@ -2222,7 +2222,7 @@ int cil_resolve_sidcontext(struct cil_tree_node *current, struct cil_db *db)
 	}
 
 	if (sid->context != NULL) {
-		cil_log(CIL_ERR, "sid's cannot be associated with more than one context\n");
+		cil_log(CIL_ERR, "sid %s cannot be associated with more than one context\n", sid_datum->name);
 		rc = SEPOL_ERR;
 		goto exit;
 	}
@@ -3381,7 +3381,7 @@ int cil_resolve_userattributeset(struct cil_tree_node *current, struct cil_db *d
 
 	if (attr_node->flavor != CIL_USERATTRIBUTE) {
 		rc = SEPOL_ERR;
-		cil_log(CIL_ERR, "Attribute user not an attribute\n");
+		cil_log(CIL_ERR, "Attribute user %s not an attribute\n", attr_datum->name);
 		goto exit;
 	}
 	attr = (struct cil_userattribute*)attr_datum;
