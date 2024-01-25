@@ -44,28 +44,23 @@ int sidtab_init(struct sidtab *s)
 	return rc;
 }
 
-int sidtab_insert(struct sidtab *s, const char * ctx)
+static struct sidtab_node *
+sidtab_insert(struct sidtab *s, const char * ctx)
 {
 	unsigned hvalue;
-	int rc = 0;
 	struct sidtab_node *newnode;
 	char * newctx;
 
-	if (s->nel >= UINT_MAX - 1) {
-		rc = -1;
-		goto out;
-	}
+	if (s->nel >= UINT_MAX - 1)
+		return NULL;
 
 	newnode = (struct sidtab_node *)avc_malloc(sizeof(*newnode));
-	if (!newnode) {
-		rc = -1;
-		goto out;
-	}
+	if (!newnode)
+		return NULL;
 	newctx = strdup(ctx);
 	if (!newctx) {
-		rc = -1;
 		avc_free(newnode);
-		goto out;
+		return NULL;
 	}
 
 	hvalue = sidtab_hash(newctx);
@@ -73,8 +68,25 @@ int sidtab_insert(struct sidtab *s, const char * ctx)
 	newnode->sid_s.ctx = newctx;
 	newnode->sid_s.id = ++s->nel;
 	s->htable[hvalue] = newnode;
-      out:
-	return rc;
+	return newnode;
+}
+
+const struct security_id *
+sidtab_context_lookup(const struct sidtab *s, const char *ctx)
+{
+	unsigned hvalue;
+	const struct sidtab_node *cur;
+
+	hvalue = sidtab_hash(ctx);
+
+	cur = s->htable[hvalue];
+	while (cur != NULL && strcmp(cur->sid_s.ctx, ctx))
+		cur = cur->next;
+
+	if (cur == NULL)
+		return NULL;
+
+	return &cur->sid_s;
 }
 
 int
@@ -82,27 +94,23 @@ sidtab_context_to_sid(struct sidtab *s,
 		      const char * ctx, security_id_t * sid)
 {
 	unsigned hvalue;
-	int rc = 0;
 	struct sidtab_node *cur;
 
 	*sid = NULL;
 	hvalue = sidtab_hash(ctx);
 
-      loop:
 	cur = s->htable[hvalue];
 	while (cur != NULL && strcmp(cur->sid_s.ctx, ctx))
 		cur = cur->next;
 
 	if (cur == NULL) {	/* need to make a new entry */
-		rc = sidtab_insert(s, ctx);
-		if (rc)
-			goto out;
-		goto loop;	/* find the newly inserted node */
+		cur = sidtab_insert(s, ctx);
+		if (cur == NULL)
+			return -1;
 	}
 
 	*sid = &cur->sid_s;
-      out:
-	return rc;
+	return 0;
 }
 
 void sidtab_sid_stats(const struct sidtab *s, char *buf, size_t buflen)
@@ -138,7 +146,7 @@ void sidtab_destroy(struct sidtab *s)
 	int i;
 	struct sidtab_node *cur, *temp;
 
-	if (!s)
+	if (!s || !s->htable)
 		return;
 
 	for (i = 0; i < SIDTAB_SIZE; i++) {
@@ -149,7 +157,6 @@ void sidtab_destroy(struct sidtab *s)
 			freecon(temp->sid_s.ctx);
 			avc_free(temp);
 		}
-		s->htable[i] = NULL;
 	}
 	avc_free(s->htable);
 	s->htable = NULL;
