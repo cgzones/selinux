@@ -789,7 +789,7 @@ static int display_handle_unknown(policydb_t * p, FILE * out_fp)
 static int read_policy(char *filename, policydb_t * policy, int verbose)
 {
 	FILE *in_fp;
-	struct policy_file f;
+	sepol_policy_file_t *f;
 	int retval;
 	uint32_t buf[1];
 
@@ -798,9 +798,6 @@ static int read_policy(char *filename, policydb_t * policy, int verbose)
 			filename, strerror(errno));
 		exit(1);
 	}
-	policy_file_init(&f);
-	f.type = PF_USE_STDIO;
-	f.fp = in_fp;
 
 	/* peek at the first byte.  if they are indicative of a
 	   package use the package reader, otherwise use the normal
@@ -810,6 +807,13 @@ static int read_policy(char *filename, policydb_t * policy, int verbose)
 		exit(1);
 	}
 	rewind(in_fp);
+
+	if (sepol_policy_file_create(&f) != 0) {
+		fprintf(stderr, "%s:  Out of memory!\n", __FUNCTION__);
+		exit(1);
+	}
+	sepol_policy_file_set_fp(f, in_fp);
+
 	if (le32_to_cpu(buf[0]) == SEPOL_MODULE_PACKAGE_MAGIC) {
 		sepol_module_package_t *package;
 		if (sepol_module_package_create(&package)) {
@@ -819,14 +823,13 @@ static int read_policy(char *filename, policydb_t * policy, int verbose)
 		sepol_policydb_free(package->policy);
 		package->policy = (sepol_policydb_t *) policy;
 		package->file_contexts = NULL;
-		retval =
-		    sepol_module_package_read(package,
-					      (sepol_policy_file_t *) & f, verbose);
+		retval = sepol_module_package_read(package, f, verbose);
 		package->policy = NULL;
 		sepol_module_package_free(package);
 	} else {
-		retval = policydb_read(policy, &f, verbose);
+		retval = policydb_read(policy, &f->pf, verbose);
 	}
+	sepol_policy_file_free(f);
 	fclose(in_fp);
 	return retval;
 }
