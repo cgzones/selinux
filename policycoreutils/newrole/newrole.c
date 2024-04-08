@@ -89,6 +89,9 @@
 #define PACKAGE "policycoreutils"	/* the name of this package lang translation */
 #endif
 
+#define ALLOW 0x52a2925
+#define DENY  0xad5d6da
+
 #define TRUE 1
 #define FALSE 0
 
@@ -174,8 +177,8 @@ static const char *service_name = "newrole";
  * out:    nothing
  * return: value   condition
  *         -----   ---------
- *           1     PAM thinks that the user authenticated themselves properly
- *           0     otherwise
+ *         ALLOW   PAM thinks that the user authenticated themselves properly
+ *         DENY    otherwise
  *
  * This function uses PAM to authenticate the user running this
  * program.  This is the only function in this program that makes PAM
@@ -184,7 +187,7 @@ static const char *service_name = "newrole";
 static int authenticate_via_pam(const char *ttyn, pam_handle_t * pam_handle)
 {
 
-	int result = 0;		/* set to 0 (not authenticated) by default */
+	int result = DENY;	/* set to DENY (not authenticated) by default */
 	int pam_rc;		/* pam return code */
 	const char *tty_name;
 
@@ -210,7 +213,7 @@ static int authenticate_via_pam(const char *ttyn, pam_handle_t * pam_handle)
 	/* Ask PAM to verify acct_mgmt */
 	pam_rc = pam_acct_mgmt(pam_handle, 0);
 	if (pam_rc == PAM_SUCCESS) {
-		result = 1;	/* user authenticated OK! */
+		result = ALLOW;	/* user authenticated OK! */
 	}
 
       out:
@@ -348,12 +351,12 @@ static int streq_constant(const char *userinput, const char *secret)
 	s_len = strlen(secret);
 
 	if (u_len != s_len)
-		return 0;
+		return DENY;
 
 	for (i = 0; i < u_len; i++)
 		ret |= x[i] ^ y[i];
 
-	return ret == 0;
+	return ret == 0 ? ALLOW : DENY;
 }
 
 /* authenticate_via_shadow_passwd()
@@ -362,9 +365,9 @@ static int streq_constant(const char *userinput, const char *secret)
  * out:    nothing
  * return: value   condition
  *         -----   ---------
- *           1     user authenticated themselves properly according to the
+ *         ALLOW   user authenticated themselves properly according to the
  *                 shadow passwd file.
- *           0     otherwise
+ *         DENY    otherwise
  *
  * This function uses the shadow passwd file to thenticate the user running
  * this program.
@@ -382,14 +385,14 @@ static int authenticate_via_shadow_passwd(const char *uname)
 	if (!(p_shadow_line)) {
 		fprintf(stderr, _("Cannot find your entry in the shadow "
 				  "passwd file.\n"));
-		return 0;
+		return DENY;
 	}
 
 	/* Ask user to input unencrypted password */
 	if (!(unencrypted_password_s = getpass(PASSWORD_PROMPT))) {
 		fprintf(stderr, _("getpass cannot open /dev/tty\n"));
 		memzero(p_shadow_line->sp_pwdp, strlen(p_shadow_line->sp_pwdp));
-		return 0;
+		return DENY;
 	}
 
 	/* Use crypt() to encrypt user's input password. */
@@ -400,7 +403,7 @@ static int authenticate_via_shadow_passwd(const char *uname)
 	if (errno || !encrypted_password_s) {
 		fprintf(stderr, _("Cannot encrypt password.\n"));
 		memzero(p_shadow_line->sp_pwdp, strlen(p_shadow_line->sp_pwdp));
-		return 0;
+		return DENY;
 	}
 
 	ret = streq_constant(encrypted_password_s, p_shadow_line->sp_pwdp);
@@ -416,7 +419,7 @@ static int authenticate_via_shadow_passwd(const char *uname)
  */
 static int verify_shell(const char *shell_name)
 {
-	int found = 0;
+	int found = DENY;
 	const char *buf;
 
 	if (!(shell_name && shell_name[0]))
@@ -429,7 +432,7 @@ static int verify_shell(const char *shell_name)
 
 		/* check the shell skipping newline char */
 		if (!strcmp(shell_name, buf)) {
-			found = 1;
+			found = ALLOW;
 			break;
 		}
 	}
@@ -479,7 +482,7 @@ static int extract_pw_data(struct passwd *pw_copy)
 		goto out_free;
 	}
 
-	if (verify_shell(pw->pw_shell) == 0) {
+	if (verify_shell(pw->pw_shell) != ALLOW) {
 		fprintf(stderr, _("Error!  Shell is not valid.\n"));
 		goto out_free;
 	}
@@ -1182,9 +1185,9 @@ int main(int argc, char *argv[])
 		goto err_free;
 	}
 
-	if (!authenticate_via_pam(ttyn, pam_handle))
+	if (authenticate_via_pam(ttyn, pam_handle) != ALLOW)
 #else
-	if (!authenticate_via_shadow_passwd(pw.pw_name))
+	if (authenticate_via_shadow_passwd(pw.pw_name) != ALLOW)
 #endif
 	{
 		fprintf(stderr, _("newrole: incorrect password for %s\n"),
