@@ -338,6 +338,24 @@ static void memzero(void *ptr, size_t size)
 	}
 }
 
+static int streq_constant(const char *userinput, const char *secret)
+{
+	const volatile char *x = userinput, *y = secret;
+	size_t i, u_len, s_len;
+	int ret = 0;
+
+	u_len = strlen(userinput);
+	s_len = strlen(secret);
+
+	if (u_len != s_len)
+		return 0;
+
+	for (i = 0; i < u_len; i++)
+		ret |= x[i] ^ y[i];
+
+	return ret == 0;
+}
+
 /* authenticate_via_shadow_passwd()
  *
  * in:     uname - the calling user's user name
@@ -383,7 +401,7 @@ static int authenticate_via_shadow_passwd(const char *uname)
 		return 0;
 	}
 
-	ret = !strcmp(encrypted_password_s, p_shadow_line->sp_pwdp);
+	ret = streq_constant(encrypted_password_s, p_shadow_line->sp_pwdp);
 	memzero(encrypted_password_s, strlen(encrypted_password_s));
 	return ret;
 }
