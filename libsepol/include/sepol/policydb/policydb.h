@@ -710,9 +710,10 @@ extern int symtab_insert(policydb_t * x, uint32_t sym,
 /* A policy "file" may be a memory region referenced by a (data, len) pair
    or a file referenced by a FILE pointer. */
 typedef struct policy_file {
-#define PF_USE_MEMORY  0
-#define PF_USE_STDIO   1
-#define PF_LEN         2	/* total up length in len field */
+#define PF_USE_MEMORY       0
+#define PF_USE_STDIO        1
+#define PF_LEN              2	/* total up length in len field */
+#define PF_USE_OWNED_MEMORY 3	/* operate on mmap'ed memory owned by sepol_policy_file_t */
 	unsigned type;
 	char *data;
 	size_t len;

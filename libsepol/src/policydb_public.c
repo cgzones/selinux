@@ -1,4 +1,6 @@
 #include <stdlib.h>
+#include <sys/mman.h>
+#include <sys/stat.h>
 
 #include "debug.h"
 #include <sepol/policydb/policydb.h>
@@ -32,6 +34,38 @@ void sepol_policy_file_set_mem(sepol_policy_file_t * spf,
 void sepol_policy_file_set_fp(sepol_policy_file_t * spf, FILE * fp)
 {
 	struct policy_file *pf = &spf->pf;
+	struct stat sb;
+	void *addr;
+	size_t len;
+	int fd, rc;
+
+	/*
+	 * Try to mmap if regular file to enable OOM sanity
+	 * checks while reading the policy.
+	 */
+
+	fd = fileno(fp);
+	if (fd == -1)
+		goto fallback;
+
+	rc = fstat(fd, &sb);
+	if (rc == -1 || !S_ISREG(sb.st_mode) || sb.st_size <= 0)
+		goto fallback;
+
+	len = sb.st_size;
+	addr = mmap(NULL, len, PROT_READ, MAP_PRIVATE, fd, 0);
+	if (addr == MAP_FAILED)
+		goto fallback;
+
+	(void) madvise(addr, len, MADV_SEQUENTIAL);
+
+	pf->type = PF_USE_OWNED_MEMORY;
+	pf->data = addr;
+	pf->len = len;
+	pf->size = len;
+	return;
+
+fallback:
 	pf->type = PF_USE_STDIO;
 	pf->fp = fp;
 	return;
@@ -52,9 +86,16 @@ void sepol_policy_file_set_handle(sepol_policy_file_t * pf,
 	pf->pf.handle = handle;
 }
 
-void sepol_policy_file_free(sepol_policy_file_t * pf)
+void sepol_policy_file_free(sepol_policy_file_t * spf)
 {
-	free(pf);
+	struct policy_file *pf = &spf->pf;
+
+	if (pf->type == PF_USE_OWNED_MEMORY && pf->data) {
+		munmap(pf->data, pf->size);
+		pf->data = NULL;
+	}
+
+	free(spf);
 }
 
 /* Policydb interfaces. */

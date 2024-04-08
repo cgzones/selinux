@@ -1714,6 +1714,7 @@ int next_entry(void *buf, struct policy_file *fp, size_t bytes)
 			return -1;
 		break;
 	case PF_USE_MEMORY:
+	case PF_USE_OWNED_MEMORY:
 		if (bytes > fp->len) {
 			errno = EOVERFLOW;
 			return -1;
@@ -1741,6 +1742,7 @@ size_t put_entry(const void *ptr, size_t size, size_t n,
 	case PF_USE_STDIO:
 		return fwrite(ptr, size, n, fp->fp);
 	case PF_USE_MEMORY:
+	case PF_USE_OWNED_MEMORY:
 		if (bytes > fp->len) {
 			errno = ENOSPC;
 			return 0;
