@@ -47,6 +47,7 @@ static int policy_file_seek(struct policy_file *fp, size_t offset)
 		}
 		return fseek(fp->fp, (long)offset, SEEK_SET);
 	case PF_USE_MEMORY:
+	case PF_USE_OWNED_MEMORY:
 		if (offset > fp->size) {
 			errno = EFAULT;
 			return -1;
@@ -81,6 +82,7 @@ static int policy_file_length(struct policy_file *fp, size_t *out)
 		*out = end_offset;
 		break;
 	case PF_USE_MEMORY:
+	case PF_USE_OWNED_MEMORY:
 		*out = fp->size;
 		break;
 	default:

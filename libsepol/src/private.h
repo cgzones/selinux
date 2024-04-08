@@ -49,7 +49,7 @@ static inline int exceeds_available_bytes(const struct policy_file *fp, size_t x
 	size_t req_size;
 
 	/* Remaining input size is only available for mmap'ed memory */
-	if (fp->type != PF_USE_MEMORY)
+	if (fp->type != PF_USE_MEMORY && fp->type != PF_USE_OWNED_MEMORY)
 		return 0;
 
 	if (__builtin_mul_overflow(x, req_elem_size, &req_size))
