@@ -388,6 +388,7 @@ static int authenticate_via_shadow_passwd(const char *uname)
 	/* Ask user to input unencrypted password */
 	if (!(unencrypted_password_s = getpass(PASSWORD_PROMPT))) {
 		fprintf(stderr, _("getpass cannot open /dev/tty\n"));
+		memzero(p_shadow_line->sp_pwdp, strlen(p_shadow_line->sp_pwdp));
 		return 0;
 	}
 
@@ -398,11 +399,13 @@ static int authenticate_via_shadow_passwd(const char *uname)
 	memzero(unencrypted_password_s, strlen(unencrypted_password_s));
 	if (errno || !encrypted_password_s) {
 		fprintf(stderr, _("Cannot encrypt password.\n"));
+		memzero(p_shadow_line->sp_pwdp, strlen(p_shadow_line->sp_pwdp));
 		return 0;
 	}
 
 	ret = streq_constant(encrypted_password_s, p_shadow_line->sp_pwdp);
 	memzero(encrypted_password_s, strlen(encrypted_password_s));
+	memzero(p_shadow_line->sp_pwdp, strlen(p_shadow_line->sp_pwdp));
 	return ret;
 }
 #endif				/* if/else USE_PAM */
