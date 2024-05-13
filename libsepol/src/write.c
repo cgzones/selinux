@@ -93,7 +93,7 @@ static int ebitmap_write(ebitmap_t * e, struct policy_file *fp)
 }
 
 /* Ordering of datums in the original avtab format in the policy file. */
-static uint16_t spec_order[] = {
+static const uint16_t spec_order[] = {
 	AVTAB_ALLOWED,
 	AVTAB_AUDITDENY,
 	AVTAB_AUDITALLOW,
