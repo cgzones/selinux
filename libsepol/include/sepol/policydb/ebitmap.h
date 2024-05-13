@@ -31,25 +31,29 @@ extern "C" {
 typedef struct ebitmap_node {
 	uint32_t startbit;	/* starting position in the total bitmap */
 	MAPTYPE map;		/* this node's portion of the bitmap */
-	struct ebitmap_node *next;
 } ebitmap_node_t;
 
 typedef struct ebitmap {
-	ebitmap_node_t *node;	/* first node in the bitmap */
+	ebitmap_node_t *nodes;	/* vector of nodes in the bitmap */
+	uint32_t size;		/* number of entries in the nodes vector */
+	uint32_t capacity;	/* allocated size of the nodes vector */
 	uint32_t highbit;	/* highest position in the total bitmap */
 } ebitmap_t;
 
-#define ebitmap_is_empty(e) (((e)->node) == NULL)
-#define ebitmap_length(e) ((e)->node ? (e)->highbit : 0)
-#define ebitmap_startbit(e) ((e)->node ? (e)->node->startbit : 0)
-#define ebitmap_startnode(e) ((e)->node)
+#define ebitmap_is_empty(e) (((e)->size) == 0)
+#define ebitmap_length(e) (!ebitmap_is_empty(e) ? (e)->highbit : 0)
+#define ebitmap_startbit(e) (!ebitmap_is_empty(e) ? (e)->nodes[0].startbit : 0)
 
 static inline unsigned int ebitmap_start(const ebitmap_t * e,
 					 ebitmap_node_t ** n)
 {
+	if (ebitmap_is_empty(e)) {
+		*n = NULL;
+		return 0;
+	}
 
-	*n = e->node;
-	return ebitmap_startbit(e);
+	*n = &e->nodes[0];
+	return e->nodes[0].startbit;
 }
 
 static inline void ebitmap_init(ebitmap_t * e)
@@ -57,10 +61,10 @@ static inline void ebitmap_init(ebitmap_t * e)
 	memset(e, 0, sizeof(*e));
 }
 
-static inline unsigned int ebitmap_next(ebitmap_node_t ** n, unsigned int bit)
+static inline unsigned int ebitmap_next(const ebitmap_t *e, ebitmap_node_t ** n, unsigned int bit)
 {
-	if ((bit == ((*n)->startbit + MAPSIZE - 1)) && (*n)->next) {
-		*n = (*n)->next;
+	if ((bit == ((*n)->startbit + MAPSIZE - 1)) && (*n) - e->nodes + 1 < e->size) {
+		(*n)++;
 		return (*n)->startbit;
 	}
 
@@ -75,7 +79,7 @@ static inline int ebitmap_node_get_bit(const ebitmap_node_t * n, unsigned int bi
 }
 
 #define ebitmap_for_each_bit(e, n, bit) \
-	for (bit = ebitmap_start(e, &n); bit < ebitmap_length(e); bit = ebitmap_next(&n, bit)) \
+	for (bit = ebitmap_start(e, &n); bit < ebitmap_length(e); bit = ebitmap_next(e, &n, bit)) \
 
 #define ebitmap_for_each_positive_bit(e, n, bit) \
 	ebitmap_for_each_bit(e, n, bit) if (ebitmap_node_get_bit(n, bit)) \

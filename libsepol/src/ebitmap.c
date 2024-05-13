@@ -7,6 +7,7 @@
  * Implementation of the extensible bitmap type.
  */
 
+#include <assert.h>
 #include <stdlib.h>
 
 #include <sepol/policydb/ebitmap.h>
@@ -15,44 +16,77 @@
 #include "debug.h"
 #include "private.h"
 
-int ebitmap_or(ebitmap_t * dst, const ebitmap_t * e1, const ebitmap_t * e2)
+#define NODES_INITIAL_CAPACITY 4
+
+static int grow_nodes_vec(ebitmap_t * dst)
 {
-	const ebitmap_node_t *n1, *n2;
-	ebitmap_node_t *new = NULL, **prev;
+	uint32_t new_cap;
+	ebitmap_node_t *tmp;
+
+	if (dst->size < dst->capacity)
+		return 0;
+
+	new_cap = dst->capacity + (dst->capacity >> 1) + (dst->capacity >> 4) + 4;
+	if (new_cap < dst->capacity)
+		return -EOVERFLOW;
+
+	tmp = reallocarray(dst->nodes, new_cap, sizeof(*dst->nodes));
+	if (!tmp)
+		return -ENOMEM;
+
+	dst->nodes = tmp;
+	dst->capacity = new_cap;
+	return 0;
+}
+
+int ebitmap_or(ebitmap_t * restrict dst, const ebitmap_t * restrict e1, const ebitmap_t * restrict e2)
+{
+	uint32_t cap, it1, it2;
 
 	ebitmap_init(dst);
 
-	prev = &dst->node;
-	n1 = e1->node;
-	n2 = e2->node;
-	while (n1 || n2) {
-		new = (ebitmap_node_t *) malloc(sizeof(ebitmap_node_t));
-		if (!new) {
+	if (__builtin_add_overflow(e1->size, e2->size, &cap))
+		cap = UINT32_MAX;
+
+	if (cap == 0)
+		return 0;
+
+	dst->nodes = malloc(cap * sizeof(*dst->nodes));
+	if (!dst->nodes)
+		return -ENOMEM;
+	dst->capacity = cap;
+
+	for (it1 = 0, it2 = 0; it1 < e1->size || it2 < e2->size;) {
+		if (dst->size == UINT32_MAX) {
 			ebitmap_destroy(dst);
-			return -ENOMEM;
+			return -EOVERFLOW;
 		}
-		if (n1 && n2 && n1->startbit == n2->startbit) {
-			new->startbit = n1->startbit;
-			new->map = n1->map | n2->map;
-			n1 = n1->next;
-			n2 = n2->next;
-		} else if (!n2 || (n1 && n1->startbit < n2->startbit)) {
-			new->startbit = n1->startbit;
-			new->map = n1->map;
-			n1 = n1->next;
+		assert(dst->size < dst->capacity);
+
+		if (it1 < e1->size && it2 < e2->size &&
+		    e1->nodes[it1].startbit == e2->nodes[it2].startbit) {
+			dst->nodes[dst->size++] = (ebitmap_node_t) {
+				.startbit = e1->nodes[it1].startbit,
+				.map = e1->nodes[it1].map | e2->nodes[it2].map,
+			};
+			it1++;
+			it2++;
+		} else if (it2 >= e2->size || (it1 < e1->size && e1->nodes[it1].startbit < e2->nodes[it2].startbit)) {
+			dst->nodes[dst->size++] = (ebitmap_node_t) {
+				.startbit = e1->nodes[it1].startbit,
+				.map = e1->nodes[it1].map,
+			};
+			it1++;
 		} else {
-			new->startbit = n2->startbit;
-			new->map = n2->map;
-			n2 = n2->next;
+			dst->nodes[dst->size++] = (ebitmap_node_t) {
+				.startbit = e2->nodes[it2].startbit,
+				.map = e2->nodes[it2].map,
+			};
+			it2++;
 		}
-
-		new->next = NULL;
-
-		*prev = new;
-		prev = &new->next;
 	}
 
-	dst->highbit = (e1->highbit > e2->highbit) ? e1->highbit : e2->highbit;
+	dst->highbit = MAX(e1->highbit, e2->highbit);
 	return 0;
 }
 
@@ -63,119 +97,133 @@ int ebitmap_union(ebitmap_t * dst, const ebitmap_t * e1)
 	if (ebitmap_or(&tmp, dst, e1))
 		return -1;
 	ebitmap_destroy(dst);
-	dst->node = tmp.node;
-	dst->highbit = tmp.highbit;
+	*dst = tmp;
 
 	return 0;
 }
 
-int ebitmap_and(ebitmap_t *dst, const ebitmap_t *e1, const ebitmap_t *e2)
+int ebitmap_and(ebitmap_t * restrict dst, const ebitmap_t * restrict e1, const ebitmap_t * restrict e2)
 {
-	const ebitmap_node_t *n1, *n2;
-	ebitmap_node_t *new = NULL, **prev;
+	uint32_t cap, it1, it2;
 
 	ebitmap_init(dst);
 
-	prev = &dst->node;
-	n1 = e1->node;
-	n2 = e2->node;
-	while (n1 && n2) {
-		if (n1->startbit == n2->startbit) {
-			if (n1->map & n2->map) {
-				new = malloc(sizeof(ebitmap_node_t));
-				if (!new) {
+	cap = MIN(e1->size, e2->size);
+
+	if (cap == 0)
+		return 0;
+
+	dst->nodes = malloc(cap * sizeof(*dst->nodes));
+	if (!dst->nodes)
+		return -ENOMEM;
+	dst->capacity = cap;
+
+	for (it1 = 0, it2 = 0; it1 < e1->size && it2 < e2->size;) {
+		if (e1->nodes[it1].startbit == e2->nodes[it2].startbit) {
+			if (e1->nodes[it1].map & e2->nodes[it2].map) {
+				if (dst->size == UINT32_MAX) {
 					ebitmap_destroy(dst);
-					return -ENOMEM;
+					return -EOVERFLOW;
 				}
-				new->startbit = n1->startbit;
-				new->map = n1->map & n2->map;
-				new->next = NULL;
+				assert(dst->size < dst->capacity);
 
-				*prev = new;
-				prev = &new->next;
+				dst->nodes[dst->size++] = (ebitmap_node_t) {
+					.startbit = e1->nodes[it1].startbit,
+					.map = e1->nodes[it1].map & e2->nodes[it2].map,
+				};
 			}
-
-			n1 = n1->next;
-			n2 = n2->next;
-		} else if (n1->startbit > n2->startbit) {
-			n2 = n2->next;
+			it1++;
+			it2++;
+		} else if (e1->nodes[it1].startbit < e2->nodes[it2].startbit) {
+			it1++;
 		} else {
-			n1 = n1->next;
+			it2++;
 		}
 	}
 
-	if (new)
-		dst->highbit = new->startbit + MAPSIZE;
+	if (dst->size > 0)
+		dst->highbit = dst->nodes[dst->size - 1].startbit + MAPSIZE;
 
 	return 0;
 }
 
-int ebitmap_xor(ebitmap_t *dst, const ebitmap_t *e1, const ebitmap_t *e2)
+int ebitmap_xor(ebitmap_t * restrict dst, const ebitmap_t * restrict e1, const ebitmap_t * restrict e2)
 {
-	const ebitmap_node_t *n1, *n2;
-	ebitmap_node_t *new = NULL, **prev;
-	uint32_t startbit;
-	MAPTYPE map;
+	uint32_t cap, it1, it2;
 
 	ebitmap_init(dst);
 
-	prev = &dst->node;
-	n1 = e1->node;
-	n2 = e2->node;
-	while (n1 || n2) {
-		if (n1 && n2 && n1->startbit == n2->startbit) {
-			startbit = n1->startbit;
-			map = n1->map ^ n2->map;
-			n1 = n1->next;
-			n2 = n2->next;
-		} else if (!n2 || (n1 && n1->startbit < n2->startbit)) {
-			startbit = n1->startbit;
-			map = n1->map;
-			n1 = n1->next;
+	if (__builtin_add_overflow(e1->size, e2->size, &cap))
+		cap = UINT32_MAX;
+
+	if (cap == 0)
+		return 0;
+
+	dst->nodes = malloc(cap * sizeof(*dst->nodes));
+	if (!dst->nodes)
+		return -ENOMEM;
+	dst->capacity = cap;
+
+	for (it1 = 0, it2 = 0; it1 < e1->size || it2 < e2->size;) {
+		uint32_t startbit;
+		MAPTYPE map;
+
+		if (it1 < e1->size && it2 < e2->size &&
+		    e1->nodes[it1].startbit == e2->nodes[it2].startbit) {
+			startbit = e1->nodes[it1].startbit;
+			map = e1->nodes[it1].map ^ e2->nodes[it2].map;
+			it1++;
+			it2++;
+		} else if (it2 >= e2->size || (it1 < e1->size && e1->nodes[it1].startbit < e2->nodes[it2].startbit)) {
+			startbit = e1->nodes[it1].startbit;
+			map = e1->nodes[it1].map;
+			it1++;
 		} else {
-			startbit = n2->startbit;
-			map = n2->map;
-			n2 = n2->next;
+			startbit = e2->nodes[it2].startbit;
+			map = e2->nodes[it2].map;
+			it2++;
 		}
 
 		if (map != 0) {
-			new = malloc(sizeof(ebitmap_node_t));
-			if (!new) {
+			if (dst->size == UINT32_MAX) {
 				ebitmap_destroy(dst);
-				return -ENOMEM;
+				return -EOVERFLOW;
 			}
-			new->startbit = startbit;
-			new->map = map;
-			new->next = NULL;
+			assert(dst->size < dst->capacity);
 
-			*prev = new;
-			prev = &new->next;
+			dst->nodes[dst->size++] = (ebitmap_node_t) {
+				.startbit = startbit,
+				.map = map,
+			};
 		}
 	}
 
-	if (new)
-		dst->highbit = new->startbit + MAPSIZE;
+	if (dst->size > 0)
+		dst->highbit = dst->nodes[dst->size - 1].startbit + MAPSIZE;
 
 	return 0;
 }
 
-int ebitmap_not(ebitmap_t *dst, const ebitmap_t *e1, unsigned int maxbit)
+int ebitmap_not(ebitmap_t * restrict dst, const ebitmap_t * restrict e1, unsigned int maxbit)
 {
-	const ebitmap_node_t *n;
-	ebitmap_node_t *new = NULL, **prev;
-	uint32_t startbit, cur_startbit;
-	MAPTYPE map;
+	uint32_t cur_startbit, it;
 
 	ebitmap_init(dst);
 
-	prev = &dst->node;
-	n = e1->node;
-	for (cur_startbit = 0; cur_startbit < maxbit; cur_startbit += MAPSIZE) {
-		if (n && n->startbit == cur_startbit) {
-			startbit = n->startbit;
-			map = ~n->map;
+	dst->nodes = malloc(NODES_INITIAL_CAPACITY * sizeof(*dst->nodes));
+	if (!dst->nodes)
+		return -ENOMEM;
+	dst->capacity = NODES_INITIAL_CAPACITY;
 
-			n = n->next;
+	for (it = 0, cur_startbit = 0; cur_startbit < maxbit; cur_startbit += MAPSIZE) {
+		uint32_t startbit;
+		MAPTYPE map;
+
+		if (it < e1->size && e1->nodes[it].startbit == cur_startbit) {
+			startbit = e1->nodes[it].startbit;
+			map = ~e1->nodes[it].map;
+
+			it++;
 		} else {
 			startbit = cur_startbit;
 			map = ~((MAPTYPE) 0);
@@ -185,23 +233,23 @@ int ebitmap_not(ebitmap_t *dst, const ebitmap_t *e1, unsigned int maxbit)
 			map &= (((MAPTYPE)1) << (maxbit - cur_startbit)) - 1;
 
 		if (map != 0) {
-			new = malloc(sizeof(ebitmap_node_t));
-			if (!new) {
+			int r;
+
+			r = grow_nodes_vec(dst);
+			if (r < 0) {
 				ebitmap_destroy(dst);
-				return -ENOMEM;
+				return r;
 			}
 
-			new->startbit = startbit;
-			new->map = map;
-			new->next = NULL;
-
-			*prev = new;
-			prev = &new->next;
+			dst->nodes[dst->size++] = (ebitmap_node_t) {
+				.startbit = startbit,
+				.map = map,
+			};
 		}
 	}
 
-	if (new)
-		dst->highbit = new->startbit + MAPSIZE;
+	if (dst->size > 0)
+		dst->highbit = dst->nodes[dst->size - 1].startbit + MAPSIZE;
 
 	return 0;
 }
@@ -224,11 +272,12 @@ int ebitmap_andnot(ebitmap_t *dst, const ebitmap_t *e1, const ebitmap_t *e2, uns
 unsigned int ebitmap_cardinality(const ebitmap_t *e1)
 {
 	unsigned int count = 0;
-	const ebitmap_node_t *n;
+	uint32_t it;
 
-	for (n = e1->node; n; n = n->next) {
-		count += __builtin_popcountll(n->map);
+	for (it = 0; it < e1->size; it++) {
+		count += __builtin_popcountll(e1->nodes[it].map);
 	}
+
 	return count;
 }
 
@@ -249,47 +298,42 @@ int ebitmap_hamming_distance(const ebitmap_t * e1, const ebitmap_t * e2)
 
 int ebitmap_cmp(const ebitmap_t * e1, const ebitmap_t * e2)
 {
-	const ebitmap_node_t *n1, *n2;
+	uint32_t it1, it2;
 
-	if (e1->highbit != e2->highbit)
+	if (e1->highbit != e2->highbit || e1->size != e2->size)
 		return 0;
 
-	n1 = e1->node;
-	n2 = e2->node;
-	while (n1 && n2 &&
-	       (n1->startbit == n2->startbit) && (n1->map == n2->map)) {
-		n1 = n1->next;
-		n2 = n2->next;
+	it1 = 0;
+	it2 = 0;
+	while (it1 < e1->size && it2 < e2->size &&
+	       e1->nodes[it1].startbit == e2->nodes[it2].startbit &&
+	       e1->nodes[it1].map == e2->nodes[it2].map) {
+		it1++;
+		it2++;
 	}
 
-	if (n1 || n2)
+	if (it1 < e1->size || it2 < e2->size)
 		return 0;
 
 	return 1;
 }
 
-int ebitmap_cpy(ebitmap_t * dst, const ebitmap_t * src)
+int ebitmap_cpy(ebitmap_t * restrict dst, const ebitmap_t * restrict src)
 {
-	const ebitmap_node_t *n;
-	ebitmap_node_t *new = NULL, **prev;
+	uint32_t src_it;
 
 	ebitmap_init(dst);
-	n = src->node;
-	prev = &dst->node;
-	while (n) {
-		new = (ebitmap_node_t *) malloc(sizeof(ebitmap_node_t));
-		if (!new) {
-			ebitmap_destroy(dst);
-			return -ENOMEM;
-		}
-		new->startbit = n->startbit;
-		new->map = n->map;
-		new->next = NULL;
 
-		*prev = new;
-		prev = &new->next;
+	dst->nodes = malloc(src->size * sizeof(*dst->nodes));
+	if (!dst->nodes)
+		return -ENOMEM;
+	dst->capacity = src->size;
 
-		n = n->next;
+	for (src_it = 0; src_it < src->size; src_it++) {
+		dst->nodes[dst->size++] = (ebitmap_node_t) {
+			.startbit = src->nodes[src_it].startbit,
+			.map = src->nodes[src_it].map,
+		};
 	}
 
 	dst->highbit = src->highbit;
@@ -298,26 +342,27 @@ int ebitmap_cpy(ebitmap_t * dst, const ebitmap_t * src)
 
 int ebitmap_contains(const ebitmap_t * e1, const ebitmap_t * e2)
 {
-	const ebitmap_node_t *n1, *n2;
+	uint32_t it1, it2;
 
-	if (e1->highbit < e2->highbit)
+	if (e1->highbit < e2->highbit || e1->size < e2->size)
 		return 0;
 
-	n1 = e1->node;
-	n2 = e2->node;
-	while (n1 && n2 && (n1->startbit <= n2->startbit)) {
-		if (n1->startbit < n2->startbit) {
-			n1 = n1->next;
+	it1 = 0;
+	it2 = 0;
+	while (it1 < e1->size && it2 < e2->size && (e1->nodes[it1].startbit <= e2->nodes[it2].startbit)) {
+		if (e1->nodes[it1].startbit < e2->nodes[it2].startbit) {
+			it1++;
 			continue;
 		}
-		if ((n1->map & n2->map) != n2->map)
+
+		if ((e1->nodes[it1].map & e2->nodes[it2].map) != e2->nodes[it2].map)
 			return 0;
 
-		n1 = n1->next;
-		n2 = n2->next;
+		it1++;
+		it2++;
 	}
 
-	if (n2)
+	if (it2 < e2->size)
 		return 0;
 
 	return 1;
@@ -325,20 +370,19 @@ int ebitmap_contains(const ebitmap_t * e1, const ebitmap_t * e2)
 
 int ebitmap_match_any(const ebitmap_t *e1, const ebitmap_t *e2)
 {
-	const ebitmap_node_t *n1 = e1->node;
-	const ebitmap_node_t *n2 = e2->node;
+	uint32_t it1 = 0, it2 = 0;
 
-	while (n1 && n2) {
-		if (n1->startbit < n2->startbit) {
-			n1 = n1->next;
-		} else if (n2->startbit < n1->startbit) {
-			n2 = n2->next;
+	while (it1 < e1->size && it2 < e2->size) {
+		if (e1->nodes[it1].startbit < e2->nodes[it2].startbit) {
+			it1++;
+		} else if (e1->nodes[it1].startbit > e2->nodes[it2].startbit) {
+			it2++;
 		} else {
-			if (n1->map & n2->map) {
+			if (e1->nodes[it1].map & e2->nodes[it2].map) {
 				return 1;
 			}
-			n1 = n1->next;
-			n2 = n2->next;
+			it1++;
+			it2++;
 		}
 	}
 
@@ -347,20 +391,19 @@ int ebitmap_match_any(const ebitmap_t *e1, const ebitmap_t *e2)
 
 int ebitmap_get_bit(const ebitmap_t * e, unsigned int bit)
 {
-	const ebitmap_node_t *n;
+	uint32_t it = 0;
 
 	if (e->highbit < bit)
 		return 0;
 
-	n = e->node;
-	while (n && (n->startbit <= bit)) {
-		if ((n->startbit + MAPSIZE) > bit) {
-			if (n->map & (MAPBIT << (bit - n->startbit)))
+	while (it < e->size && (e->nodes[it].startbit <= bit)) {
+		if ((e->nodes[it].startbit + MAPSIZE) > bit) {
+			if (e->nodes[it].map & (MAPBIT << (bit - e->nodes[it].startbit)))
 				return 1;
 			else
 				return 0;
 		}
-		n = n->next;
+		it++;
 	}
 
 	return 0;
@@ -368,73 +411,64 @@ int ebitmap_get_bit(const ebitmap_t * e, unsigned int bit)
 
 int ebitmap_set_bit(ebitmap_t * e, unsigned int bit, int value)
 {
-	ebitmap_node_t *n, *prev, *new;
-	uint32_t startbit = bit & ~(MAPSIZE - 1);
-	uint32_t highbit = startbit + MAPSIZE;
+	uint32_t it, higher_elems;
+	const uint32_t startbit = bit & ~(MAPSIZE - 1);
+	const uint32_t highbit = startbit + MAPSIZE;
+	int r;
 
 	if (highbit == 0) {
 		ERR(NULL, "bitmap overflow, bit 0x%x", bit);
 		return -EINVAL;
 	}
 
-	prev = 0;
-	n = e->node;
-	while (n && n->startbit <= bit) {
-		if ((n->startbit + MAPSIZE) > bit) {
+	for (it = 0; it < e->size && e->nodes[it].startbit <= bit; it++) {
+		if ((e->nodes[it].startbit + MAPSIZE) > bit) {
 			if (value) {
-				n->map |= (MAPBIT << (bit - n->startbit));
+				e->nodes[it].map |= (MAPBIT << (bit - e->nodes[it].startbit));
 			} else {
-				n->map &= ~(MAPBIT << (bit - n->startbit));
-				if (!n->map) {
+				e->nodes[it].map &= ~(MAPBIT << (bit - e->nodes[it].startbit));
+				if (!e->nodes[it].map) {
 					/* drop this node from the bitmap */
 
-					if (!n->next) {
+					higher_elems = e->size - it - 1;
+					if (higher_elems == 0) {
 						/*
 						 * this was the highest map
 						 * within the bitmap
 						 */
-						if (prev)
-							e->highbit =
-							    prev->startbit +
-							    MAPSIZE;
-						else
-							e->highbit = 0;
+						e->size--;
+						e->highbit = e->size > 0 ? e->nodes[e->size - 1].startbit + MAPSIZE : 0;
+					} else {
+						memmove(&e->nodes[it], &e->nodes[it + 1], higher_elems * sizeof(*e->nodes));
+						e->size--;
 					}
-					if (prev)
-						prev->next = n->next;
-					else
-						e->node = n->next;
-
-					free(n);
 				}
 			}
 			return 0;
 		}
-		prev = n;
-		n = n->next;
 	}
 
 	if (!value)
 		return 0;
 
-	new = (ebitmap_node_t *) malloc(sizeof(ebitmap_node_t));
-	if (!new)
-		return -ENOMEM;
+	r = grow_nodes_vec(e);
+	if (r < 0)
+		return r;
 
-	new->startbit = startbit;
-	new->map = (MAPBIT << (bit - new->startbit));
-
-	if (!n) {
-		/* this node will be the highest map within the bitmap */
+	higher_elems = e->size - it;
+	if (higher_elems == 0) {
+		e->nodes[e->size++] = (ebitmap_node_t) {
+			.startbit = startbit,
+			.map = (MAPBIT << (bit - startbit)),
+		};
 		e->highbit = highbit;
-	}
-
-	if (prev) {
-		new->next = prev->next;
-		prev->next = new;
 	} else {
-		new->next = e->node;
-		e->node = new;
+		memmove(&e->nodes[it + 1], &e->nodes[it], higher_elems * sizeof(*e->nodes));
+		e->nodes[it] = (ebitmap_node_t) {
+			.startbit = startbit,
+			.map = (MAPBIT << (bit - startbit)),
+		};
+		e->size++;
 	}
 
 	return 0;
@@ -442,13 +476,11 @@ int ebitmap_set_bit(ebitmap_t * e, unsigned int bit, int value)
 
 int ebitmap_init_range(ebitmap_t * e, unsigned int minbit, unsigned int maxbit)
 {
-	ebitmap_node_t *new = NULL, **prev;
-	uint32_t minstartbit = minbit & ~(MAPSIZE - 1);
-	uint32_t maxstartbit = maxbit & ~(MAPSIZE - 1);
-	uint32_t minhighbit = minstartbit + MAPSIZE;
-	uint32_t maxhighbit = maxstartbit + MAPSIZE;
-	uint32_t startbit;
-	MAPTYPE mask;
+	const uint32_t minstartbit = minbit & ~(MAPSIZE - 1);
+	const uint32_t maxstartbit = maxbit & ~(MAPSIZE - 1);
+	const uint32_t minhighbit = minstartbit + MAPSIZE;
+	const uint32_t maxhighbit = maxstartbit + MAPSIZE;
+	uint32_t cap, startbit;
 
 	ebitmap_init(e);
 
@@ -458,29 +490,32 @@ int ebitmap_init_range(ebitmap_t * e, unsigned int minbit, unsigned int maxbit)
 	if (minhighbit == 0 || maxhighbit == 0)
 		return -EOVERFLOW;
 
-	prev = &e->node;
+	cap = (maxstartbit - minstartbit) / MAPSIZE + 1;
+	e->nodes = malloc(cap * sizeof(*e->nodes));
+	if (!e->nodes)
+		return -ENOMEM;
+	e->capacity = cap;
 
 	for (startbit = minstartbit; startbit <= maxstartbit; startbit += MAPSIZE) {
-		new = malloc(sizeof(ebitmap_node_t));
-		if (!new)
-			return -ENOMEM;
-
-		new->next = NULL;
-		new->startbit = startbit;
+		MAPTYPE map, mask;
 
 		if (startbit != minstartbit && startbit != maxstartbit) {
-			new->map = ~((MAPTYPE)0);
+			map = ~((MAPTYPE)0);
 		} else if (startbit != maxstartbit) {
-			new->map = ~((MAPTYPE)0) << (minbit - startbit);
+			map = ~((MAPTYPE)0) << (minbit - startbit);
 		} else if (startbit != minstartbit) {
-			new->map = ~((MAPTYPE)0) >> (MAPSIZE - (maxbit - startbit + 1));
+			map = ~((MAPTYPE)0) >> (MAPSIZE - (maxbit - startbit + 1));
 		} else {
 			mask = ~((MAPTYPE)0) >> (MAPSIZE - (maxbit - minbit + 1));
-			new->map = (mask << (minbit - startbit));
+			map = (mask << (minbit - startbit));
 		}
 
-		*prev = new;
-		prev = &new->next;
+		assert(e->size < e->capacity);
+
+		e->nodes[e->size++] = (ebitmap_node_t) {
+			.startbit = startbit,
+			.map = map,
+		};
 	}
 
 	e->highbit = maxhighbit;
@@ -490,49 +525,35 @@ int ebitmap_init_range(ebitmap_t * e, unsigned int minbit, unsigned int maxbit)
 
 unsigned int ebitmap_highest_set_bit(const ebitmap_t * e)
 {
-	const ebitmap_node_t *n;
 	MAPTYPE map;
 	unsigned int pos = 0;
 
-	n = e->node;
-	if (!n)
+	if (e->size == 0)
 		return 0;
 
-	while (n->next)
-		n = n->next;
-
-	map = n->map;
+	map = e->nodes[e->size - 1].map;
 	while (map >>= 1)
 		pos++;
 
-	return n->startbit + pos;
+	return e->nodes[e->size - 1].startbit + pos;
 }
 
 void ebitmap_destroy(ebitmap_t * e)
 {
-	ebitmap_node_t *n, *temp;
-
 	if (!e)
 		return;
 
-	n = e->node;
-	while (n) {
-		temp = n;
-		n = n->next;
-		free(temp);
-	}
-
+	free(e->nodes);
+	e->nodes = NULL;
+	e->capacity = 0;
+	e->size = 0;
 	e->highbit = 0;
-	e->node = 0;
-	return;
 }
 
 int ebitmap_read(ebitmap_t * e, void *fp)
 {
 	int rc;
-	ebitmap_node_t *n, *l;
-	uint32_t buf[3], mapsize, count, i;
-	uint64_t map;
+	uint32_t buf[3], mapsize, count, it;
 
 	ebitmap_init(e);
 
@@ -549,73 +570,69 @@ int ebitmap_read(ebitmap_t * e, void *fp)
 		     mapsize, MAPSIZE, e->highbit);
 		goto bad;
 	}
-	if (!e->highbit) {
-		e->node = NULL;
+	if ((e->highbit && !count) || (!e->highbit && count))
+		goto bad;
+	if (!e->highbit)
 		goto ok;
-	}
 	if (e->highbit & (MAPSIZE - 1)) {
 		ERR(NULL, "security: ebitmap: high bit (%d) is not a multiple of the map size (%zu)",
 		     e->highbit, MAPSIZE);
 		goto bad;
 	}
 
-	if (e->highbit && !count)
+	e->nodes = malloc(count * sizeof(*e->nodes));
+	if (!e->nodes)
 		goto bad;
+	e->capacity = count;
 
-	l = NULL;
-	for (i = 0; i < count; i++) {
+	for (it = 0; it < count; it++) {
+		uint64_t map;
+		uint32_t startbit;
+
 		rc = next_entry(buf, fp, sizeof(uint32_t));
 		if (rc < 0) {
 			ERR(NULL, "security: ebitmap: truncated map");
 			goto bad;
 		}
-		n = (ebitmap_node_t *) malloc(sizeof(ebitmap_node_t));
-		if (!n) {
-			ERR(NULL, "security: ebitmap: out of memory");
-			rc = -ENOMEM;
+
+		startbit = le32_to_cpu(buf[0]);
+
+		if (startbit & (MAPSIZE - 1)) {
+			ERR(NULL, "security: ebitmap start bit (%d) is not a multiple of the map size (%zu)",
+			     startbit, MAPSIZE);
 			goto bad;
 		}
-		memset(n, 0, sizeof(ebitmap_node_t));
-
-		n->startbit = le32_to_cpu(buf[0]);
-
-		if (n->startbit & (MAPSIZE - 1)) {
-			ERR(NULL, "security: ebitmap start bit (%d) is not a multiple of the map size (%zu)",
-			     n->startbit, MAPSIZE);
-			goto bad_free;
-		}
-		if (n->startbit > (e->highbit - MAPSIZE)) {
+		if (startbit > (e->highbit - MAPSIZE)) {
 			ERR(NULL, "security: ebitmap start bit (%d) is beyond the end of the bitmap (%zu)",
-			     n->startbit, (e->highbit - MAPSIZE));
-			goto bad_free;
+			     startbit, (e->highbit - MAPSIZE));
+			goto bad;
 		}
 		rc = next_entry(&map, fp, sizeof(uint64_t));
 		if (rc < 0) {
 			ERR(NULL, "security: ebitmap: truncated map");
-			goto bad_free;
+			goto bad;
 		}
-		n->map = le64_to_cpu(map);
+		map = le64_to_cpu(map);
 
-		if (!n->map) {
+		if (!map) {
 			ERR(NULL, "security: ebitmap: null map in ebitmap (startbit %d)",
-			     n->startbit);
-			goto bad_free;
+			     startbit);
+			goto bad;
 		}
-		if (l) {
-			if (n->startbit <= l->startbit) {
-				ERR(NULL, "security: ebitmap: start bit %d comes after start bit %d",
-				     n->startbit, l->startbit);
-				goto bad_free;
-			}
-			l->next = n;
-		} else
-			e->node = n;
+		if (it > 0 && startbit <= e->nodes[it - 1].startbit) {
+			ERR(NULL, "security: ebitmap: start bit %d comes after start bit %d",
+			     startbit, e->nodes[it - 1].startbit);
+			goto bad;
+		}
 
-		l = n;
+		e->nodes[e->size++] = (ebitmap_node_t) {
+			.startbit = startbit,
+			.map = map,
+		};
 	}
-	if (count && l->startbit + MAPSIZE != e->highbit) {
+	if (e->size && e->nodes[e->size - 1].startbit + MAPSIZE != e->highbit) {
 		ERR(NULL, "security: ebitmap: high bit %u has not the expected value %zu",
-		     e->highbit, l->startbit + MAPSIZE);
+		     e->highbit, e->nodes[e->size - 1].startbit + MAPSIZE);
 		goto bad;
 	}
 
@@ -623,8 +640,6 @@ int ebitmap_read(ebitmap_t * e, void *fp)
 	rc = 0;
       out:
 	return rc;
-      bad_free:
-	free(n);
       bad:
 	if (!rc)
 		rc = -EINVAL;

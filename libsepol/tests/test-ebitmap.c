@@ -40,7 +40,6 @@ static void test_ebitmap_init_destroy(void)
 	ebitmap_init(&e);
 
 	CU_ASSERT(ebitmap_is_empty(&e));
-	CU_ASSERT_PTR_NULL(ebitmap_startnode(&e));
 
 	/* verify idempotence */
 	ebitmap_destroy(&e);
@@ -48,7 +47,6 @@ static void test_ebitmap_init_destroy(void)
 	ebitmap_destroy(&e);
 
 	CU_ASSERT(ebitmap_is_empty(&e));
-	CU_ASSERT_PTR_NULL(ebitmap_startnode(&e));
 }
 
 static void test_ebitmap_cmp(void)
