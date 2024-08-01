@@ -173,11 +173,9 @@ receive_response(int fd, uint32_t function, char **outdata, int32_t * ret_val)
 		return -1;
 	}
 
-	data = malloc(data_size);
+	data = calloc(1, data_size);
 	if (!data)
 		return -1;
-	/* coveriety doesn't realize that data will be initialized in readv */
-	memset(data, 0, data_size);
 
 	resp_data.iov_base = data;
 	resp_data.iov_len = data_size;

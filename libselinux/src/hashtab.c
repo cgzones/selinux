@@ -20,24 +20,22 @@ hashtab_t hashtab_create(unsigned int (*hash_value) (hashtab_t h,
 {
 
 	hashtab_t p;
-	unsigned int i;
 
 	p = (hashtab_t) malloc(sizeof(hashtab_val_t));
 	if (p == NULL)
 		return p;
 
-	memset(p, 0, sizeof(hashtab_val_t));
-	p->size = size;
-	p->nel = 0;
-	p->hash_value = hash_value;
-	p->keycmp = keycmp;
-	p->htable = (hashtab_ptr_t *) malloc(sizeof(hashtab_ptr_t) * size);
+	*p = (hashtab_val_t) {
+		.size = size,
+		.nel = 0,
+		.hash_value = hash_value,
+		.keycmp = keycmp,
+		.htable = calloc(size, sizeof(hashtab_ptr_t))
+	};
 	if (p->htable == NULL) {
 		free(p);
 		return NULL;
 	}
-	for (i = 0; i < size; i++)
-		p->htable[i] = (hashtab_ptr_t) NULL;
 
 	return p;
 }
@@ -64,9 +62,10 @@ int hashtab_insert(hashtab_t h, hashtab_key_t key, hashtab_datum_t datum)
 	newnode = (hashtab_ptr_t) malloc(sizeof(hashtab_node_t));
 	if (newnode == NULL)
 		return HASHTAB_OVERFLOW;
-	memset(newnode, 0, sizeof(struct hashtab_node));
-	newnode->key = key;
-	newnode->datum = datum;
+	*newnode = (hashtab_node_t) {
+		.key = key,
+		.datum = datum
+	};
 	if (prev) {
 		newnode->next = prev->next;
 		prev->next = newnode;

@@ -13,7 +13,7 @@ int security_reject_unknown(void)
 {
 	int fd, ret, reject_unknown = 0;
 	char path[PATH_MAX];
-	char buf[20];
+	char buf[20] = {};
 
 	if (!selinux_mnt) {
 		errno = ENOENT;
@@ -25,7 +25,6 @@ int security_reject_unknown(void)
 	if (fd < 0)
 		return -1;
 
-	memset(buf, 0, sizeof(buf));
 	ret = read(fd, buf, sizeof(buf) - 1);
 	close(fd);
 	if (ret < 0)
