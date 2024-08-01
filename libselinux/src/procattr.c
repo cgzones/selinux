@@ -86,32 +86,32 @@ static void init_procattr(void)
 static int openattr(pid_t pid, const char *attr, int flags)
 {
 	int fd, rc;
-	char *path;
+	char path[40];  /* must hold "/proc/thread-self/attr/sockcreate" */
 	pid_t tid;
 
 	if (pid > 0) {
-		rc = asprintf(&path, "/proc/%d/attr/%s", pid, attr);
+		rc = snprintf(path, sizeof(path), "/proc/%d/attr/%s", pid, attr);
 	} else if (pid == 0) {
-		rc = asprintf(&path, "/proc/thread-self/attr/%s", attr);
-		if (rc < 0)
+		rc = snprintf(path, sizeof(path), "/proc/thread-self/attr/%s", attr);
+		if (rc < 0 || (size_t)rc >= sizeof(path)) {
+			errno = EOVERFLOW;
 			return -1;
+		}
 		fd = open(path, flags | O_CLOEXEC);
 		if (fd >= 0 || errno != ENOENT)
-			goto out;
-		free(path);
+			return fd;
 		tid = selinux_gettid();
-		rc = asprintf(&path, "/proc/self/task/%d/attr/%s", tid, attr);
+		rc = snprintf(path, sizeof(path), "/proc/self/task/%d/attr/%s", tid, attr);
 	} else {
 		errno = EINVAL;
 		return -1;
 	}
-	if (rc < 0)
+	if (rc < 0 || (size_t)rc >= sizeof(path)) {
+		errno = EOVERFLOW;
 		return -1;
+	}
 
-	fd = open(path, flags | O_CLOEXEC);
-out:
-	free(path);
-	return fd;
+	return open(path, flags | O_CLOEXEC);
 }
 
 static int getprocattrcon_raw(char **context, pid_t pid, const char *attr,
