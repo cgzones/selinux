@@ -74,7 +74,7 @@ extern int hashtab_insert(hashtab_t h, hashtab_key_t k, hashtab_datum_t d);
    Returns SEPOL_ENOENT if no entry has the specified key or
    SEPOL_OK otherwise.
  */
-extern int hashtab_remove(hashtab_t h, hashtab_key_t k,
+extern int hashtab_remove(hashtab_t h, const_hashtab_key_t k,
 			  void (*destroy) (hashtab_key_t k,
 					   hashtab_datum_t d,
 					   void *args), void *args);

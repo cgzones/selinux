@@ -142,7 +142,7 @@ int hashtab_insert(hashtab_t h, hashtab_key_t key, hashtab_datum_t datum)
 	return SEPOL_OK;
 }
 
-int hashtab_remove(hashtab_t h, hashtab_key_t key,
+int hashtab_remove(hashtab_t h, const_hashtab_key_t key,
 		   void (*destroy) (hashtab_key_t k,
 				    hashtab_datum_t d, void *args), void *args)
 {
