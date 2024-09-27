@@ -128,11 +128,11 @@ bad:
 	return -1;
 }
 
-static int validate_type_set(const type_set_t *type_set, const validate_t *type)
+static int validate_type_set(const type_set_t *type_set, const validate_t *flavor)
 {
-	if (validate_ebitmap(&type_set->types, type))
+	if (validate_ebitmap(&type_set->types, flavor))
 		goto bad;
-	if (validate_ebitmap(&type_set->negset, type))
+	if (validate_ebitmap(&type_set->negset, flavor))
 		goto bad;
 
 	switch (type_set->flags) {
