@@ -245,12 +245,12 @@ static int is_avrule_redundant(avtab_ptr_t entry, avtab_t *tab,
 	return 0;
 }
 
-static int is_type_attr(policydb_t *p, unsigned int id)
+static int is_type_attr(const policydb_t *p, unsigned int id)
 {
 	return p->type_val_to_struct[id]->flavor == TYPE_ATTRIB;
 }
 
-static int is_avrule_with_attr(avtab_ptr_t entry, policydb_t *p)
+static int is_avrule_with_attr(const struct avtab_node *entry, const policydb_t *p)
 {
 	unsigned int s_idx = entry->key.source_type - 1;
 	unsigned int t_idx = entry->key.target_type - 1;
@@ -259,7 +259,7 @@ static int is_avrule_with_attr(avtab_ptr_t entry, policydb_t *p)
 }
 
 /* checks if conditional list contains a rule that covers the given rule */
-static int is_cond_rule_redundant(avtab_ptr_t e1, cond_av_list_t *list,
+static int is_cond_rule_redundant(avtab_ptr_t e1, const cond_av_list_t *list,
 				  const struct type_vec *type_map)
 {
 	unsigned int s1, t1, c1, k1, s2, t2, c2, k2;
@@ -274,7 +274,7 @@ static int is_cond_rule_redundant(avtab_ptr_t e1, cond_av_list_t *list,
 	k1 = e1->key.specified;
 
 	for (; list; list = list->next) {
-		avtab_ptr_t e2 = list->node;
+		const struct avtab_node * e2 = list->node;
 
 		s2 = e2->key.source_type - 1;
 		t2 = e2->key.target_type - 1;
