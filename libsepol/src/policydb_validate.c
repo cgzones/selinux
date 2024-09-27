@@ -150,6 +150,29 @@ bad:
 	return -1;
 }
 
+static int validate_simple_type_set(const type_set_t *type_set, const validate_t *flavor)
+{
+	if (validate_ebitmap(&type_set->types, flavor))
+		goto bad;
+	if (!ebitmap_is_empty(&type_set->negset))
+		goto bad;
+
+	switch (type_set->flags) {
+	case 0:
+		break;
+	case TYPE_STAR:
+	case TYPE_COMP:
+		goto bad;
+	default:
+		goto bad;
+	}
+
+	return 0;
+
+bad:
+	return -1;
+}
+
 static int validate_empty_type_set(const type_set_t *type_set)
 {
 	if (!ebitmap_is_empty(&type_set->types))
@@ -295,7 +318,7 @@ static int validate_constraint_nodes(sepol_handle_t *handle, uint32_t nperms, co
 				case CEXPR_TYPE | CEXPR_XTARGET:
 					if (validate_ebitmap(&cexp->names, &flavors[SYM_TYPES]))
 						goto bad;
-					if (validate_type_set(cexp->type_names, &flavors[SYM_TYPES]))
+					if (validate_simple_type_set(cexp->type_names, &flavors[SYM_TYPES]))
 						goto bad;
 					break;
 				default:
@@ -516,7 +539,7 @@ static int validate_role_datum(sepol_handle_t *handle, const role_datum_t *role,
 		goto bad;
 	if (validate_ebitmap(&role->dominates, &flavors[SYM_ROLES]))
 		goto bad;
-	if (validate_type_set(&role->types, &flavors[SYM_TYPES]))
+	if (validate_simple_type_set(&role->types, &flavors[SYM_TYPES]))
 		goto bad;
 	if (role->bounds && validate_value(role->bounds, &flavors[SYM_ROLES]))
 		goto bad;
@@ -1417,7 +1440,7 @@ static int validate_role_trans_rules(sepol_handle_t *handle, const role_trans_ru
 	for (; role_trans; role_trans = role_trans->next) {
 		if (validate_role_set(&role_trans->roles, &flavors[SYM_ROLES]))
 			goto bad;
-		if (validate_type_set(&role_trans->types, &flavors[SYM_TYPES]))
+		if (validate_simple_type_set(&role_trans->types, &flavors[SYM_TYPES]))
 			goto bad;
 		if (validate_ebitmap(&role_trans->classes, &flavors[SYM_CLASSES]))
 			goto bad;
@@ -1451,9 +1474,9 @@ bad:
 static int validate_range_trans_rules(sepol_handle_t *handle, const range_trans_rule_t *range_trans, validate_t flavors[])
 {
 	for (; range_trans; range_trans = range_trans->next) {
-		if (validate_type_set(&range_trans->stypes, &flavors[SYM_TYPES]))
+		if (validate_simple_type_set(&range_trans->stypes, &flavors[SYM_TYPES]))
 			goto bad;
-		if (validate_type_set(&range_trans->ttypes, &flavors[SYM_TYPES]))
+		if (validate_simple_type_set(&range_trans->ttypes, &flavors[SYM_TYPES]))
 			goto bad;
 		if (validate_ebitmap(&range_trans->tclasses, &flavors[SYM_CLASSES]))
 			goto bad;
@@ -1504,9 +1527,9 @@ bad:
 static int validate_filename_trans_rules(sepol_handle_t *handle, const filename_trans_rule_t *filename_trans, const policydb_t *p, validate_t flavors[])
 {
 	for (; filename_trans; filename_trans = filename_trans->next) {
-		if (validate_type_set(&filename_trans->stypes, &flavors[SYM_TYPES]))
+		if (validate_simple_type_set(&filename_trans->stypes, &flavors[SYM_TYPES]))
 			goto bad;
-		if (validate_type_set(&filename_trans->ttypes, &flavors[SYM_TYPES]))
+		if (validate_simple_type_set(&filename_trans->ttypes, &flavors[SYM_TYPES]))
 			goto bad;
 		if (validate_value(filename_trans->tclass,&flavors[SYM_CLASSES] ))
 			goto bad;
