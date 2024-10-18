@@ -3024,7 +3024,7 @@ void semanage_setfiles(semanage_handle_t * sh, const char *path){
 
 	/* Fix the user and role portions of the context, ignore errors
 	 * since this is not a critical operation */
-	selinux_restorecon(path, SELINUX_RESTORECON_SET_SPECFILE_CTX | SELINUX_RESTORECON_IGNORE_NOENTRY);
+	(void)! selinux_restorecon(path, SELINUX_RESTORECON_SET_SPECFILE_CTX | SELINUX_RESTORECON_IGNORE_NOENTRY);
 	/* restore log_logging */
 	selinux_set_callback(SELINUX_CB_LOG, cb_orig);
 	/* Make sure "path" is owned by root */
