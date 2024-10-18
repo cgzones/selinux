@@ -3011,7 +3011,8 @@ void semanage_setfiles(semanage_handle_t * sh, const char *path){
 	int fd;
 	/* Fix the user and role portions of the context, ignore errors
 	 * since this is not a critical operation */
-	selinux_restorecon(path, SELINUX_RESTORECON_SET_SPECFILE_CTX | SELINUX_RESTORECON_IGNORE_NOENTRY);
+	(void)! selinux_restorecon(path, SELINUX_RESTORECON_SET_SPECFILE_CTX | SELINUX_RESTORECON_IGNORE_NOENTRY);
+
 
 	/* Make sure "path" is owned by root */
 	if ((geteuid() != 0 || getegid() != 0) &&
