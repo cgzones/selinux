@@ -33,7 +33,6 @@
 
 #include "debug.h"
 #include "private.h"
-#include "policydb_validate.h"
 
 #define TYPE_VEC_INIT_SIZE 16
 
@@ -443,161 +442,6 @@ static void optimize_cond_avtab(policydb_t *p, const struct type_vec *type_map)
 	}
 }
 
-static int drop_attribute(policydb_t *p, unsigned int id)
-{
-	int rc;
-	const char *name = p->p_type_val_to_name[id];
-	fprintf(stderr, "dropping empty attribute %u (%s)...\n", id, name);
-
-	free(p->type_val_to_struct[id]);
-	p->type_val_to_struct[id] = NULL;
-
-	hashtab_remove(p->p_types.table, name, NULL, NULL);
-
-	free(p->p_type_val_to_name[id]);
-	p->p_type_val_to_name[id] = NULL;
-
-	ebitmap_destroy(&p->attr_type_map[id]);
-	ebitmap_destroy(&p->type_attr_map[id]);
-
-	/* Drop access vector rules referencing attribute */
-	{
-		avtab_t *tab = &p->te_avtab;
-		unsigned int i;
-		avtab_ptr_t *cur;
-
-		for (i = 0; i < tab->nslot; i++) {
-			cur = &tab->htable[i];
-			while (*cur) {
-				if ((*cur)->key.source_type - 1 == (uint16_t)id || (*cur)->key.target_type - 1 == (uint16_t)id) {
-					/* rule referencing attribute -> remove it */
-					avtab_ptr_t tmp = *cur;
-
-					*cur = tmp->next;
-					if (tmp->key.specified & AVTAB_XPERMS)
-						free(tmp->datum.xperms);
-					free(tmp);
-
-					tab->nel--;
-				} else {
-					/* rule not affected -> move to next rule */
-					cur = &(*cur)->next;
-				}
-			}
-		}
-	}
-
-	/* Drop conditional access vector rules referencing attribute */
-	{
-		avtab_t *tab = &p->te_cond_avtab;
-		unsigned int i;
-		avtab_ptr_t *cur;
-
-		for (i = 0; i < tab->nslot; i++) {
-			cur = &tab->htable[i];
-			while (*cur) {
-				if ((*cur)->key.source_type - 1 == (uint16_t)id || (*cur)->key.target_type - 1 == (uint16_t)id) {
-					/* rule referencing attribute -> remove it */
-					avtab_ptr_t tmp = *cur;
-
-					*cur = tmp->next;
-					if (tmp->key.specified & AVTAB_XPERMS)
-						free(tmp->datum.xperms);
-					free(tmp);
-
-					tab->nel--;
-				} else {
-					/* rule not affected -> move to next rule */
-					cur = &(*cur)->next;
-				}
-			}
-		}
-	}
-
-	/* Drop constraints referencing attribute */
-	{
-		unsigned int i;
-		constraint_node_t *cons;
-		constraint_expr_t *cexp;
-
-		for (i = 0; i < p->p_classes.nprim; i++) {
-			class_datum_t *cdatum = p->class_val_to_struct[i];
-
-			if (!cdatum)
-				continue;
-
-			for (cons = cdatum->constraints; cons; cons = cons->next) {
-				for (cexp = cons->expr; cexp; cexp = cexp->next) {
-					if (cexp->expr_type == CEXPR_NAMES) {
-						if (cexp->attr & CEXPR_TYPE) {
-							fprintf(stderr, "cardinality before: %u\n", ebitmap_cardinality(&cexp->type_names->types));
-							rc = ebitmap_set_bit(&cexp->type_names->types, id, 0);
-							if (rc)
-								return rc;
-							fprintf(stderr, "cardinality after: %u\n", ebitmap_cardinality(&cexp->type_names->types));
-							// TODO: drop exp if resulting typeset is empty
-						}
-					}
-				}
-			}
-
-			for (cons = cdatum->validatetrans; cons; cons = cons->next) {
-				for (cexp = cons->expr; cexp; cexp = cexp->next) {
-					if (cexp->expr_type == CEXPR_NAMES) {
-						if (cexp->attr & CEXPR_TYPE) {
-							fprintf(stderr, "cardinality before: %u\n", ebitmap_cardinality(&cexp->type_names->types));
-							rc = ebitmap_set_bit(&cexp->type_names->types, id, 0);
-							if (rc)
-								return rc;
-							fprintf(stderr, "cardinality after: %u\n", ebitmap_cardinality(&cexp->type_names->types));
-							// TODO: drop exp if resulting typeset is empty
-						}
-					}
-				}
-			}
-		}
-	}
-
-	return 0;
-
-	// FIXME: drop in filename_trans
-}
-
-static int optimize_typeattributes(policydb_t *p)
-{
-	unsigned int i;
-	int rc;
-
-	for (i = 0; i < p->p_types.nprim; i++) {
-		unsigned int cardinality;
-
-		if (!p->type_val_to_struct[i])
-			continue;
-
-		if (p->type_val_to_struct[i]->flavor != TYPE_ATTRIB)
-			continue;
-
-		cardinality = ebitmap_cardinality(&p->attr_type_map[i]);
-
-		if (cardinality > 1)
-			continue;
-
-		if (cardinality == 0) {
-			rc = drop_attribute(p, i);
-			if (rc) {
-				ERR(NULL, "Failed to drop attribute %u\n", i);
-				return rc;
-			}
-
-			continue;
-		}
-
-		fprintf(stderr, "cardinality of attribute %s: %u\n", p->p_type_val_to_name[i], cardinality);
-	}
-
-	return 0;
-}
-
 int policydb_optimize(policydb_t *p)
 {
 	struct type_vec *type_map;
@@ -613,21 +457,6 @@ int policydb_optimize(policydb_t *p)
 		 * can refer to those gaps.
 		 */
 		ERR(NULL, "Optimizing policy versions between 20 and 23 is not supported");
-		return -1;
-	}
-
-	if (policydb_validate(NULL, p) != 0) {
-		ERR(NULL, "Policy is invalid");
-		return -1;
-	}
-
-	if (optimize_typeattributes(p)) {
-		ERR(NULL, "Failed to optimize type attributes");
-		return -1;
-	}
-
-	if (policydb_validate(NULL, p) != 0) {
-		ERR(NULL, "Policy is invalid after type attribute optimization");
 		return -1;
 	}
 
