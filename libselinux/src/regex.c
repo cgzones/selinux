@@ -636,5 +636,4 @@ truncated:
 	default:
 		break;
 	}
-	return;
 }
