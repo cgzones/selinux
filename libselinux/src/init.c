@@ -127,7 +127,6 @@ static void init_selinuxmnt(void)
 	free(buf);
 	if (fp)
 		fclose(fp);
-	return;
 }
 
 void fini_selinuxmnt(void)
