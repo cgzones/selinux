@@ -379,11 +379,11 @@ static inline struct avc_node *avc_claim_node(security_id_t ssid,
 static inline struct avc_node *avc_search_node(security_id_t ssid,
 					       security_id_t tsid,
 					       security_class_t tclass,
-					       int *probes)
+					       unsigned int *probes)
 {
 	struct avc_node *cur;
 	int hvalue;
-	int tprobes = 1;
+	unsigned int tprobes = 1;
 
 	hvalue = avc_hash(ssid, tsid, tclass);
 	cur = avc_cache.slots[hvalue];
@@ -429,7 +429,8 @@ static int avc_lookup(security_id_t ssid, security_id_t tsid,
 		      access_vector_t requested, struct avc_entry_ref *aeref)
 {
 	struct avc_node *node;
-	int probes, rc = 0;
+	unsigned int probes;
+	int rc = 0;
 
 	avc_cache_stats_incr(cav_lookups);
 	node = avc_search_node(ssid, tsid, tclass, &probes);
@@ -991,7 +992,7 @@ static int avc_update_cache(uint32_t event, security_id_t ssid,
 		}
 	} else {
 		/* apply to one node */
-		node = avc_search_node(ssid, tsid, tclass, 0);
+		node = avc_search_node(ssid, tsid, tclass, NULL);
 		if (node) {
 			avc_update_node(event, node, perms);
 		}

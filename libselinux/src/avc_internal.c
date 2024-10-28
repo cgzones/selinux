@@ -100,7 +100,8 @@ static int fd = -1;
 
 int avc_netlink_open(int blocking)
 {
-	int len, rc = 0;
+	unsigned int len;
+	int rc = 0;
 	struct sockaddr_nl addr;
 
 	fd = socket(PF_NETLINK, SOCK_RAW | SOCK_CLOEXEC, NETLINK_SELINUX);
