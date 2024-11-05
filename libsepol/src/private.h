@@ -104,3 +104,13 @@ static inline void* reallocarray(void *ptr, size_t nmemb, size_t size) {
 	return realloc(ptr, nmemb * size);
 }
 #endif
+
+static inline void* recallocarray(void* ptr, size_t prevmemb, size_t newmemb, size_t size) {
+   void* ret = reallocarray(ptr, newmemb, size);
+
+   if (ret && newmemb > prevmemb) {
+      memset((unsigned char*)ret + prevmemb * size, '\0', (newmemb - prevmemb) * size);
+   }
+
+   return ret;
+}

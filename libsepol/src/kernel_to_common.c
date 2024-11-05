@@ -119,13 +119,12 @@ int strs_add(struct strs *strs, char *s)
 		char **new;
 		size_t i = strs->size;
 		strs->size *= 2;
-		new = reallocarray(strs->list, strs->size, sizeof(char *));
+		new = recallocarray(strs->list, i, strs->size, sizeof(char *));
 		if (!new) {
 			ERR(NULL, "Out of memory");
 			return -1;
 		}
 		strs->list = new;
-		memset(&strs->list[i], 0, sizeof(char *)*(strs->size-i));
 	}
 
 	strs->list[strs->num] = s;
@@ -176,13 +175,12 @@ int strs_add_at_index(struct strs *strs, char *s, size_t index)
 		while (index >= strs->size) {
 			strs->size *= 2;
 		}
-		new = reallocarray(strs->list, strs->size, sizeof(char *));
+		new = recallocarray(strs->list, i, strs->size, sizeof(char *));
 		if (!new) {
 			ERR(NULL, "Out of memory");
 			return -1;
 		}
 		strs->list = new;
-		memset(&strs->list[i], 0, sizeof(char *)*(strs->size - i));
 	}
 
 	strs->list[index] = s;
