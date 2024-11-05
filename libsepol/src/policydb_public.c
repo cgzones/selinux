@@ -26,7 +26,6 @@ void sepol_policy_file_set_mem(sepol_policy_file_t * spf,
 	pf->data = data;
 	pf->len = len;
 	pf->size = len;
-	return;
 }
 
 void sepol_policy_file_set_fp(sepol_policy_file_t * spf, FILE * fp)
@@ -34,7 +33,6 @@ void sepol_policy_file_set_fp(sepol_policy_file_t * spf, FILE * fp)
 	struct policy_file *pf = &spf->pf;
 	pf->type = PF_USE_STDIO;
 	pf->fp = fp;
-	return;
 }
 
 int sepol_policy_file_get_len(sepol_policy_file_t * spf, size_t * len)
@@ -147,7 +145,7 @@ int sepol_policydb_set_handle_unknown(sepol_policydb_t * sp,
 		return -1;
 	}
 
-	p->handle_unknown = handle_unknown;		
+	p->handle_unknown = handle_unknown;
 	return 0;
 }
 
@@ -164,7 +162,7 @@ int sepol_policydb_set_target_platform(sepol_policydb_t * sp,
 		return -1;
 	}
 
-	p->target_platform = target_platform;		
+	p->target_platform = target_platform;
 	return 0;
 }
 
@@ -202,7 +200,7 @@ int sepol_policydb_mls_enabled(const sepol_policydb_t * p)
 	return p->p.mls;
 }
 
-/* 
+/*
  * Enable compatibility mode for SELinux network checks iff
  * the packet class is not defined in the policy.
  */

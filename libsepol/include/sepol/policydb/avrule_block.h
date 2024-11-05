@@ -35,7 +35,7 @@ extern avrule_decl_t *get_avrule_decl(policydb_t * p, uint32_t decl_id);
 extern cond_list_t *get_decl_cond_list(policydb_t * p,
 				       avrule_decl_t * decl,
 				       cond_list_t * cond);
-extern int is_id_enabled(const char *id, const policydb_t * p, int symbol_table);
+extern int is_id_enabled(const char *id, const policydb_t * p, unsigned int symbol_table);
 extern int is_perm_existent(const class_datum_t *cladatum, const char *perm_id);
 
 #ifdef __cplusplus

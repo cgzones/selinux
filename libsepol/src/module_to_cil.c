@@ -370,7 +370,7 @@ static int typealias_list_create(struct policydb *pdb)
 	uint32_t max_decl_id = 0;
 	struct avrule_decl *decl;
 	struct avrule_block *block;
-	uint32_t rc = -1;
+	int rc = -1;
 
 	for (block = pdb->global; block != NULL; block = block->next) {
 		decl = block->branch_list;
@@ -753,7 +753,8 @@ static int ebitmap_to_cil(struct policydb *pdb, struct ebitmap *map, int type)
 static char *get_new_attr_name(struct policydb *pdb, int is_type)
 {
 	static unsigned int num_attrs = 0;
-	int len, rlen;
+	size_t len;
+	int rlen;
 	const char *infix;
 	char *attr_name = NULL;
 
@@ -773,7 +774,7 @@ static char *get_new_attr_name(struct policydb *pdb, int is_type)
 	}
 
 	rlen = snprintf(attr_name, len, "%s%s%i", pdb->name, infix, num_attrs);
-	if (rlen < 0 || rlen >= len) {
+	if (rlen < 0 || (size_t)rlen >= len) {
 		ERR(NULL, "Failed to generate attribute name");
 		free(attr_name);
 		attr_name = NULL;
@@ -1284,7 +1285,7 @@ static int cond_expr_to_cil(int indent, struct policydb *pdb, struct cond_expr *
 	int rc = 0;
 	struct cond_expr *curr;
 	struct stack *stack = NULL;
-	int len = 0;
+	size_t len;
 	int rlen;
 	char *new_val = NULL;
 	char *val1 = NULL;
@@ -1312,7 +1313,7 @@ static int cond_expr_to_cil(int indent, struct policydb *pdb, struct cond_expr *
 				goto exit;
 			}
 			rlen = snprintf(new_val, len, "(%s)", val1);
-			if (rlen < 0 || rlen >= len) {
+			if (rlen < 0 || (size_t)rlen >= len) {
 				ERR(NULL, "Failed to generate conditional expression");
 				rc = -1;
 				goto exit;
@@ -1367,7 +1368,7 @@ static int cond_expr_to_cil(int indent, struct policydb *pdb, struct cond_expr *
 			}
 
 			rlen = snprintf(new_val, len, "(%s %s%s%s)", op, val1, sep, val2);
-			if (rlen < 0 || rlen >= len) {
+			if (rlen < 0 || (size_t)rlen >= len) {
 				ERR(NULL, "Failed to generate conditional expression");
 				rc = -1;
 				goto exit;
@@ -1740,7 +1741,7 @@ static int constraint_expr_to_string(struct policydb *pdb, struct constraint_exp
 	int rc = -1;
 	struct constraint_expr *expr;
 	struct stack *stack = NULL;
-	int len = 0;
+	size_t len;
 	int rlen;
 	char *new_val = NULL;
 	char *val1 = NULL;
@@ -1806,7 +1807,7 @@ static int constraint_expr_to_string(struct policydb *pdb, struct constraint_exp
 					goto exit;
 				}
 				rlen = snprintf(new_val, len, "(%s %s %s)", op, attr1, attr2);
-				if (rlen < 0 || rlen >= len) {
+				if (rlen < 0 || (size_t)rlen >= len) {
 					ERR(NULL, "Failed to generate constraint expression");
 					rc = -1;
 					goto exit;
@@ -1858,7 +1859,7 @@ static int constraint_expr_to_string(struct policydb *pdb, struct constraint_exp
 				} else {
 					rlen = snprintf(new_val, len, "(%s %s %s)", op, attr1, names);
 				}
-				if (rlen < 0 || rlen >= len) {
+				if (rlen < 0 || (size_t)rlen >= len) {
 					ERR(NULL, "Failed to generate constraint expression");
 					rc = -1;
 					goto exit;
@@ -1916,7 +1917,7 @@ static int constraint_expr_to_string(struct policydb *pdb, struct constraint_exp
 			}
 
 			rlen = snprintf(new_val, len, "(%s %s%s%s)", op, val1, sep, val2);
-			if (rlen < 0 || rlen >= len) {
+			if (rlen < 0 || (size_t)rlen >= len) {
 				ERR(NULL, "Failed to generate constraint expression");
 				rc = -1;
 				goto exit;
@@ -3225,7 +3226,7 @@ static int user_extra_to_cil(struct sepol_module_package *mod_pkg)
 	int matched;
 	char *user = NULL;
 	char *prefix = NULL;
-	int prefix_len = 0;
+	size_t prefix_len;
 	char *user_str = NULL;
 	char *prefix_str = NULL;
 	char *eol = NULL;

@@ -37,7 +37,7 @@
 
 /* FLASK */
 
-/* 
+/*
  * Implementation of the access vector table type.
  */
 
@@ -53,7 +53,7 @@
  * public domain.
  */
 ignore_unsigned_overflow_
-static inline int avtab_hash(struct avtab_key *keyp, uint32_t mask)
+static inline uint32_t avtab_hash(struct avtab_key *keyp, uint32_t mask)
 {
 	static const uint32_t c1 = 0xcc9e2d51;
 	static const uint32_t c2 = 0x1b873593;
@@ -90,7 +90,7 @@ static inline int avtab_hash(struct avtab_key *keyp, uint32_t mask)
 }
 
 static avtab_ptr_t
-avtab_insert_node(avtab_t * h, int hvalue, avtab_ptr_t prev, avtab_key_t * key,
+avtab_insert_node(avtab_t * h, uint32_t hvalue, avtab_ptr_t prev, avtab_key_t * key,
 		  avtab_datum_t * datum)
 {
 	avtab_ptr_t newnode;
@@ -135,7 +135,7 @@ avtab_insert_node(avtab_t * h, int hvalue, avtab_ptr_t prev, avtab_key_t * key,
 
 int avtab_insert(avtab_t * h, avtab_key_t * key, avtab_datum_t * datum)
 {
-	int hvalue;
+	uint32_t hvalue;
 	avtab_ptr_t prev, cur, newnode;
 	uint16_t specified =
 	    key->specified & ~(AVTAB_ENABLED | AVTAB_ENABLED_OLD);
@@ -173,14 +173,14 @@ int avtab_insert(avtab_t * h, avtab_key_t * key, avtab_datum_t * datum)
 	return 0;
 }
 
-/* Unlike avtab_insert(), this function allow multiple insertions of the same 
- * key/specified mask into the table, as needed by the conditional avtab.  
+/* Unlike avtab_insert(), this function allow multiple insertions of the same
+ * key/specified mask into the table, as needed by the conditional avtab.
  * It also returns a pointer to the node inserted.
  */
 avtab_ptr_t
 avtab_insert_nonunique(avtab_t * h, avtab_key_t * key, avtab_datum_t * datum)
 {
-	int hvalue;
+	uint32_t hvalue;
 	avtab_ptr_t prev, cur, newnode;
 	uint16_t specified =
 	    key->specified & ~(AVTAB_ENABLED | AVTAB_ENABLED_OLD);
@@ -212,7 +212,7 @@ avtab_insert_nonunique(avtab_t * h, avtab_key_t * key, avtab_datum_t * datum)
 
 avtab_datum_t *avtab_search(avtab_t * h, avtab_key_t * key)
 {
-	int hvalue;
+	uint32_t hvalue;
 	avtab_ptr_t cur;
 	uint16_t specified =
 	    key->specified & ~(AVTAB_ENABLED | AVTAB_ENABLED_OLD);
@@ -247,7 +247,7 @@ avtab_datum_t *avtab_search(avtab_t * h, avtab_key_t * key)
  */
 avtab_ptr_t avtab_search_node(avtab_t * h, avtab_key_t * key)
 {
-	int hvalue;
+	uint32_t hvalue;
 	avtab_ptr_t cur;
 	uint16_t specified =
 	    key->specified & ~(AVTAB_ENABLED | AVTAB_ENABLED_OLD);
@@ -276,7 +276,7 @@ avtab_ptr_t avtab_search_node(avtab_t * h, avtab_key_t * key)
 	return NULL;
 }
 
-avtab_ptr_t avtab_search_node_next(avtab_ptr_t node, int specified)
+avtab_ptr_t avtab_search_node_next(avtab_ptr_t node, uint16_t specified)
 {
 	avtab_ptr_t cur;
 

@@ -31,7 +31,7 @@
 
 /*
  * An access vector table (avtab) is a hash table
- * of access vectors and transition types indexed 
+ * of access vectors and transition types indexed
  * by a type pair and a class.  An access vector
  * table is used to represent the type enforcement
  * tables.
@@ -136,7 +136,7 @@ extern avtab_ptr_t avtab_insert_with_parse_context(avtab_t * h,
 
 extern avtab_ptr_t avtab_search_node(avtab_t * h, avtab_key_t * key);
 
-extern avtab_ptr_t avtab_search_node_next(avtab_ptr_t node, int specified);
+extern avtab_ptr_t avtab_search_node_next(avtab_ptr_t node, uint16_t specified);
 
 #define MAX_AVTAB_HASH_BITS 20
 #define MAX_AVTAB_HASH_BUCKETS (1 << MAX_AVTAB_HASH_BITS)

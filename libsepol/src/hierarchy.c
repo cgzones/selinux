@@ -28,7 +28,6 @@
 
 #include <string.h>
 #include <stdlib.h>
-#include <assert.h>
 #include <sepol/policydb/policydb.h>
 #include <sepol/policydb/conditional.h>
 #include <sepol/policydb/hierarchy.h>
@@ -244,7 +243,7 @@ exit:
 	return rc;
 }
 
-static int bounds_not_covered(avtab_t *global_avtab, avtab_t *cur_avtab,
+static uint32_t bounds_not_covered(avtab_t *global_avtab, avtab_t *cur_avtab,
 			      avtab_key_t *avtab_key, uint32_t data)
 {
 	avtab_datum_t *datum = avtab_search(cur_avtab, avtab_key);

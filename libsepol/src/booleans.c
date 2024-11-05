@@ -53,7 +53,7 @@ static int bool_update(sepol_handle_t * handle,
 
 static int bool_to_record(sepol_handle_t * handle,
 			  const policydb_t * policydb,
-			  int bool_idx, sepol_bool_t ** record)
+			  uint32_t bool_idx, sepol_bool_t ** record)
 {
 
 	const char *name = policydb->p_bool_val_to_name[bool_idx];

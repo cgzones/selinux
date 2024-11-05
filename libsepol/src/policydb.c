@@ -9,7 +9,7 @@
  * Updated: Frank Mayer <mayerf@tresys.com> and Karl MacMillan <kmacmillan@tresys.com>
  *
  * 	Added conditional policy language extensions
- * 
+ *
  * Updated: Red Hat, Inc.  James Morris <jmorris@redhat.com>
  *      Fine-grained netlink support
  *      IPv6 support
@@ -781,7 +781,7 @@ void avrule_list_destroy(avrule_t * x)
 	}
 }
 
-/* 
+/*
  * Initialize the role table by implicitly adding role 'object_r'.  If
  * the policy is a module, set object_r's scope to be SCOPE_REQ,
  * otherwise set it to SCOPE_DECL.
@@ -1155,7 +1155,7 @@ common_index, class_index, role_index, type_index, user_index,
 /*
  * Define the common val_to_name array and the class
  * val_to_name and val_to_struct arrays in a policy
- * database structure.  
+ * database structure.
  */
 int policydb_index_classes(policydb_t * p)
 {
@@ -1241,7 +1241,7 @@ static int policydb_index_decls(sepol_handle_t * handle, policydb_t * p)
 
 /*
  * Define the other val_to_name and val_to_struct arrays
- * in a policy database structure.  
+ * in a policy database structure.
  */
 int policydb_index_others(sepol_handle_t * handle,
 			  policydb_t * p, unsigned verbose)
@@ -1606,8 +1606,6 @@ void policydb_destroy(policydb_t * p)
 		}
 		free(p->attr_type_map);
 	}
-
-	return;
 }
 
 void symtabs_destroy(symtab_t * symtab)
@@ -1737,7 +1735,7 @@ int symtab_insert(policydb_t * pol, uint32_t sym,
 		if (sym == SYM_ROLES) {
 			role_datum_t *base_role;
 			role_datum_t *cur_role = (role_datum_t *)datum;
-		
+
 			base_role = (role_datum_t *)
 					hashtab_search(pol->symtab[sym].table,
 						       key);
@@ -1867,7 +1865,7 @@ static int type_set_read(type_set_t * t, struct policy_file *fp)
 }
 
 /*
- * Read a MLS range structure from a policydb binary 
+ * Read a MLS range structure from a policydb binary
  * representation file.
  */
 static int mls_read_range_helper(mls_range_t * r, struct policy_file *fp)
@@ -1924,7 +1922,7 @@ static int mls_read_range_helper(mls_range_t * r, struct policy_file *fp)
 }
 
 /*
- * Read a semantic MLS level structure from a policydb binary 
+ * Read a semantic MLS level structure from a policydb binary
  * representation file.
  */
 static int mls_read_semantic_level_helper(mls_semantic_level_t * l,
@@ -1972,7 +1970,7 @@ static int mls_read_semantic_level_helper(mls_semantic_level_t * l,
 }
 
 /*
- * Read a semantic MLS range structure from a policydb binary 
+ * Read a semantic MLS range structure from a policydb binary
  * representation file.
  */
 static int mls_read_semantic_range_helper(mls_semantic_range_t * r,
@@ -2393,7 +2391,7 @@ static int role_read(policydb_t * p, hashtab_t h, struct policy_file *fp)
 		if (type_set_read(&role->types, fp))
 			goto bad;
 	}
-	
+
 	if (p->policy_type != POLICY_KERN &&
 	    p->policyvers >= MOD_POLICYDB_VERSION_ROLEATTRIB) {
 		rc = next_entry(buf, fp, sizeof(uint32_t));
@@ -3249,7 +3247,7 @@ static int genfs_read(policydb_t * p, struct policy_file *fp)
 }
 
 /*
- * Read a MLS level structure from a policydb binary 
+ * Read a MLS level structure from a policydb binary
  * representation file.
  */
 static int mls_read_level(mls_level_t * lp, struct policy_file *fp)
@@ -3936,7 +3934,7 @@ static int avrule_decl_read(policydb_t * p, avrule_decl_t * decl,
 
 	for (i = 0; i < num_scope_syms; i++) {
 		rc = next_entry(buf, fp, sizeof(uint32_t) * 2);
-		if (rc < 0) 
+		if (rc < 0)
 			return -1;
 		nprim = le32_to_cpu(buf[0]);
 		if (is_saturated(nprim))

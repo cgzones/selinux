@@ -18,7 +18,7 @@
 #include "private.h"
 
 #define SIDTAB_HASH(sid) \
-(sid & SIDTAB_HASH_MASK)
+((sid) & SIDTAB_HASH_MASK)
 
 #define INIT_SIDTAB_LOCK(s)
 #define SIDTAB_LOCK(s)
@@ -165,8 +165,6 @@ void sepol_sidtab_map_remove_on_error(sidtab_t * s,
 			}
 		}
 	}
-
-	return;
 }
 
 static inline sepol_security_id_t sepol_sidtab_search_context(sidtab_t * s,

@@ -1698,7 +1698,7 @@ static uint32_t avrule_to_avtab_spec(uint32_t specification)
 
 #define EXPAND_RULE_SUCCESS   1
 #define EXPAND_RULE_CONFLICT  0
-#define EXPAND_RULE_ERROR    -1
+#define EXPAND_RULE_ERROR   (-1)
 
 static int expand_terule_helper(sepol_handle_t * handle,
 				policydb_t * p, uint32_t * typemap,

@@ -75,7 +75,7 @@ static inline int ebitmap_node_get_bit(const ebitmap_node_t * n, unsigned int bi
 }
 
 #define ebitmap_for_each_bit(e, n, bit) \
-	for (bit = ebitmap_start(e, &n); bit < ebitmap_length(e); bit = ebitmap_next(&n, bit)) \
+	for ((bit) = ebitmap_start(e, &(n)); (bit) < ebitmap_length(e); (bit) = ebitmap_next(&(n), bit)) \
 
 #define ebitmap_for_each_positive_bit(e, n, bit) \
 	ebitmap_for_each_bit(e, n, bit) if (ebitmap_node_get_bit(n, bit)) \

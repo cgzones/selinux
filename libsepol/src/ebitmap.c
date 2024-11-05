@@ -3,7 +3,7 @@
 
 /* FLASK */
 
-/* 
+/*
  * Implementation of the extensible bitmap type.
  */
 
@@ -524,7 +524,6 @@ void ebitmap_destroy(ebitmap_t * e)
 
 	e->highbit = 0;
 	e->node = 0;
-	return;
 }
 
 int ebitmap_read(ebitmap_t * e, void *fp)

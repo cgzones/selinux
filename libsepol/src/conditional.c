@@ -59,7 +59,7 @@ void cond_optimize_lists(cond_list_t * cl)
 	}
 }
 
-static int bool_present(unsigned int target, unsigned int bools[],
+static int bool_present(unsigned int target, const unsigned int bools[],
 			unsigned int num_bools)
 {
 	unsigned int i = 0;
@@ -93,7 +93,7 @@ static int same_bools(cond_node_t * a, cond_node_t * b)
 }
 
 /*
- * Determine if two conditional expressions are equal. 
+ * Determine if two conditional expressions are equal.
  */
 int cond_expr_equal(cond_node_t * a, cond_node_t * b)
 {
@@ -337,7 +337,7 @@ static int evaluate_cond_node(policydb_t * p, cond_node_t * node)
 	return 0;
 }
 
-/* precompute and simplify an expression if possible.  If left with !expression, change 
+/* precompute and simplify an expression if possible.  If left with !expression, change
  * to expression and switch t and f. precompute expression for expressions with limited
  * number of bools.
  */
@@ -856,7 +856,7 @@ int cond_read_list(policydb_t * p, cond_list_t ** list, void *fp)
 }
 
 /* Determine whether additional permissions are granted by the conditional
- * av table, and if so, add them to the result 
+ * av table, and if so, add them to the result
  */
 void cond_compute_av(avtab_t * ctab, avtab_key_t * key,
 		     struct sepol_av_decision *avd)
@@ -873,7 +873,7 @@ void cond_compute_av(avtab_t * ctab, avtab_key_t * key,
 			avd->allowed |= node->datum.data;
 		if ((uint16_t) (AVTAB_AUDITDENY | AVTAB_ENABLED) ==
 		    (node->key.specified & (AVTAB_AUDITDENY | AVTAB_ENABLED)))
-			/* Since a '0' in an auditdeny mask represents a 
+			/* Since a '0' in an auditdeny mask represents a
 			 * permission we do NOT want to audit (dontaudit), we use
 			 * the '&' operand to ensure that all '0's in the mask
 			 * are retained (much unlike the allow and auditallow cases).
@@ -883,7 +883,6 @@ void cond_compute_av(avtab_t * ctab, avtab_key_t * key,
 		    (node->key.specified & (AVTAB_AUDITALLOW | AVTAB_ENABLED)))
 			avd->auditallow |= node->datum.data;
 	}
-	return;
 }
 
 avtab_datum_t *cond_av_list_search(avtab_key_t * key,

@@ -24,7 +24,6 @@
 #include <sepol/policydb/conditional.h>
 #include <sepol/policydb/avrule_block.h>
 
-#include <assert.h>
 #include <stdlib.h>
 
 /* It is anticipated that there be less declarations within an avrule
@@ -150,9 +149,9 @@ cond_list_t *get_decl_cond_list(policydb_t * p, avrule_decl_t * decl,
 
 /* Look up an identifier in a policy's scoping table.  If it is there,
  * marked as SCOPE_DECL, and any of its declaring block has been enabled,
- * then return 1.  Otherwise return 0. Can only be called after the 
+ * then return 1.  Otherwise return 0. Can only be called after the
  * decl_val_to_struct index has been created */
-int is_id_enabled(const char *id, const policydb_t * p, int symbol_table)
+int is_id_enabled(const char *id, const policydb_t * p, unsigned int symbol_table)
 {
 	const scope_datum_t *scope =
 	    (scope_datum_t *) hashtab_search(p->scope[symbol_table].table, id);

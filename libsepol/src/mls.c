@@ -23,7 +23,7 @@
 
 /* FLASK */
 
-/* 
+/*
  * Implementation of the multi-level security (MLS) policy.
  */
 
@@ -248,7 +248,6 @@ void mls_sid_to_context(const policydb_t * policydb,
 	}
 
 	*scontext = scontextp;
-	return;
 }
 
 /*
@@ -609,7 +608,7 @@ int mls_compute_sid(policydb_t * policydb,
 	range_trans_t rtr;
 	struct mls_range *r;
 	struct class_datum *cladatum;
-	int default_range = 0;
+	char default_range = 0;
 
 	if (!policydb->mls)
 		return 0;

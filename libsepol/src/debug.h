@@ -24,7 +24,7 @@
 #include "handle.h"
 
 #define STATUS_SUCCESS 0
-#define STATUS_ERR -1
+#define STATUS_ERR (-1)
 #define STATUS_NODATA 1
 
 /* FIXME: this needs to become a real function. Declaring variables
@@ -62,7 +62,7 @@
 __attribute__ ((format(printf, 3, 4)))
 #endif
 extern void sepol_msg_default_handler(void *varg,
-					     sepol_handle_t * msg,
+					     sepol_handle_t * handle,
 					     const char *fmt, ...);
 
 extern struct sepol_handle sepol_compat_handle;

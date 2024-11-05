@@ -22,7 +22,6 @@
 #include <sepol/policydb/expand.h>
 #include <sepol/policydb/flask_types.h>
 
-#include <assert.h>
 #include <stdlib.h>
 
 int constraint_expr_init(constraint_expr_t * expr)

@@ -387,7 +387,7 @@ static int module_package_read_offsets(sepol_module_package_t * mod,
 		ERR(file->handle, "out of memory");
 		goto err;
 	}
-	  
+
 	rc = next_entry(buf, file, sizeof(uint32_t) * 3);
 	if (rc < 0) {
 		ERR(file->handle, "module package header truncated");
@@ -755,7 +755,7 @@ int sepol_module_package_info(struct sepol_policy_file *spf, int *type,
 				ERR(file->handle,
 				    "out of memory (at section %u)",
 				    i);
-				goto cleanup;				
+				goto cleanup;
 			}
 			rc = next_entry(id, file, len);
 			free(id);
@@ -765,7 +765,7 @@ int sepol_module_package_info(struct sepol_policy_file *spf, int *type,
 				    i);
 				goto cleanup;
 			}
-			
+
 			rc = next_entry(buf, file, sizeof(uint32_t) * 5);
 			if (rc < 0) {
 				ERR(file->handle,
@@ -842,10 +842,9 @@ int sepol_module_package_info(struct sepol_policy_file *spf, int *type,
 	return -1;
 }
 
-static int write_helper(char *data, size_t len, struct policy_file *file)
+static int write_helper(const char *data, size_t len, struct policy_file *file)
 {
-	int idx = 0;
-	size_t len2;
+	size_t idx = 0, len2;
 
 	while (len) {
 		if (len > BUFSIZ)

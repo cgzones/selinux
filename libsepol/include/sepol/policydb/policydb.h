@@ -65,9 +65,9 @@
 
 #define ERRMSG_LEN 1024
 
-#define POLICYDB_SUCCESS      0
-#define POLICYDB_ERROR       -1
-#define POLICYDB_UNSUPPORTED -2
+#define POLICYDB_SUCCESS       0
+#define POLICYDB_ERROR       (-1)
+#define POLICYDB_UNSUPPORTED (-2)
 
 #ifdef __cplusplus
 extern "C" {

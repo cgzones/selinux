@@ -9,7 +9,7 @@
  * Updated: Frank Mayer <mayerf@tresys.com> and Karl MacMillan <kmacmillan@tresys.com>
  *
  * 	Added conditional policy language extensions
- * 
+ *
  * Updated: Joshua Brindle <jbrindle@tresys.com> and Jason Tang <jtang@tresys.org>
  *
  *	Module writing support
@@ -32,7 +32,6 @@
  *  License along with this library; if not, write to the Free Software
  *  Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
  */
-#include <assert.h>
 #include <stdlib.h>
 
 #include <sepol/policydb/ebitmap.h>
@@ -298,7 +297,7 @@ static int avtab_write(struct policydb *p, avtab_t * a, struct policy_file *fp)
 	if (oldvers) {
 		/* Old avtab format.
 		   First, we need to expand attributes.  Then, we need to
-		   merge similar entries, so we need to track merged nodes 
+		   merge similar entries, so we need to track merged nodes
 		   and compute the final nel. */
 		if (avtab_init(&expa))
 			return POLICYDB_ERROR;
@@ -356,7 +355,7 @@ static int avtab_write(struct policydb *p, avtab_t * a, struct policy_file *fp)
 }
 
 /*
- * Write a semantic MLS level structure to a policydb binary 
+ * Write a semantic MLS level structure to a policydb binary
  * representation file.
  */
 static int mls_write_semantic_level_helper(mls_semantic_level_t * l,
@@ -387,7 +386,7 @@ static int mls_write_semantic_level_helper(mls_semantic_level_t * l,
 }
 
 /*
- * Read a semantic MLS range structure to a policydb binary 
+ * Read a semantic MLS range structure to a policydb binary
  * representation file.
  */
 static int mls_write_semantic_range_helper(mls_semantic_range_t * r,
@@ -405,7 +404,7 @@ static int mls_write_semantic_range_helper(mls_semantic_range_t * r,
 }
 
 /*
- * Write a MLS level structure to a policydb binary 
+ * Write a MLS level structure to a policydb binary
  * representation file.
  */
 static int mls_write_level(mls_level_t * l, struct policy_file *fp)
@@ -425,7 +424,7 @@ static int mls_write_level(mls_level_t * l, struct policy_file *fp)
 }
 
 /*
- * Write a MLS range structure to a policydb binary 
+ * Write a MLS range structure to a policydb binary
  * representation file.
  */
 static int mls_write_range_helper(mls_range_t * r, struct policy_file *fp)
@@ -988,7 +987,7 @@ static int write_cons_helper(policydb_t * p,
 	constraint_node_t *c;
 	constraint_expr_t *e;
 	uint32_t buf[3], nexpr;
-	int items;
+	size_t items;
 
 	for (c = node; c; c = c->next) {
 		nexpr = 0;
@@ -2060,12 +2059,12 @@ static int scope_index_write(scope_index_t * scope_index,
 	return POLICYDB_SUCCESS;
 }
 
-static int avrule_decl_write(avrule_decl_t * decl, int num_scope_syms,
+static int avrule_decl_write(avrule_decl_t * decl, unsigned int num_scope_syms,
 			     policydb_t * p, struct policy_file *fp)
 {
 	struct policy_data pd;
 	uint32_t buf[2];
-	int i;
+	unsigned int i;
 	buf[0] = cpu_to_le32(decl->decl_id);
 	buf[1] = cpu_to_le32(decl->enabled);
 	if (put_entry(buf, sizeof(uint32_t), 2, fp) != 2) {
@@ -2105,7 +2104,7 @@ static int avrule_decl_write(avrule_decl_t * decl, int num_scope_syms,
 	return POLICYDB_SUCCESS;
 }
 
-static int avrule_block_write(avrule_block_t * block, int num_scope_syms,
+static int avrule_block_write(avrule_block_t * block, unsigned int num_scope_syms,
 			      policydb_t * p, struct policy_file *fp)
 {
 	/* first write a count of the total number of blocks */

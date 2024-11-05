@@ -18,7 +18,7 @@ extern "C" {
 #endif
 
 extern int link_modules(sepol_handle_t * handle,
-			policydb_t * b, policydb_t ** mods, int len,
+			policydb_t * b, policydb_t ** mods, size_t len,
 			int verbose);
 
 #ifdef __cplusplus

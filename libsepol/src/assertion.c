@@ -81,7 +81,7 @@ static bool match_any_class_permissions(const class_perm_node_t *cp, uint32_t cl
 	return false;
 }
 
-static bool extended_permissions_and(const uint32_t *perms1, const uint32_t *perms2) {
+static int extended_permissions_and(const uint32_t perms1[EXTENDED_PERMS_LEN], const uint32_t perms2[EXTENDED_PERMS_LEN]) {
 	size_t i;
 	for (i = 0; i < EXTENDED_PERMS_LEN; i++) {
 		if (perms1[i] & perms2[i])

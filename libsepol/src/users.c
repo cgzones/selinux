@@ -14,7 +14,7 @@
 
 static int user_to_record(sepol_handle_t * handle,
 			  const policydb_t * policydb,
-			  int user_idx, sepol_user_t ** record)
+			  uint32_t user_idx, sepol_user_t ** record)
 {
 
 	const char *name = policydb->p_user_val_to_name[user_idx];
@@ -142,7 +142,7 @@ int sepol_user_modify(sepol_handle_t * handle,
 	/* If it does, we will modify it */
 	if (usrdatum) {
 
-		int value_cp = usrdatum->s.value;
+		uint32_t value_cp = usrdatum->s.value;
 		user_datum_destroy(usrdatum);
 		user_datum_init(usrdatum);
 		usrdatum->s.value = value_cp;

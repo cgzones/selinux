@@ -267,8 +267,6 @@ static void get_name_list(constraint_expr_t *e, int type,
 		cat_expr_buf(expr_list[expr_counter], " -Fail-) ");
 	else
 		cat_expr_buf(expr_list[expr_counter], ") ");
-
-	return;
 }
 
 static void msgcat(const char *src, const char *tgt, const char *op, int failed)
@@ -429,7 +427,7 @@ static int constraint_expr_eval_reason(context_struct_t *scontext,
 	/* The pop operands */
 	char *a;
 	char *b;
-	int a_len, b_len;
+	size_t a_len, b_len;
 
 	class_buf = get_class_info(tclass, constraint, xcontext);
 	if (!class_buf) {
@@ -928,7 +926,7 @@ static int context_struct_compute_av(context_struct_t * scontext,
 	}
 	tclass_datum = policydb->class_val_to_struct[tclass - 1];
 
-	/* 
+	/*
 	 * Initialize the access vectors to the default values.
 	 */
 	avd->allowed = 0;
@@ -977,7 +975,7 @@ static int context_struct_compute_av(context_struct_t * scontext,
 		requested &= avd->allowed;
 	}
 
-	/* 
+	/*
 	 * Remove any permissions prohibited by a constraint (this includes
 	 * the MLS policy).
 	 */
@@ -998,9 +996,9 @@ static int context_struct_compute_av(context_struct_t * scontext,
 		requested &= avd->allowed;
 	}
 
-	/* 
+	/*
 	 * If checking process transition permission and the
-	 * role is changing, then check the (current_role, new_role) 
+	 * role is changing, then check the (current_role, new_role)
 	 * pair.
 	 */
 	if (tclass == policydb->process_class &&
@@ -1261,7 +1259,7 @@ out:
 }
 
 /*
- * Write the security context string representation of 
+ * Write the security context string representation of
  * the context associated with `sid' into a dynamically
  * allocated string of the correct size.  Set `*scontext'
  * to point to this string and set `*scontext_len' to
@@ -1482,8 +1480,8 @@ static int sepol_compute_sid(sepol_security_id_t ssid,
 }
 
 /*
- * Compute a SID to use for labeling a new object in the 
- * class `tclass' based on a SID pair.  
+ * Compute a SID to use for labeling a new object in the
+ * class `tclass' based on a SID pair.
  */
 int sepol_transition_sid(sepol_security_id_t ssid,
 				sepol_security_id_t tsid,
@@ -1494,8 +1492,8 @@ int sepol_transition_sid(sepol_security_id_t ssid,
 }
 
 /*
- * Compute a SID to use when selecting a member of a 
- * polyinstantiated object of class `tclass' based on 
+ * Compute a SID to use when selecting a member of a
+ * polyinstantiated object of class `tclass' based on
  * a SID pair.
  */
 int sepol_member_sid(sepol_security_id_t ssid,
@@ -1507,8 +1505,8 @@ int sepol_member_sid(sepol_security_id_t ssid,
 }
 
 /*
- * Compute a SID to use for relabeling an object in the 
- * class `tclass' based on a SID pair.  
+ * Compute a SID to use for relabeling an object in the
+ * class `tclass' based on a SID pair.
  */
 int sepol_change_sid(sepol_security_id_t ssid,
 			    sepol_security_id_t tsid,
@@ -1545,7 +1543,7 @@ static int validate_perm(hashtab_key_t key, hashtab_datum_t datum, void *p)
 
 /*
  * Verify that each class that is defined under the
- * existing policy is still defined with the same 
+ * existing policy is still defined with the same
  * attributes in the new policy.
  */
 static int validate_class(hashtab_key_t key, hashtab_datum_t datum, void *p)
@@ -1788,19 +1786,19 @@ int str_read(char **strp, struct policy_file *fp, size_t len)
 }
 
 /*
- * Read a new set of configuration data from 
+ * Read a new set of configuration data from
  * a policy database binary representation file.
  *
  * Verify that each class that is defined under the
- * existing policy is still defined with the same 
- * attributes in the new policy.  
+ * existing policy is still defined with the same
+ * attributes in the new policy.
  *
  * Convert the context structures in the SID table to the
  * new representation and verify that all entries
- * in the SID table are valid under the new policy. 
+ * in the SID table are valid under the new policy.
  *
- * Change the active policy database to use the new 
- * configuration data.  
+ * Change the active policy database to use the new
+ * configuration data.
  *
  * Reset the access vector cache.
  */
@@ -1843,7 +1841,7 @@ int sepol_load_policy(void *data, size_t len)
 		goto err;
 	}
 
-	/* Convert the internal representations of contexts 
+	/* Convert the internal representations of contexts
 	   in the new SID table and remove invalid SIDs. */
 	args.oldp = policydb;
 	args.newp = &newpolicydb;
@@ -1873,7 +1871,7 @@ int sepol_load_policy(void *data, size_t len)
 /*
  * Return the SIDs to use for an unlabeled file system
  * that is being mounted from the device with the
- * the kdevname `name'.  The `fs_sid' SID is returned for 
+ * the kdevname `name'.  The `fs_sid' SID is returned for
  * the file system and the `file_sid' SID is returned
  * for all files within that file system.
  */
@@ -2027,8 +2025,8 @@ int sepol_port_sid(uint16_t domain __attribute__ ((unused)),
 
 /*
  * Return the SIDs to use for a network interface
- * with the name `name'.  The `if_sid' SID is returned for 
- * the interface and the `msg_sid' SID is returned as 
+ * with the name `name'.  The `if_sid' SID is returned for
+ * the interface and the `msg_sid' SID is returned as
  * the default SID for messages received on the
  * interface.
  */
@@ -2070,8 +2068,8 @@ int sepol_netif_sid(char *name,
 	return rc;
 }
 
-static int match_ipv6_addrmask(uint32_t * input, uint32_t * addr,
-			       uint32_t * mask)
+static int match_ipv6_addrmask(const uint32_t input[4], const uint32_t addr[4],
+			       const uint32_t mask[4])
 {
 	int i, fail = 0;
 
@@ -2157,7 +2155,7 @@ int sepol_node_sid(uint16_t domain,
 /*
  * Generate the set of SIDs for legal security contexts
  * for a given user that can be reached by `fromsid'.
- * Set `*sids' to point to a dynamically allocated 
+ * Set `*sids' to point to a dynamically allocated
  * array containing the set of SIDs.  Set `*nel' to the
  * number of elements in the array.
  */
