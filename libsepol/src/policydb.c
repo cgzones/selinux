@@ -4028,7 +4028,7 @@ static int avrule_block_read(policydb_t * p,
 	return 0;
 }
 
-static int scope_read(policydb_t * p, int symnum, struct policy_file *fp)
+static int scope_read(policydb_t * p, unsigned int symnum, struct policy_file *fp)
 {
 	scope_datum_t *scope = NULL;
 	uint32_t buf[2];
