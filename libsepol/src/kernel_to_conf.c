@@ -1534,7 +1534,7 @@ static char *attr_strs_to_str(struct strs *strs)
 	}
 
 	/* 2*strs->num - 1 because ", " follows all but last attr (followed by '\0') */
-	len = strs_len_items(strs) + 2*strs->num - 1;
+	len = strs_len_items(strs) + 2*(size_t)strs->num - 1;
 	str = malloc(len);
 	if (!str) {
 		ERR(NULL, "Out of memory");
