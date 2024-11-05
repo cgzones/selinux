@@ -2017,7 +2017,7 @@ exit:
 	return rc;
 }
 
-static int class_to_cil(int indent, struct policydb *pdb, struct avrule_block *UNUSED(block), struct stack *UNUSED(decl_stack), char *key, void *datum, int scope)
+static int class_to_cil(int indent, struct policydb *pdb, struct avrule_block *UNUSED(block), struct stack *UNUSED(decl_stack), char *key, void *datum, uint32_t scope)
 {
 	int rc = -1;
 	struct class_datum *class = datum;
@@ -2148,7 +2148,7 @@ static int class_order_to_cil(int indent, struct policydb *pdb, struct ebitmap o
 	return 0;
 }
 
-static int role_to_cil(int indent, struct policydb *pdb, struct avrule_block *UNUSED(block), struct stack *decl_stack, char *key, void *datum, int scope)
+static int role_to_cil(int indent, struct policydb *pdb, struct avrule_block *UNUSED(block), struct stack *decl_stack, char *key, void *datum, uint32_t scope)
 {
 	int rc = -1;
 	struct ebitmap_node *node;
@@ -2248,7 +2248,7 @@ exit:
 	return rc;
 }
 
-static int type_to_cil(int indent, struct policydb *pdb, struct avrule_block *UNUSED(block), struct stack *decl_stack, char *key, void *datum, int scope)
+static int type_to_cil(int indent, struct policydb *pdb, struct avrule_block *UNUSED(block), struct stack *decl_stack, char *key, void *datum, uint32_t scope)
 {
 	int rc = -1;
 	struct type_datum *type = datum;
@@ -2321,7 +2321,7 @@ exit:
 	return rc;
 }
 
-static int user_to_cil(int indent, struct policydb *pdb, struct avrule_block *block, struct stack *UNUSED(decl_stack), char *key, void *datum,  int scope)
+static int user_to_cil(int indent, struct policydb *pdb, struct avrule_block *block, struct stack *UNUSED(decl_stack), char *key, void *datum, uint32_t scope)
 {
 	struct user_datum *user = datum;
 	struct ebitmap roles = user->roles.roles;
@@ -2372,7 +2372,7 @@ static int user_to_cil(int indent, struct policydb *pdb, struct avrule_block *bl
 	return 0;
 }
 
-static int boolean_to_cil(int indent, struct policydb *UNUSED(pdb), struct avrule_block *UNUSED(block), struct stack *UNUSED(decl_stack), char *key, void *datum,  int scope)
+static int boolean_to_cil(int indent, struct policydb *UNUSED(pdb), struct avrule_block *UNUSED(block), struct stack *UNUSED(decl_stack), char *key, void *datum, uint32_t scope)
 {
 	struct cond_bool_datum *boolean = datum;
 	const char *type;
@@ -2390,7 +2390,7 @@ static int boolean_to_cil(int indent, struct policydb *UNUSED(pdb), struct avrul
 	return 0;
 }
 
-static int sens_to_cil(int indent, struct policydb *pdb, struct avrule_block *UNUSED(block), struct stack *UNUSED(decl_stack), char *key, void *datum, int scope)
+static int sens_to_cil(int indent, struct policydb *pdb, struct avrule_block *UNUSED(block), struct stack *UNUSED(decl_stack), char *key, void *datum, uint32_t scope)
 {
 	level_datum_t *level = datum;
 
@@ -2434,7 +2434,7 @@ static int sens_order_to_cil(int indent, struct policydb *pdb, struct ebitmap or
 	return 0;
 }
 
-static int cat_to_cil(int indent, struct policydb *pdb, struct avrule_block *UNUSED(block), struct stack *UNUSED(decl_stack), char *key, void *datum,  int scope)
+static int cat_to_cil(int indent, struct policydb *pdb, struct avrule_block *UNUSED(block), struct stack *UNUSED(decl_stack), char *key, void *datum, uint32_t scope)
 {
 	struct cat_datum *cat = datum;
 
@@ -3387,7 +3387,7 @@ exit:
 }
 
 
-static int (*const func_to_cil[SYM_NUM])(int indent, struct policydb *pdb, struct avrule_block *block, struct stack *decl_stack, char *key, void *datum, int scope) = {
+static int (*const func_to_cil[SYM_NUM])(int indent, struct policydb *pdb, struct avrule_block *block, struct stack *decl_stack, char *key, void *datum, uint32_t scope) = {
 	NULL,	// commons, only stored in the global symtab, handled elsewhere
 	class_to_cil,
 	role_to_cil,
