@@ -398,17 +398,15 @@ exit:
 }
 
 
-static int stack_destroy(struct stack **stack)
+static void stack_destroy(struct stack **stack)
 {
 	if (stack == NULL || *stack == NULL) {
-		return 0;
+		return;
 	}
 
 	free((*stack)->stack);
 	free(*stack);
 	*stack = NULL;
-
-	return 0;
 }
 
 static int stack_init(struct stack **stack)
@@ -440,14 +438,18 @@ static int stack_push(struct stack *stack, void *ptr)
 {
 	int rc = -1;
 	void *new_stack;
+	int new_size;
 
 	if (stack->pos + 1 == stack->size) {
-		new_stack = reallocarray(stack->stack, stack->size * 2, sizeof(*stack->stack));
+		if (__builtin_mul_overflow(stack->size, 2, &new_size))
+			return -1;
+
+		new_stack = reallocarray(stack->stack, new_size, sizeof(*stack->stack));
 		if (new_stack == NULL) {
 			goto exit;
 		}
 		stack->stack = new_stack;
-		stack->size *= 2;
+		stack->size = new_size;
 	}
 
 	stack->pos++;
@@ -3765,7 +3767,10 @@ static int module_block_to_cil(struct policydb *pdb, struct avrule_block *block,
 		(*indent)++;
 	}
 
-	stack_push(stack, decl);
+	rc = stack_push(stack, decl);
+	if (rc != 0) {
+		goto exit;
+	}
 
 	rc = block_to_cil(pdb, block, stack, *indent);
 	if (rc != 0) {
@@ -3790,7 +3795,10 @@ static int global_block_to_cil(struct policydb *pdb, struct avrule_block *block,
 		ERR(NULL, "Warning: 'else' not allowed in global block. Dropping from output.");
 	}
 
-	stack_push(stack, decl);
+	rc = stack_push(stack, decl);
+	if (rc != 0) {
+		goto exit;
+	}
 
 	// type aliases and commons are only stored in the global symtab.
 	// However, to get scoping correct, we assume they are in the
@@ -3863,7 +3871,10 @@ static int linked_block_to_cil(struct policydb *pdb, struct avrule_block *block,
 		}
 	}
 
-	stack_push(stack, decl);
+	rc = stack_push(stack, decl);
+	if (rc != 0) {
+		goto exit;
+	}
 
 	rc = block_to_cil(pdb, block, stack, 0);
 	if (rc != 0) {
