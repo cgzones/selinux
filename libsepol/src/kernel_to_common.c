@@ -117,14 +117,18 @@ int strs_add(struct strs *strs, char *s)
 {
 	if (strs->num + 1 > strs->size) {
 		char **new;
-		size_t i = strs->size;
-		strs->size *= 2;
-		new = recallocarray(strs->list, i, strs->size, sizeof(char *));
+		size_t new_size;
+		if (__builtin_mul_overflow(strs->size, 2, &new_size)) {
+			ERR(NULL, "Out of memory");
+			return -1;
+		}
+		new = recallocarray(strs->list, strs->size, new_size, sizeof(char *));
 		if (!new) {
 			ERR(NULL, "Out of memory");
 			return -1;
 		}
 		strs->list = new;
+		strs->size = new_size;
 	}
 
 	strs->list[strs->num] = s;
@@ -171,16 +175,21 @@ int strs_add_at_index(struct strs *strs, char *s, size_t index)
 {
 	if (index >= strs->size) {
 		char **new;
-		size_t i = strs->size;
-		while (index >= strs->size) {
-			strs->size *= 2;
-		}
-		new = recallocarray(strs->list, i, strs->size, sizeof(char *));
+		size_t new_size = strs->size;
+
+		do {
+			if (__builtin_mul_overflow(new_size, 2, &new_size)) {
+				ERR(NULL, "Out of memory");
+				return -1;
+			}
+		} while (index >= new_size);
+		new = recallocarray(strs->list, strs->size, new_size, sizeof(char *));
 		if (!new) {
 			ERR(NULL, "Out of memory");
 			return -1;
 		}
 		strs->list = new;
+		strs->size = new_size;
 	}
 
 	strs->list[index] = s;

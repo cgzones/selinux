@@ -88,7 +88,7 @@ extern int ebitmap_xor(ebitmap_t *dst, const ebitmap_t *e1, const ebitmap_t *e2)
 extern int ebitmap_not(ebitmap_t *dst, const ebitmap_t *e1, unsigned int maxbit);
 extern int ebitmap_andnot(ebitmap_t *dst, const ebitmap_t *e1, const ebitmap_t *e2, unsigned int maxbit);
 extern unsigned int ebitmap_cardinality(const ebitmap_t *e1);
-extern int ebitmap_hamming_distance(const ebitmap_t * e1, const ebitmap_t * e2);
+extern unsigned int ebitmap_hamming_distance(const ebitmap_t * e1, const ebitmap_t * e2);
 extern int ebitmap_cpy(ebitmap_t * dst, const ebitmap_t * src);
 extern int ebitmap_contains(const ebitmap_t * e1, const ebitmap_t * e2);
 extern int ebitmap_match_any(const ebitmap_t *e1, const ebitmap_t *e2);

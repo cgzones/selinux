@@ -232,11 +232,11 @@ unsigned int ebitmap_cardinality(const ebitmap_t *e1)
 	return count;
 }
 
-int ebitmap_hamming_distance(const ebitmap_t * e1, const ebitmap_t * e2)
+unsigned int ebitmap_hamming_distance(const ebitmap_t * e1, const ebitmap_t * e2)
 {
 	int rc;
 	ebitmap_t tmp;
-	int distance;
+	unsigned int distance;
 	if (ebitmap_cmp(e1, e2))
 		return 0;
 	rc = ebitmap_xor(&tmp, e1, e2);

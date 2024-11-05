@@ -1413,7 +1413,8 @@ compute_trans_from_raw(const char *level, domain_t *domain) {
 				}
 			}
 
-			int loops, hamming, change=1;
+			int loops, change=1;
+			unsigned int hamming;
 			for (loops = 50; ebitmap_cardinality(&unhandled) && loops > 0 && change; loops--) {
 				change = 0;
 				hamming = 10000;
@@ -1442,7 +1443,7 @@ compute_trans_from_raw(const char *level, domain_t *domain) {
 						if (ebitmap_and(&temp, &bit_diff, &unhandled) < 0)
 							goto err;
 						if (ebitmap_cmp(&bit_diff, &temp)) {
-							int h = ebitmap_hamming_distance(&bit_diff, &unhandled);
+							unsigned int h = ebitmap_hamming_distance(&bit_diff, &unhandled);
 							if (h < hamming) {
 								hamming = h;
 								currentGroup = g;
