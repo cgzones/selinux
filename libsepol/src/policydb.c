@@ -4302,17 +4302,17 @@ int policydb_read(policydb_t * p, struct policy_file *fp, unsigned verbose)
 
 	if (p->policy_type == POLICY_MOD) {
 		/* Get the module name and version */
-		if ((rc = next_entry(buf, fp, sizeof(uint32_t))) < 0) {
+		rc = next_entry(buf, fp, sizeof(uint32_t));
+		if (rc < 0)
 			goto bad;
-		}
 		len = le32_to_cpu(buf[0]);
 		rc = str_read(&p->name, fp, len);
 		if (rc < 0)
 			goto bad;
 
-		if ((rc = next_entry(buf, fp, sizeof(uint32_t))) < 0) {
+		rc = next_entry(buf, fp, sizeof(uint32_t));
+		if (rc < 0)
 			goto bad;
-		}
 		len = le32_to_cpu(buf[0]);
 		rc = str_read(&p->version, fp, len);
 		if (rc < 0)
@@ -4393,9 +4393,9 @@ int policydb_read(policydb_t * p, struct policy_file *fp, unsigned verbose)
 			goto bad;
 		}
 		for (i = 0; i < info->sym_num; i++) {
-			if ((rc = next_entry(buf, fp, sizeof(uint32_t))) < 0) {
+			rc = next_entry(buf, fp, sizeof(uint32_t));
+			if (rc < 0)
 				goto bad;
-			}
 			nel = le32_to_cpu(buf[0]);
 			for (j = 0; j < nel; j++) {
 				if (scope_read(p, i, fp))
