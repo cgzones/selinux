@@ -385,37 +385,27 @@ int strs_stack_empty(const struct strs *stack)
 static int compare_ranges(uint64_t l1, uint64_t h1, uint64_t l2, uint64_t h2)
 {
 	uint64_t d1, d2;
+	int rc;
 
 	d1 = h1-l1;
 	d2 = h2-l2;
 
-	if (d1 < d2) {
-		return -1;
-	} else if (d1 > d2) {
-		return 1;
-	} else {
-		if (l1 < l2) {
-			return -1;
-		} else if (l1 > l2) {
-			return 1;
-		}
-	}
+	rc = spaceship_cmp(d1, d2);
+	if (rc)
+		return rc;
 
-	return 0;
+	return spaceship_cmp(l1, l2);
 }
 
 static int fsuse_data_cmp(const void *a, const void *b)
 {
 	struct ocontext *const *aa = a;
 	struct ocontext *const *bb = b;
+	int rc;
 
-	if ((*aa)->v.behavior != (*bb)->v.behavior) {
-		if ((*aa)->v.behavior < (*bb)->v.behavior) {
-			return -1;
-		} else {
-			return 1;
-		}
-	}
+	rc = spaceship_cmp((*aa)->v.behavior, (*bb)->v.behavior);
+	if (rc)
+		return rc;
 
 	return strcmp((*aa)->u.name, (*bb)->u.name);
 }
@@ -428,15 +418,10 @@ static int portcon_data_cmp(const void *a, const void *b)
 
 	rc = compare_ranges((*aa)->u.port.low_port, (*aa)->u.port.high_port,
 			    (*bb)->u.port.low_port, (*bb)->u.port.high_port);
-	if (rc == 0) {
-		if ((*aa)->u.port.protocol < (*bb)->u.port.protocol) {
-			rc = -1;
-		} else if ((*aa)->u.port.protocol > (*bb)->u.port.protocol) {
-			rc = 1;
-		}
-	}
+	if (rc)
+		return rc;
 
-	return rc;
+	return spaceship_cmp((*aa)->u.port.protocol, (*bb)->u.port.protocol);
 }
 
 static int netif_data_cmp(const void *a, const void *b)
@@ -485,7 +470,7 @@ static int ibpkey_data_cmp(const void *a, const void *b)
 	struct ocontext *const *aa = a;
 	struct ocontext *const *bb = b;
 
-	rc = (*aa)->u.ibpkey.subnet_prefix - (*bb)->u.ibpkey.subnet_prefix;
+	rc = spaceship_cmp((*aa)->u.ibpkey.subnet_prefix, (*bb)->u.ibpkey.subnet_prefix);
 	if (rc)
 		return rc;
 
@@ -511,13 +496,7 @@ static int pirq_data_cmp(const void *a, const void *b)
 	struct ocontext *const *aa = a;
 	struct ocontext *const *bb = b;
 
-	if ((*aa)->u.pirq < (*bb)->u.pirq) {
-		return -1;
-	} else if ((*aa)->u.pirq > (*bb)->u.pirq) {
-		return 1;
-	}
-
-	return 0;
+	return spaceship_cmp((*aa)->u.pirq, (*bb)->u.pirq);
 }
 
 static int ioport_data_cmp(const void *a, const void *b)
@@ -543,13 +522,7 @@ static int pcid_data_cmp(const void *a, const void *b)
 	struct ocontext *const *aa = a;
 	struct ocontext *const *bb = b;
 
-	if ((*aa)->u.device < (*bb)->u.device) {
-		return -1;
-	} else if ((*aa)->u.device > (*bb)->u.device) {
-		return 1;
-	}
-
-	return 0;
+	return spaceship_cmp((*aa)->u.device, (*bb)->u.device);
 }
 
 static int dtree_data_cmp(const void *a, const void *b)
