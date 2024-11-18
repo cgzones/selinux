@@ -3,7 +3,7 @@
 set -eu
 
 BASEDIR=$(dirname "$0")
-CHECKPOLICY="${BASEDIR}/../checkpolicy"
+CHECKPOLICY=${CHECKPOLICY:-"${BASEDIR}/../checkpolicy"}
 
 check_policy() {
 	POLICY=$1

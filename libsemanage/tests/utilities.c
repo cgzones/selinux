@@ -118,7 +118,7 @@ int write_test_policy_from_file(const char *filename) {
 	int rc;
 
 	if (!fptr) {
-		fprintf(stderr, "failed to open %s: %m\n", filename);
+		fprintf(stderr, "failed to open '%s': %m\n", filename);
 		return -1;
 	}
 
@@ -143,11 +143,15 @@ int write_test_policy_from_file(const char *filename) {
 }
 
 int write_test_policy_src(unsigned char *data, unsigned int data_len) {
-	if (mkdir("test-policy/store/active/modules/100", 0700) < 0)
+	if (mkdir("test-policy/store/active/modules/100", 0700) < 0 && errno != EEXIST) {
+		fprintf(stderr, "failed to create 'test-policy/store/active/modules/100' directory: %m\n");
 		return -1;
+	}
 
-	if (mkdir("test-policy/store/active/modules/100/base", 0700) < 0)
+	if (mkdir("test-policy/store/active/modules/100/base", 0700) < 0 && errno != EEXIST) {
+		fprintf(stderr, "failed to create 'test-policy/store/active/modules/100/base' directory: %m\n");
 		return -1;
+	}
 
 	FILE *fptr = fopen("test-policy/store/active/modules/100/base/cil",
 			   "w+");
@@ -169,7 +173,7 @@ int write_test_policy_src(unsigned char *data, unsigned int data_len) {
 		     "w+");
 
 	if (!fptr) {
-		fprintf(stderr, "test-policy/store/active/modules/100/base/lang_ext: %m\n");
+		fprintf(stderr, "failed to open 'test-policy/store/active/modules/100/base/lang_ext': %m\n");
 		return -1;
 	}
 

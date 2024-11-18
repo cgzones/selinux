@@ -55,6 +55,7 @@ jobs:
 
       - name: Install dependencies
         run: |
+          echo "::group::Ubuntu packages"
           sudo apt-get update -q
           sudo apt-get install -qy --no-install-recommends \
               bison \
@@ -62,17 +63,30 @@ jobs:
               gawk \
               gettext \
               libaudit-dev \
-              libbz2-dev \
               libcap-dev \
               libcap-ng-dev \
               libcunit1-dev \
               libdbus-glib-1-dev \
+              libpam0g-dev \
               libpcre2-dev \
+              meson \
+              pkgconf \
               ruby-dev \
               swig \
               xmlto
+          echo "::endgroup::"
 
+          echo "::group::Debian packages"
+          curl -fsSL https://ftp-master.debian.org/keys/archive-key-13.asc | gpg --dearmor | sudo tee /usr/share/keyrings/debian-archive-keyring.gpg
+          echo "deb [signed-by=/usr/share/keyrings/debian-archive-keyring.gpg] http://deb.debian.org/debian trixie main" | sudo tee /etc/apt/sources.list
+          sudo apt-get update -q
+          # includes pkg-config file
+          sudo apt-get install -qy --no-install-recommends libbz2-dev
+          echo "::endgroup::"
+
+          echo "::group::Python packages"
           pip install flake8 setuptools
+          echo "::endgroup::"
 
       - name: Install Clang
         if: ${{ matrix.compiler == 'clang' }}
@@ -98,22 +112,16 @@ jobs:
           fi
           echo "CC=$CC" >> $GITHUB_ENV
 
-          EXPLICIT_MAKE_VARS=
-          if [ "${{ matrix.python-ruby-version.other }}" = "test-flags-override" ] ; then
-              # Test that overriding CFLAGS, LDFLAGS and other variables works fine
-              EXPLICIT_MAKE_VARS="CFLAGS=-I$DESTDIR/usr/include LDFLAGS=-L$DESTDIR/usr/lib LDLIBS= CPPFLAGS="
-          elif [ "${{ matrix.python-ruby-version.other }}" = "test-debug" ] ; then
-              # Test hat debug build works fine
-              EXPLICIT_MAKE_VARS="DEBUG=1"
+          if [ "${{ matrix.python-ruby-version.other }}" = "test-debug" ] ; then
+              # Test that debug build works fine
+              echo "DEBUG=1" >> $GITHUB_ENV
           elif [ "${{ matrix.python-ruby-version.other }}" = "sanitizers" ] ; then
-              sanitizers='-fsanitize=address,undefined'
-              EXPLICIT_MAKE_VARS="CFLAGS='-g -I$DESTDIR/usr/include $sanitizers' LDFLAGS='-L$DESTDIR/usr/lib $sanitizers' LDLIBS= CPPFLAGS= OPT_SUBDIRS="
+              sanitizers="-fsanitize=address,undefined"
+              echo "CFLAGS=-g -O1 $sanitizers -Wno-error=format-overflow" >> $GITHUB_ENV
+              echo "LDFLAGS=$sanitizers" >> $GITHUB_ENV
               echo "ASAN_OPTIONS=strict_string_checks=1:detect_stack_use_after_return=1:check_initialization_order=1:strict_init_order=1" >> $GITHUB_ENV
               echo "UBSAN_OPTIONS=print_stacktrace=1:print_summary=1:halt_on_error=1" >> $GITHUB_ENV
-          else
-              EXPLICIT_MAKE_VARS=
           fi
-          echo "EXPLICIT_MAKE_VARS=${EXPLICIT_MAKE_VARS}" >> $GITHUB_ENV
 
           # Find files in order of pkgconf to be able to find Python.h
           # For example with Python 3.5:
@@ -132,45 +140,56 @@ jobs:
           curl --location --retry 10 -o refpolicy.tar.bz2 https://github.com/SELinuxProject/refpolicy/releases/download/RELEASE_2_20250923/refpolicy-2.20250923.tar.bz2
           tar -xvjf refpolicy.tar.bz2
           sed -e "s,^PREFIX :=.*,PREFIX := $DESTDIR/usr," -i refpolicy/support/Makefile.devel
-          sudo make -C refpolicy install-headers bare
+          sudo make -C refpolicy/ install-headers bare
           sudo mkdir -p /etc/selinux
           echo 'SELINUXTYPE=refpolicy' | sudo tee /etc/selinux/config
           echo 'SELINUX_DEVEL_PATH = /usr/share/selinux/refpolicy' | sudo tee /etc/selinux/sepolgen.conf
           sed -e "s,\"\(/usr/bin/[cs]\),\"$DESTDIR\1," -i python/sepolgen/src/sepolgen/module.py
-          rm -r refpolicy refpolicy.tar.bz2
+          rm -r refpolicy/ refpolicy.tar.bz2
 
       - name: Display versions
         run: |
           echo "::group::Compiler ($CC):"
           $CC --version
           echo "::endgroup::"
+
           echo "::group::Python ($(which "$PYTHON")):"
           $PYTHON --version
           echo "::endgroup::"
+
           echo "::group::Ruby ($(which "$RUBY")):"
           $RUBY --version
           echo "::endgroup::"
 
       - name: Run tests
         run: |
-          echo "::group::make install"
-          eval make -j$(nproc) install $EXPLICIT_MAKE_VARS -k
-          echo "::endgroup::"
-          echo "::group::make install-pywrap"
-          eval make -j$(nproc) install-pywrap $EXPLICIT_MAKE_VARS -k
-          echo "::endgroup::"
-          echo "::group::make install-rubywrap"
-          eval make -j$(nproc) install-rubywrap $EXPLICIT_MAKE_VARS -k
+          echo "::group::meson setup"
+          # Skip `--fatal-meson-warnings` due to
+          #     libselinux| WARNING: Please do not define rpath with a linker argument, use install_rpath
+          #     libselinux| or build_rpath properties instead.
+          #     libselinux| This will become a hard error in a future Meson release.
+          # caused by using subprojects
+          meson setup --prefix /usr --werror build_dir || ( cat ./build_dir/meson-logs/meson-log.txt; exit 1 )
           echo "::endgroup::"
 
-          # Now that everything is installed, run "make all" to build everything which may have not been built
-          echo "::group::make all"
-          eval make -j$(nproc) all $EXPLICIT_MAKE_VARS -k
+          echo "::group::meson build"
+          meson compile --verbose -C build_dir/
+          echo "::endgroup::"
+
+          echo "::group::meson install"
+          meson install -C build_dir/
           echo "::endgroup::"
 
           # Set up environment variables for the tests and show variables (to help debugging issues)
           echo "::group::Environment variables"
           . ./scripts/env_use_destdir
+
+          PYTHONPATH="/tmp/destdir/usr/lib/python3/dist-packages:$PYTHONPATH"
+          echo "PYTHONPATH=$PYTHONPATH" >> $GITHUB_ENV
+
+          LD_LIBRARY_PATH="/tmp/destdir/usr/lib/$(dpkg-architecture -qDEB_HOST_MULTIARCH):$LD_LIBRARY_PATH"
+          echo "LD_LIBRARY_PATH=$LD_LIBRARY_PATH" >> $GITHUB_ENV
+
           echo "LD_LIBRARY_PATH=$LD_LIBRARY_PATH"
           echo "PATH=$PATH"
           echo "PYTHONPATH=$PYTHONPATH"
@@ -178,8 +197,12 @@ jobs:
           echo "::endgroup::"
 
           # Run tests
-          echo "::group::make test"
-          eval make test $EXPLICIT_MAKE_VARS
+          echo "::group::meson list tests"
+          meson test --list -C build_dir/
+          echo "::endgroup::"
+
+          echo "::group::meson test"
+          meson test --print-errorlogs --verbose -C build_dir/ || (cat ./build_dir/meson-logs/testlog.txt; exit 1 )
           echo "::endgroup::"
 
           if [ "${{ matrix.python-ruby-version.other }}" != "sanitizers" ] ; then
@@ -201,6 +224,6 @@ jobs:
           # Test that "git status" looks clean, or print a clear error message
           git status --short | sed -n 's/^??/error: missing .gitignore entry for/p' | (! grep '^')
           # Clean up everything and show which file needs to be added to "make clean"
-          eval make clean distclean $EXPLICIT_MAKE_VARS
+          rm -Rf build_dir/
           git ls-files --ignored --others --exclude-standard | sed 's/^/error: "make clean distclean" did not remove /' | (! grep '^')
           echo "::endgroup::"
