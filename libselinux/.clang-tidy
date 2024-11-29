@@ -1,0 +1,41 @@
+---
+Checks:              '*,
+                      -altera-unroll-loops,
+                      -altera-id-dependent-backward-branch,
+                      -altera-struct-pack-align,
+                      -bugprone-assignment-in-if-condition,
+                      -bugprone-branch-clone,
+                      -bugprone-easily-swappable-parameters,
+                      -bugprone-multi-level-implicit-pointer-conversion,
+                      -bugprone-reserved-identifier,-cert-dcl37-c,-cert-dcl51-cpp,
+                      -cert-err33-c,
+                      -clang-analyzer-security.insecureAPI.DeprecatedOrUnsafeBufferHandling,
+                      -clang-analyzer-security.insecureAPI.strcpy,
+                      -cppcoreguidelines-init-variables,
+                      -cppcoreguidelines-avoid-magic-numbers,-readability-magic-numbers,
+                      -cppcoreguidelines-avoid-non-const-global-variables,
+                      -cppcoreguidelines-macro-to-enum,-modernize-macro-to-enum,
+                      -hicpp-signed-bitwise,
+                      -llvm-header-guard,
+                      -llvm-include-order,
+                      -llvmlibc-restrict-system-libc-headers,
+                      -llvm-else-after-return,-readability-else-after-return,
+                      -misc-include-cleaner,
+                      -google-readability-braces-around-statements,-hicpp-braces-around-statements,-readability-braces-around-statements,
+                      -readability-identifier-length,
+                      -readability-inconsistent-declaration-parameter-name,-hicpp-named-parameter,-readability-named-parameter,
+                      -readability-isolate-declaration,
+                      -readability-function-cognitive-complexity,
+                      -readability-math-missing-parentheses'
+#WarningsAsErrors:    ''
+HeaderFilterRegex:   '.*'
+#FormatStyle:         none
+#InheritParentConfig: true
+#User:                user
+#CheckOptions:
+#  some-check.SomeOption: 'some value'
+
+# TODO:
+#  - cert-err33-c
+#  - readability-math-missing-parentheses
+#  - clang-analyzer-security.insecureAPI.strcpy
