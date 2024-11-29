@@ -20,13 +20,13 @@ int main(int argc, char *argv[])
 		return 1;
 	}
 
-	fp = fopen(argv[1], "r");
+	fp = fopen(argv[1], "re");
 	if (!fp) {
-		fprintf(stderr, "Can't open policy %s:  %s\n", argv[1], strerror(errno));
+		fprintf(stderr, "Can't open policy %s:  %m\n", argv[1]);
 		return 1;
 	}
 	if (sepol_set_policydb_from_file(fp) < 0) {
-		fprintf(stderr, "Error while processing policy %s:  %s\n", argv[1], strerror(errno));
+		fprintf(stderr, "Error while processing policy %s:  %m\n", argv[1]);
 		fclose(fp);
 		return 1;
 	}
@@ -64,7 +64,7 @@ int main(int argc, char *argv[])
 		ret = 7;
 		break;
 	default:
-		printf("sepol_validate_transition_reason_buffer returned %d errno: %s\n", ret, strerror(errno));
+		printf("sepol_validate_transition_reason_buffer returned %d errno: %m\n", ret);
 		ret = 1;
 	}
 

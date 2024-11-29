@@ -24,13 +24,13 @@ int main(int argc, char *argv[])
 		return 1;
 	}
 
-	fp = fopen(argv[1], "r");
+	fp = fopen(argv[1], "re");
 	if (!fp) {
-		fprintf(stderr, "Can't open policy %s:  %s\n", argv[1], strerror(errno));
+		fprintf(stderr, "Can't open policy %s:  %m\n", argv[1]);
 		return 1;
 	}
 	if (sepol_set_policydb_from_file(fp) < 0) {
-		fprintf(stderr, "Error while processing policy %s:  %s\n", argv[1], strerror(errno));
+		fprintf(stderr, "Error while processing policy %s:  %m\n", argv[1]);
 		fclose(fp);
 		return 1;
 	}
@@ -60,7 +60,7 @@ int main(int argc, char *argv[])
 		if (delim) {
 			tmp = strndup(permlist, delim - permlist);
 			if (!tmp) {
-				fprintf(stderr, "Failed to allocate memory:  %s\n", strerror(errno));
+				fprintf(stderr, "Failed to allocate memory:  %m\n");
 				return 1;
 			}
 		}
@@ -68,7 +68,7 @@ int main(int argc, char *argv[])
 		perm = tmp ? tmp : permlist;
 
 		if (sepol_string_to_av_perm(tclass, perm, &av) < 0) {
-			fprintf(stderr, "Invalid permission %s for security class %s:  %s\n", perm, argv[4], strerror(errno));
+			fprintf(stderr, "Invalid permission %s for security class %s:  %m\n", perm, argv[4]);
 			free(tmp);
 			return 1;
 		}
@@ -84,7 +84,7 @@ int main(int argc, char *argv[])
 	}
 
 	if (sepol_compute_av_reason_buffer(ssid, tsid, tclass, av, &avd, &reason, &reason_buf, 0) < 0) {
-		fprintf(stderr, "Failed to compute av decision:  %s\n", strerror(errno));
+		fprintf(stderr, "Failed to compute av decision:  %m\n");
 		return 1;
 	}
 

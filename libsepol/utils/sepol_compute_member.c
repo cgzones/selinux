@@ -20,13 +20,13 @@ int main(int argc, char *argv[])
 		return 1;
 	}
 
-	fp = fopen(argv[1], "r");
+	fp = fopen(argv[1], "re");
 	if (!fp) {
-		fprintf(stderr, "Can't open policy %s:  %s\n", argv[1], strerror(errno));
+		fprintf(stderr, "Can't open policy %s:  %m\n", argv[1]);
 		return 1;
 	}
 	if (sepol_set_policydb_from_file(fp) < 0) {
-		fprintf(stderr, "Error while processing policy %s:  %s\n", argv[1], strerror(errno));
+		fprintf(stderr, "Error while processing policy %s:  %m\n", argv[1]);
 		fclose(fp);
 		return 1;
 	}
@@ -48,12 +48,12 @@ int main(int argc, char *argv[])
 	}
 
 	if (sepol_member_sid(ssid, tsid, tclass, &out_sid) < 0) {
-		fprintf(stderr, "Failed to compute member sid:  %s\n", strerror(errno));
+		fprintf(stderr, "Failed to compute member sid:  %m\n");
 		return 1;
 	}
 
 	if (sepol_sid_to_context(out_sid, &context, &context_len) < 0) {
-		fprintf(stderr, "Failed to convert sid %u:  %s\n", out_sid, strerror(errno));
+		fprintf(stderr, "Failed to convert sid %u:  %m\n", out_sid);
 		return 1;
 	}
 
