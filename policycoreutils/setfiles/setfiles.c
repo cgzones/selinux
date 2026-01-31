@@ -50,7 +50,7 @@ static __attribute__((__noreturn__)) void usage(const char *const name)
 
 static void set_rootpath(const char *arg)
 {
-	if (strlen(arg) == 1 && strncmp(arg, "/", 1) == 0) {
+	if (strcmp(arg, "/") == 0) {
 		fprintf(stderr, "%s:  invalid alt_rootpath: %s\n",
 			r_opts.progname, arg);
 		exit(-1);

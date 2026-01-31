@@ -209,8 +209,11 @@ oom:
 static int check_excluded(const char *file)
 {
 	int i;
+	size_t file_len = strlen(file);
 
 	for (i = 0; i < exclude_count; i++) {
+		if (exclude_lst[i].size > file_len)
+			continue;
 		if (strncmp(file, exclude_lst[i].directory,
 		    exclude_lst[i].size) == 0) {
 			if (file[exclude_lst[i].size] == 0 ||
@@ -694,19 +697,19 @@ static int restorecon_sb(const char *pathname, const struct stat *sb,
 	}
 
 	if (flags->progress) {
-		__pthread_mutex_lock(&progress_mutex);
-		fc_count++;
-		if (fc_count % STAR_COUNT == 0) {
+		uint64_t count = __atomic_add_fetch(&fc_count, 1, __ATOMIC_RELAXED);
+		if (count % STAR_COUNT == 0) {
+			__pthread_mutex_lock(&progress_mutex);
 			if (flags->mass_relabel && efile_count > 0) {
-				float pc = (fc_count < efile_count) ? (100.0 *
-					     fc_count / efile_count) : 100;
+				float pc = (count < efile_count) ? (100.0 *
+					     count / efile_count) : 100;
 				fprintf(stdout, "\r%-.1f%%", (double)pc);
 			} else {
-				fprintf(stdout, "\r%" PRIu64 "k", fc_count / STAR_COUNT);
+				fprintf(stdout, "\r%" PRIu64 "k", count / STAR_COUNT);
 			}
 			fflush(stdout);
+			__pthread_mutex_unlock(&progress_mutex);
 		}
-		__pthread_mutex_unlock(&progress_mutex);
 	}
 
 	if (flags->add_assoc) {
@@ -901,6 +904,19 @@ struct rest_state {
 	pthread_mutex_t mutex;
 };
 
+/*
+ * Helper macro to handle FTS errors by logging, restoring errno,
+ * and skipping the entry.
+ */
+#define HANDLE_FTS_ERROR(fts, ftsent, format, ...)		\
+	do {							\
+		int _saved = errno;				\
+		errno = (ftsent)->fts_errno;			\
+		selinux_log(SELINUX_ERROR, format, __VA_ARGS__); \
+		errno = _saved;					\
+		fts_set((fts), (ftsent), FTS_SKIP);		\
+	} while (0)
+
 static void *selinux_restorecon_thread(void *arg)
 {
 	struct rest_state *state = arg;
@@ -940,13 +956,9 @@ loop_body:
 		case FTS_DP:
 			continue;
 		case FTS_DNR:
-			error = errno;
-			errno = ftsent->fts_errno;
-			selinux_log(SELINUX_ERROR,
-				    "Could not read %s: %m.\n",
-				    ftsent->fts_path);
-			errno = error;
-			fts_set(fts, ftsent, FTS_SKIP);
+			HANDLE_FTS_ERROR(fts, ftsent,
+					 "Could not read %s: %m.\n",
+					 ftsent->fts_path);
 			continue;
 		case FTS_NS:
 			error = errno;
@@ -959,13 +971,9 @@ loop_body:
 			fts_set(fts, ftsent, FTS_SKIP);
 			continue;
 		case FTS_ERR:
-			error = errno;
-			errno = ftsent->fts_errno;
-			selinux_log(SELINUX_ERROR,
-				    "Error on %s: %m.\n",
-				    ftsent->fts_path);
-			errno = error;
-			fts_set(fts, ftsent, FTS_SKIP);
+			HANDLE_FTS_ERROR(fts, ftsent,
+					 "Error on %s: %m.\n",
+					 ftsent->fts_path);
 			continue;
 		case FTS_D:
 			if (state->sfsb.f_type == SYSFS_MAGIC &&
