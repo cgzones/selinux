@@ -25,3 +25,4 @@ cscope.*
 .*.swp
 # Failsafes
 !.gitignore
+_codeql_detected_source_root
