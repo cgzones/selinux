@@ -9,36 +9,38 @@ jobs:
       matrix:
         compiler: [gcc, clang]
         python-ruby-version:
-          - { python: "3.13", ruby: "3.3" }
-          - { python: "3.13", ruby: "3.3", other: "test-flags-override" }
-          - { python: "3.13", ruby: "3.3", other: "test-debug" }
-          - { python: "3.13", ruby: "3.3", other: "linker-bfd" }
-          - { python: "3.13", ruby: "3.3", other: "linker-gold" }
+          - { python: "3.14", ruby: "3.4" }
+          - { python: "3.14", ruby: "3.4", other: "test-flags-override" }
+          - { python: "3.14", ruby: "3.4", other: "test-debug" }
+          - { python: "3.14", ruby: "3.4", other: "linker-bfd" }
+          - { python: "3.14", ruby: "3.4", other: "linker-gold" }
           # Test several Python versions with the latest Ruby version
-          - { python: "3.12", ruby: "3.3" }
-          - { python: "3.11", ruby: "3.3" }
-          - { python: "3.10", ruby: "3.3" }
-          - { python: "3.9", ruby: "3.3" }
-          - { python: "3.8", ruby: "3.3" }
-          - { python: "pypy3.7", ruby: "3.3" }
+          - { python: "3.14", ruby: "3.4" }
+          - { python: "3.12", ruby: "3.4" }
+          - { python: "3.11", ruby: "3.4" }
+          - { python: "3.10", ruby: "3.4" }
+          - { python: "3.9", ruby: "3.4" }
+          - { python: "3.8", ruby: "3.4" }
           # Test several Ruby versions with the latest Python version
-          - { python: "3.13", ruby: "3.2" }
-          - { python: "3.13", ruby: "3.1" }
-          - { python: "3.13", ruby: "3.0" }
-          - { python: "3.13", ruby: "2.7" }
-          - { python: "3.13", ruby: "2.6" }
-          - { python: "3.13", ruby: "2.5" }
+          - { python: "3.14", ruby: "4.0" }
+          - { python: "3.14", ruby: "3.3" }
+          - { python: "3.14", ruby: "3.2" }
+          - { python: "3.14", ruby: "3.1" }
+          - { python: "3.14", ruby: "3.0" }
+          - { python: "3.14", ruby: "2.7" }
+          - { python: "3.14", ruby: "2.6" }
+          - { python: "3.14", ruby: "2.5" }
         exclude:
           - compiler: clang
             python-ruby-version:
-              { python: "3.13", ruby: "3.3", other: "linker-bfd" }
+              { python: "3.14", ruby: "3.4", other: "linker-bfd" }
           - compiler: clang
             python-ruby-version:
-              { python: "3.13", ruby: "3.3", other: "linker-gold" }
+              { python: "3.14", ruby: "3.4", other: "linker-gold" }
         include:
           - compiler: gcc
             python-ruby-version:
-              { python: "3.13", ruby: "3.3", other: "sanitizers" }
+              { python: "3.14", ruby: "3.4", other: "sanitizers" }
 
     steps:
       - uses: actions/checkout@v6
@@ -125,19 +127,12 @@ jobs:
           PYTHON_SYS_PREFIX="$(python -c 'import sys;print(sys.prefix)')"
           echo "PKG_CONFIG_PATH=${PYTHON_SYS_PREFIX}/lib/pkgconfig" >> $GITHUB_ENV
 
-          if [[ "${{ matrix.python-ruby-version.python }}" == pypy* ]] ; then
-              # PyPy does not provide a config file for pkg-config
-              # libpypy-c.so is provided in bin/libpypy-c.so for PyPy and bin/libpypy3-c.so for PyPy3
-              echo "PYINC=-I${PYTHON_SYS_PREFIX}/include" >> $GITHUB_ENV
-              echo "PYLIBS=-L${PYTHON_SYS_PREFIX}/bin -lpypy3-c" >> $GITHUB_ENV
-          fi
-
           # Display the final environment file, for debugging purpose
           cat $GITHUB_ENV
 
       - name: Download and install refpolicy headers for sepolgen tests
         run: |
-          curl --location --retry 10 -o refpolicy.tar.bz2 https://github.com/SELinuxProject/refpolicy/releases/download/RELEASE_2_20220520/refpolicy-2.20220520.tar.bz2
+          curl --location --retry 10 -o refpolicy.tar.bz2 https://github.com/SELinuxProject/refpolicy/releases/download/RELEASE_2_20250923/refpolicy-2.20250923.tar.bz2
           tar -xvjf refpolicy.tar.bz2
           sed -e "s,^PREFIX :=.*,PREFIX := $DESTDIR/usr," -i refpolicy/support/Makefile.devel
           sudo make -C refpolicy install-headers bare
