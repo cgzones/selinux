@@ -14,6 +14,7 @@ jobs:
           - { python: "3.14", ruby: "3.4", other: "test-debug" }
           - { python: "3.14", ruby: "3.4", other: "linker-bfd" }
           - { python: "3.14", ruby: "3.4", other: "linker-gold" }
+          - { python: "3.14", ruby: "3.4", other: "sanitizers" }
           # Test several Python versions with the latest Ruby version
           - { python: "3.14", ruby: "3.4" }
           - { python: "3.12", ruby: "3.4" }
@@ -37,10 +38,6 @@ jobs:
           - compiler: clang
             python-ruby-version:
               { python: "3.14", ruby: "3.4", other: "linker-gold" }
-        include:
-          - compiler: gcc
-            python-ruby-version:
-              { python: "3.14", ruby: "3.4", other: "sanitizers" }
 
     steps:
       - uses: actions/checkout@v6
