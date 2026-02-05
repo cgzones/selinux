@@ -29,7 +29,6 @@
 /* helper functions */
 
 /* Override CU_*_FATAL() in order to help static analyzers by really asserting that an assertion holds */
-#ifdef __CHECKER__
 
 #include <assert.h>
 
@@ -52,8 +51,6 @@
 		CU_ASSERT_PTR_NOT_NULL(_value); \
 		assert(_value != NULL); \
 	} while (0)
-
-#endif /* __CHECKER__ */
 
 
 /* Load a source policy into p. policydb_init will called within this function.

@@ -46,8 +46,6 @@
  *
  *************************************************************************/
 
-#define _GNU_SOURCE
-
 #if defined(AUDIT_LOG_PRIV) && !defined(USE_AUDIT)
 #error AUDIT_LOG_PRIV needs the USE_AUDIT option
 #endif

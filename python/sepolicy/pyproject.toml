@@ -1,0 +1,10 @@
+[build-system]
+build-backend = 'mesonpy'
+requires = ['meson-python']
+
+[project]
+name = 'sepolicy'
+version = meson.project_version()
+description = 'SELinux policy python 3 bindings'
+author = 'SELinux Project'
+author_email = 'selinux@vger.kernel.org'

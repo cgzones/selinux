@@ -1,4 +1,6 @@
-#define _GNU_SOURCE
+#ifndef _GNU_SOURCE
+# define _GNU_SOURCE
+#endif
 #include <sys/inotify.h>
 #include <errno.h>
 #include <stdio.h>

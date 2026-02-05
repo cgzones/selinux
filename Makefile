@@ -1,6 +1,6 @@
 PREFIX ?= /usr
 OPT_SUBDIRS ?= dbus gui mcstrans python restorecond sandbox semodule-utils
-SUBDIRS=libsepol libselinux libsemanage checkpolicy secilc policycoreutils $(OPT_SUBDIRS)
+SUBDIRS=libsepol libselinux libsemanage secilc policycoreutils $(OPT_SUBDIRS)
 PYSUBDIRS=libselinux libsemanage
 DISTCLEANSUBDIRS=libselinux libsemanage
 

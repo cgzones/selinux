@@ -1,0 +1,4 @@
+option('checkpolicy', type: 'boolean', value: true,
+       description: 'Build checkpolicy compiler')
+option('cil', type: 'boolean', value: true,
+       description: 'Build CIL support')

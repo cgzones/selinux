@@ -1,5 +1,3 @@
-#define _GNU_SOURCE  /* vasprintf(3) */
-
 #include "test-neverallow.h"
 
 #include "helpers.h"
