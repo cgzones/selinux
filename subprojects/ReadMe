@@ -1,0 +1,1 @@
+Meson requires subprojects to be located in "${MESON_SOURCE_ROOT}/subprojects/${SUBPROJECT}".

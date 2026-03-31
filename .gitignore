@@ -23,5 +23,9 @@ cscope.*
 .#*
 \#*
 .*.swp
+
+# meson
+/subprojects/.wraplock
+
 # Failsafes
 !.gitignore

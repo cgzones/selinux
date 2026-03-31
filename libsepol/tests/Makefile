@@ -27,7 +27,7 @@ LIBSEPOL := ../src/libsepol.a
 # In order to load source policies we need to link in the checkpolicy/checkmodule parser and util code.
 # This is less than ideal, but it makes the tests easier to maintain by allowing source policies
 # to be loaded directly.
-CHECKPOLICY := ../../checkpolicy/
+CHECKPOLICY := ../checkpolicy/
 override CPPFLAGS += -I../include/ -I$(CHECKPOLICY)
 
 # test program object files
@@ -69,7 +69,7 @@ clean:
 # when the source code is built with ASan
 test: $(EXE) $(policies)
 	$(ENV) -i $(MKDIR) -p policies/test-downgrade
-	../../checkpolicy/checkpolicy -M policies/test-cond/refpolicy-base.conf -o policies/test-downgrade/policy.hi	
+	$(CHECKPOLICY)/checkpolicy -M policies/test-cond/refpolicy-base.conf -o policies/test-downgrade/policy.hi	
 	./$(EXE)
 
 .PHONY: all policies clean test

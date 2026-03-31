@@ -77,3 +77,4 @@ clean-rubywrap:
 	$(MAKE) -C src $@
 
 test:
+	./tests/test_python_wrap.py

@@ -34,7 +34,7 @@
 #include <string.h>
 #include <unistd.h>
 
-#include "utilities.h"
+#include "../src/utilities.h"
 #include "test_utilities.h"
 
 static void test_semanage_is_prefix(void);

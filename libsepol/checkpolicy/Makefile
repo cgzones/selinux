@@ -19,6 +19,8 @@ ifeq ($(LIBSEPOLA),)
         LDLIBS_LIBSEPOLA := -l:libsepol.a
 endif
 
+override CFLAGS += -I../include
+
 CHECKOBJS = y.tab.o lex.yy.o queue.o module_compiler.o parse_util.o \
 	    policy_define.o
 CHECKPOLOBJS = $(CHECKOBJS) checkpolicy.o

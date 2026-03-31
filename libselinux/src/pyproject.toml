@@ -1,0 +1,13 @@
+[build-system]
+build-backend = 'mesonpy'
+requires = ['meson-python']
+
+[project]
+name = 'SELinux'
+version = meson.project_version()
+description = 'SELinux python 3 bindings'
+author = 'SELinux Project'
+author_email = 'selinux@vger.kernel.org'
+
+[project.urls]
+Source = 'https://github.com/SELinuxProject/selinux'

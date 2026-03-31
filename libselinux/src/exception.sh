@@ -20,18 +20,18 @@ esac
 # Make sure that selinux.h is included first in order not to depend on the order
 # in which "#include <selinux/selinux.h>" appears in other files.
 FILE_LIST=(
-    ../include/selinux/selinux.h
-    ../include/selinux/avc.h
-    ../include/selinux/context.h
-    ../include/selinux/get_context_list.h
-    ../include/selinux/get_default_type.h
-    ../include/selinux/label.h
-    ../include/selinux/restorecon.h
+    "${LIBSELINUX_SRC}/../include/selinux/selinux.h"
+    "${LIBSELINUX_SRC}/../include/selinux/avc.h"
+    "${LIBSELINUX_SRC}/../include/selinux/context.h"
+    "${LIBSELINUX_SRC}/../include/selinux/get_context_list.h"
+    "${LIBSELINUX_SRC}/../include/selinux/get_default_type.h"
+    "${LIBSELINUX_SRC}/../include/selinux/label.h"
+    "${LIBSELINUX_SRC}/../include/selinux/restorecon.h"
 )
-if ! cat "${FILE_LIST[@]}" | ${CC:-gcc} -x c -c -I../include -o temp.o - -aux-info temp.aux
+if ! cat "${FILE_LIST[@]}" | ${CC:-gcc} -x c -c -I"${LIBSELINUX_SRC}/../include" -o libselinux.temp.o - -aux-info libselinux.temp.aux
 then
     # clang does not support -aux-info so fall back to gcc
-    cat "${FILE_LIST[@]}" | gcc -x c -c -I../include -o temp.o - -aux-info temp.aux
+    cat "${FILE_LIST[@]}" | gcc -x c -c -I"${LIBSELINUX_SRC}/../include" -o libselinux.temp.o - -aux-info libselinux.temp.aux
 fi
-for i in `awk '/<stdin>.*extern int/ { print $6 }' temp.aux`; do except $i ; done 
-rm -f -- temp.aux temp.o
+for i in `awk '/<stdin>.*extern int/ { print $6 }' libselinux.temp.aux`; do except $i ; done
+rm -f -- libselinux.temp.aux libselinux.temp.o

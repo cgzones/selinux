@@ -3,6 +3,8 @@
 #
 CFLAGS ?= -g -Wall -W -Werror -O2
 
+override CFLAGS += -I../../include
+
 # If no specific libsepol.a is specified, fall back on LDFLAGS search path
 # Otherwise, as $(LIBSEPOLA) already appears in the dependencies, there
 # is no need to define a value for LDLIBS_LIBSEPOLA

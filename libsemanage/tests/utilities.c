@@ -41,28 +41,42 @@ void test_msg_handler(__attribute__((unused)) void *varg,
 int create_test_store(void) {
 	FILE *fptr;
 
-	if (mkdir("test-policy", 0700) < 0)
+	if (mkdir("test-policy", 0700) < 0 && errno != EEXIST) {
+		fprintf(stderr, "failed to create 'test-policy' directory: %m\n");
 		return -1;
+	}
 
-	if (mkdir("test-policy/store", 0700) < 0)
+	if (mkdir("test-policy/store", 0700) < 0 && errno != EEXIST) {
+		fprintf(stderr, "failed to create 'test-policy/store' directory: %m\n");
 		return -1;
+	}
 
-	if (mkdir("test-policy/store/active", 0700) < 0)
+	if (mkdir("test-policy/store/active", 0700) < 0 && errno != EEXIST) {
+		fprintf(stderr, "failed to create 'test-policy/store/active' directory: %m\n");
 		return -1;
+	}
 
-	if (mkdir("test-policy/store/active/modules", 0700) < 0)
+	if (mkdir("test-policy/store/active/modules", 0700) < 0 && errno != EEXIST) {
+		fprintf(stderr, "failed to create 'test-policy/store/active/modules' directory: %m\n");
 		return -1;
+	}
 
-	if (mkdir("test-policy/etc", 0700) < 0)
+	if (mkdir("test-policy/etc", 0700) < 0 && errno != EEXIST) {
+		fprintf(stderr, "failed to create 'test-policy/etc' directory: %m\n");
 		return -1;
+	}
 
-	if (mkdir("test-policy/etc/selinux", 0700) < 0)
+	if (mkdir("test-policy/etc/selinux", 0700) < 0 && errno != EEXIST) {
+		fprintf(stderr, "failed to create 'test-policy/etc/selinux' directory: %m\n");
 		return -1;
+	}
 
 	fptr = fopen("test-policy/etc/selinux/semanage.conf", "w+");
 
-	if (!fptr)
+	if (!fptr) {
+		fprintf(stderr, "failed to create 'test-policy/etc/selinux/semanage.conf' file: %m\n");
 		return -1;
+	}
 
 	fclose(fptr);
 
@@ -82,7 +96,7 @@ static int write_test_policy(char *data, size_t data_len) {
 	FILE *fptr = fopen("test-policy/store/active/policy.kern", "wb+");
 
 	if (!fptr) {
-		perror("fopen");
+		fprintf(stderr, "failed to open 'test-policy/store/active/policy.kern': %m\n");
 		return -1;
 	}
 
@@ -104,7 +118,7 @@ int write_test_policy_from_file(const char *filename) {
 	int rc;
 
 	if (!fptr) {
-		perror("fopen");
+		fprintf(stderr, "failed to open '%s': %m\n", filename);
 		return -1;
 	}
 
@@ -129,17 +143,21 @@ int write_test_policy_from_file(const char *filename) {
 }
 
 int write_test_policy_src(unsigned char *data, unsigned int data_len) {
-	if (mkdir("test-policy/store/active/modules/100", 0700) < 0)
+	if (mkdir("test-policy/store/active/modules/100", 0700) < 0 && errno != EEXIST) {
+		fprintf(stderr, "failed to create 'test-policy/store/active/modules/100' directory: %m\n");
 		return -1;
+	}
 
-	if (mkdir("test-policy/store/active/modules/100/base", 0700) < 0)
+	if (mkdir("test-policy/store/active/modules/100/base", 0700) < 0 && errno != EEXIST) {
+		fprintf(stderr, "failed to create 'test-policy/store/active/modules/100/base' directory: %m\n");
 		return -1;
+	}
 
 	FILE *fptr = fopen("test-policy/store/active/modules/100/base/cil",
 			   "w+");
 
 	if (!fptr) {
-		perror("fopen");
+		fprintf(stderr, "failed to open 'test-policy/store/active/modules/100/base/cil': %m\n");
 		return -1;
 	}
 
@@ -155,7 +173,7 @@ int write_test_policy_src(unsigned char *data, unsigned int data_len) {
 		     "w+");
 
 	if (!fptr) {
-		perror("fopen");
+		fprintf(stderr, "failed to open 'test-policy/store/active/modules/100/base/lang_ext': %m\n");
 		return -1;
 	}
 

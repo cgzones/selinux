@@ -1,0 +1,6 @@
+subdir('test-cond')
+subdir('test-deps')
+subdir('test-expander')
+subdir('test-hooks')
+subdir('test-linker')
+subdir('test-neverallow')

@@ -78,6 +78,7 @@ extern semanage_handle_t *sh;
 
 typedef enum { SH_NULL, SH_HANDLE, SH_CONNECT, SH_TRANS } level_t;
 
+__attribute__((format(printf, 3, 4)))
 void test_msg_handler(void *varg, semanage_handle_t *handle, const char *fmt,
 		      ...);
 

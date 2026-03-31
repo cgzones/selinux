@@ -1,0 +1,55 @@
+utils = [
+  'avcstat',
+  'compute_av',
+  'compute_create',
+  'compute_member',
+  'compute_relabel',
+  'getconlist',
+  'getdefaultcon',
+  'getenforce',
+  'getfilecon',
+  'getpidcon',
+  'getpidprevcon',
+  'getpolicyload',
+  'getsebool',
+  'getseuser',
+  'matchpathcon',
+  'policyvers',
+  'selabel_compare',
+  'selabel_digest',
+  'selabel_get_digests_all_partial_matches',
+  'selabel_lookup',
+  'selabel_lookup_best_match',
+  'selabel_partial_match',
+  'selinux_check_access',
+  'selinux_check_securetty_context',
+  'selinuxenabled',
+  'selinuxexeccon',
+  'setenforce',
+  'setfilecon',
+  'togglesebool',
+  'validatetrans',
+]
+
+foreach util : utils
+  executable(
+    util,
+    sources: [util + '.c'],
+    include_directories: selinux_includes,
+    link_args: [exe_link_args],
+    link_with: [selinux_shared],
+    install: true,
+    install_dir: get_option('sbindir'),
+  )
+endforeach
+
+executable(
+  'sefcontext_compile',
+  sources: ['sefcontext_compile.c'],
+  include_directories: selinux_includes,
+  dependencies: [libsepol_static, pcre2],
+  link_args: [exe_link_args],
+  link_with: [selinux_static],
+  install: true,
+  install_dir: get_option('sbindir'),
+)
